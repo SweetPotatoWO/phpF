@@ -1,0 +1,231 @@
+<?php
+
+namespace Frontend\Controller;
+
+use Service\Connect\Logic\ConnectRelationLogic;
+use Service\Connect\Logic\DataCleanLogic;
+use Service\Connect\Logic\DataImportLogic;
+use Service\Connect\Logic\MakeDataLogic;
+use Service\Connect\Model\CompanyModel;
+use Service\Connect\Model\ConnectModel;
+use Service\Connect\Model\ConnectTypeEnum;
+use Service\Connect\Model\ConnectWorkModel;
+use Service\Connect\Model\PersonModel;
+use Symfony\Component\Config\Definition\Exception\Exception;
+
+/**
+ * 测试
+ * @package Home\Controller
+ */
+class TestController extends BaseFrontController
+{
+    public function __construct()
+    {
+        set_time_limit(0);
+    }
+
+//    /**
+//     * 导入Neo4j
+//     */
+//    public function import()
+//    {
+//        try {
+//            (new DataImportLogic)->import4QhzDb();
+//            echo 'success';
+//        } catch (Exception $ex) {
+//            echo $ex->getMessage();
+//        }
+//    }
+    /**
+     * 测试基本操作方法
+     */
+    public function testNeo()
+    {
+        $logic = new ConnectRelationLogic();
+
+        /*$person = new PersonModel();
+        $person->setMobile('13100000001')->setName('张三')->setUserId(1)->setCity('深圳')->setIndustry('互联网,游戏')->setProfession('产品经理');
+        $logic->upsertPerson($person);
+
+        $person = new PersonModel();
+        $person->setMobile('13100000002')->setName('李四')->setUserId(2)->setCity('长沙');
+        $logic->upsertPerson($person);
+
+        $person = new PersonModel();
+        $person->setMobile('13100000012')->setName('李三')->setUserId(12)->setCity('长沙');
+        $logic->upsertPerson($person);
+
+        $person = new PersonModel();
+        $person->setMobile('13100000003')->setName('王五')->setUserId(3)->setCity('深圳');
+        $logic->upsertPerson($person);
+
+        $person4 = new PersonModel();
+        $person4->setMobile('13100000004')->setName('赵六')->setUserId(4)->setCity('深圳')->setProfession('项目经理');
+        $logic->upsertPerson($person4);
+
+        $person14 = new PersonModel();
+        $person14->setMobile('13100000014')->setName('赵五')->setUserId(14)->setCity('广州')->setProfession('工程师');
+        $logic->upsertPerson($person14);
+
+        $person = new PersonModel();
+        $person->setMobile('13100000005')->setName('马七')->setUserId(5)->setCity('成都')->setIndustry('互联网,金融');
+        $logic->upsertPerson($person);
+
+        $logic = new ConnectRelationLogic();
+        $connect = new ConnectModel($person,$person4);
+        $connect->setType(ConnectTypeEnum::FRIEND)->setTitle('钱盒子')->setDesc('技术-小六子');
+        $logic->upsertConnect($connect);*/
+
+        $person = new PersonModel();
+        $person->setUserId(10899);
+        $company = new CompanyModel();
+        $company->setCompanyId('65aee0363c064cdfb0912b92023b4337')
+            ->setCompanyName('深圳盒子支付信息技术有限公司')
+            ->setIndustry('家用电器及电子产品专门零售')
+            ->setCity('深圳');
+        $connect = new ConnectWorkModel($person,$company);
+        $logic->upsertCompany($connect);
+
+        echo 'success';
+    }
+
+    /**
+     * 测试推荐
+     */
+    public function testNeoQuery()
+    {
+        //含同行、同城、同事和校友
+        $user_id = 8870;
+        $user_id = 7314;
+
+        //含同行、同城、同事或校友
+        $user_id = 1260;
+        $user_id = 6191;
+        $user_id = 10899;
+        //含同行、同城
+//        $user_id = 1176;
+        //含同事、校友
+//        $user_id = 4084;
+
+        echo '<h2>查询user_id：'.$user_id.'</h2>';
+        $logic = new ConnectRelationLogic();
+        echo '<h2>一度人脉</h2>';
+        $list = $logic->getConnectList($user_id,10);
+        echo "<table><tr><td>姓名</td><td>编号</td><td>城市</td><td>行业</td><td>头像</td></tr>";
+        foreach ($list as $item) {
+            echo "<tr><td>{$item->getName()}</td><td>{$item->getUserId()}</td><td>{$item->getCity()}</td><td>{$item->getIndustry()}</td><td>{$item->getHeadPic()}</td></tr>";
+        }
+        echo "</table>";
+
+        unset($list);
+        echo '<h2>推荐好友</h2>';
+        $list = $logic->getRecommendFriend($user_id,10);
+        echo "<table><tr><td>姓名</td><td>编号</td><td>城市</td><td>行业</td><td>标签</td></tr>";
+        foreach ($list as $item) {
+            echo "<tr><td>{$item->getName()}</td><td>{$item->getUserId()}</td><td>{$item->getCity()}</td><td>{$item->getIndustry()}</td><td>{$item->getLabel()}</td></tr>";
+        }
+        echo "</table>";
+
+        unset($list);
+        echo '<h2>同城</h2>';
+        $list = $logic->getRecommendFriend($user_id,10,false,true);
+        echo "<table><tr><td>姓名</td><td>编号</td><td>城市</td><td>行业</td><td>标签</td></tr>";
+        foreach ($list as $item) {
+            echo "<tr><td>{$item->getName()}</td><td>{$item->getUserId()}</td><td>{$item->getCity()}</td><td>{$item->getIndustry()}</td><td>{$item->getLabel()}</td></tr>";
+        }
+        echo "</table>";
+
+        unset($list);
+        echo '<h2>同行</h2>';
+        $list = $logic->getRecommendFriend($user_id,10,true);
+        echo "<table><tr><td>姓名</td><td>编号</td><td>城市</td><td>行业</td><td>标签</td></tr>";
+        foreach ($list as $item) {
+            echo "<tr><td>{$item->getName()}</td><td>{$item->getUserId()}</td><td>{$item->getCity()}</td><td>{$item->getIndustry()}</td><td>{$item->getLabel()}</td></tr>";
+        }
+        echo "</table>";
+
+        unset($list);
+        echo '<h2>最近活跃</h2>';
+        $list = $logic->getRecommendFriend($user_id,10,false,false,true);
+        echo "<table><tr><td>姓名</td><td>编号</td><td>城市</td><td>行业</td><td>标签</td></tr>";
+        foreach ($list as $item) {
+            echo "<tr><td>{$item->getName()}</td><td>{$item->getUserId()}</td><td>{$item->getCity()}</td><td>{$item->getIndustry()}</td><td>{$item->getLabel()}</td></tr>";
+        }
+        echo "</table>";
+
+        unset($list);
+        echo '<h2>推荐人脉</h2>';
+        $list = $logic->getRecommendConnect($user_id,10);
+        echo "<table><tr><td>姓名</td><td>编号</td><td>城市</td><td>行业</td><td>标签</td></tr>";
+        foreach ($list as $item) {
+            echo "<tr><td>{$item->getName()}</td><td>{$item->getUserId()}</td><td>{$item->getCity()}</td><td>{$item->getIndustry()}</td><td>{$item->getLabel()}</td></tr>";
+        }
+        echo "</table>";
+
+        unset($list);
+        echo '<h2>同事/前同事</h2>';
+        $list = $logic->getRecommendConnect($user_id,10,true);
+        echo "<table><tr><td>姓名</td><td>编号</td><td>城市</td><td>行业</td><td>标签</td></tr>";
+        foreach ($list as $item) {
+            echo "<tr><td>{$item->getName()}</td><td>{$item->getUserId()}</td><td>{$item->getCity()}</td><td>{$item->getIndustry()}</td><td>{$item->getLabel()}</td></tr>";
+        }
+        echo "</table>";
+
+        unset($list);
+        echo '<h2>校友</h2>';
+        $list = $logic->getRecommendConnect($user_id,10,false,true);
+        echo "<table><tr><td>姓名</td><td>编号</td><td>城市</td><td>行业</td><td>标签</td></tr>";
+        foreach ($list as $item) {
+            echo "<tr><td>{$item->getName()}</td><td>{$item->getUserId()}</td><td>{$item->getCity()}</td><td>{$item->getIndustry()}</td><td>{$item->getLabel()}</td></tr>";
+        }
+        echo "</table>";
+
+        unset($list);
+        $count = $logic->countPersonsByCompany($user_id,9430);
+        echo '<h2>企业员工('.$count.')</h2>';
+        $list = $logic->getPersonsByCompany($user_id,9430,10);
+        echo "<table><tr><td>姓名</td><td>编号</td><td>城市</td><td>行业</td><td>标签</td></tr>";
+        foreach ($list as $item) {
+            echo "<tr><td>{$item->getName()}</td><td>{$item->getUserId()}</td><td>{$item->getCity()}</td><td>{$item->getIndustry()}</td><td>{$item->getLabel()}</td></tr>";
+        }
+        echo "</table>";
+
+    }
+
+    //region 造数据
+    public function mkCompany()
+    {
+        echo '开始导入';
+        echo PHP_EOL;
+//        MakeDataLogic::company();
+//        MakeDataLogic::multiUser();
+//        MakeDataLogic::userCompany();
+//        MakeDataLogic::userInfo();
+//        MakeDataLogic::userEducation();
+//        MakeDataLogic::multiUserMail();
+        MakeDataLogic::userCompany2Graph();
+        MakeDataLogic::userEducation2Graph();
+        MakeDataLogic::userConnect2Graph();
+        echo 'Finish!';
+    }
+    //endregion
+
+    public function clean()
+    {
+        echo 'Begin...';
+        echo PHP_EOL;
+        $t1 = microtime(true);
+        $logic = new DataCleanLogic();
+        $logic->str2ID();
+        $t2 = microtime(true);
+        echo 'Finish! 耗时：'.round($t2-$t1,3).'秒';
+
+    }
+
+    public function importContact()
+    {
+        $Connect = new ConnectRelationLogic();   //通知导入通讯录
+        $Connect->notifyImportContacts(10719);
+        echo 'success';
+    }
+}

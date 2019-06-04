@@ -1,0 +1,244 @@
+<include file="Common:header" />
+<div class="creditInfo">
+	<div class="navigation text-center bg-white">
+        <ul class="nav nav-tabs bord-n clearfix" role="tablist">
+            <li role="presentation">
+                <a href="#punish" aria-controls="punish" role="tab" data-toggle="tab" class="active">行政处罚</a>
+            </li>
+            <li role="presentation" data="list">
+                <a href="#abnormal" aria-controls="abnormal" role="tab" data-toggle="tab">经营异常</a>
+            </li>
+        </ul>
+    </div>
+    
+    <div class="tab-content">
+    	<div id="punish" role="tabpanel" class="tab-pane active">
+    		<div class="list bg-white">
+    			<!--&lt;!&ndash;单条数据循环start&ndash;&gt;-->
+    			<!--<div class="bord-b">-->
+    				<!--<h6 class="mb-15">决定文书号</h6>-->
+    				<!--<table class="table fs-12 mb-0">-->
+    					<!--<tr>-->
+    						<!--<td class="color-deep">决定机关：</td>-->
+    						<!--<td>XXX工商局</td>-->
+    					<!--</tr>-->
+    					<!--<tr>-->
+    						<!--<td class="color-deep">违法行为类型：</td>-->
+    						<!--<td>不正当行为</td>-->
+    					<!--</tr>-->
+    					<!--<tr>-->
+    						<!--<td class="color-deep">行政处罚内容：</td>-->
+    						<!--<td>未按照规定公布企业信息</td>-->
+    					<!--</tr>-->
+    				<!--</table>-->
+    			<!--</div>-->
+    			<!--&lt;!&ndash;单条数据循环end&ndash;&gt;-->
+    		</div>
+    		<!--&lt;!&ndash;暂无数据&ndash;&gt;-->
+    		<!--<div class="nodata text-center fs-13 color-deep pl-10">暂无数据~</div>-->
+    		<!--&lt;!&ndash;点击加载&ndash;&gt;-->
+    		<!--<div id="wxNo" class="wxLast text-center fs-13 color-deep">已经没有更多数据</div>-->
+            <!--<div id="wxLoad" class="wxLast text-center fs-13 color-deep">正在努力加载...</div>-->
+            <div id="punMore" class="wxLast text-center fs-13 color-deep">点击加载更多</div>
+    	</div>
+    	<div id="abnormal" role="tabpanel" class="tab-pane">
+    		<div class="list bg-white">
+    			<!--&lt;!&ndash;单条数据循环start&ndash;&gt;-->
+    			<!--<div class="bord-b">-->
+    				<!--<table class="table fs-12 mb-0">-->
+    					<!--<tr>-->
+    						<!--<td width="35%" class="color-deep">异常日期：</td>-->
+    						<!--<td>2018-12-12</td>-->
+    					<!--</tr>-->
+    					<!--<tr>-->
+    						<!--<td class="color-deep">决定机关：</td>-->
+    						<!--<td>XXX工商局</td>-->
+    					<!--</tr>-->
+    					<!--<tr>-->
+    						<!--<td class="color-deep">异常原因：</td>-->
+    						<!--<td>未按照规定公布企业信息</td>-->
+    					<!--</tr>-->
+    				<!--</table>-->
+    			<!--</div>-->
+    			<!--&lt;!&ndash;单条数据循环end&ndash;&gt;-->
+    		</div>
+    		<!--&lt;!&ndash;暂无数据&ndash;&gt;-->
+    		<!--<div class="nodata text-center fs-13 color-deep pl-10">暂无数据~</div>-->
+    		<!--&lt;!&ndash;点击加载&ndash;&gt;-->
+    		<!--<div id="wxNo" class="wxLast text-center fs-13 color-deep">已经没有更多数据</div>-->
+            <!--<div id="wxLoad" class="wxLast text-center fs-13 color-deep">正在努力加载...</div>-->
+            <div id="abMore" page="2" class="wxLast text-center fs-13 color-deep">点击加载更多</div>
+    	</div>
+    </div>
+</div>
+</body>
+</html>
+<script type="text/javascript">
+
+    var pagesize = 15;  //每一页的列表数量
+
+	$(function () {
+	    getPenalty(1);
+	    getAbnormal(1);
+
+        $("#abMore").click(function() {  //点击加载
+            var page = $(this).attr('page');
+            getAbnormal(page);
+        });
+
+        $("#punMore").click(function () {
+            var page = $(this).attr('page');
+            getPenalty(page);
+        });
+	});
+
+    /**
+     * 行政处罚
+     * @param page
+     */
+    function getPenalty(page) {
+        var data = {'page':page,'companyID':"dd"};
+        $.ajax({
+            url:"/wechat/company/getPenalty",
+            type:"post",
+            data:data,
+            dataType:'json',
+            success:function(data){
+                if(data.code == 0) {   //成功
+                    getCombinationPenalty(data.data,page,pagesize);
+                } else {   //失败
+                    alert("服务器出错");
+                }
+            },
+            error:function(data){
+                alert("请求错误");
+            },
+        });
+    }
+
+
+    /**
+     * 经营异常
+     * @param page
+     */
+    function getAbnormal(page) {
+        var data = {'page':page,'companyID':"dd"};
+        $.ajax({
+            url:"/wechat/company/getAbnormal",
+            type:"post",
+            data:data,
+            dataType:'json',
+            success:function(data){
+                if(data.code == 0) {   //成功
+                    getCombinationAbnormal(data.data,page,pagesize);
+                } else {   //失败
+                    alert("服务器出错");
+                }
+            },
+            error:function(data){
+                alert("请求错误");
+            },
+        });
+    }
+
+
+
+
+    /*
+        组合行政处罚
+    * */
+    function getCombinationPenalty(data,page,pagesize) {
+        var html = "";
+        if(data == "" && page == 1) {  //当请求的是第一页且没数据的时候
+            var b = $("#punish").children();
+            html = "<div class=\"nodata text-center fs-13 color-deep pl-10\">暂无数据~</div>";
+            $("#punish").html(html);
+            return;
+        }
+        if(data == "" && page !=1) {   //当请求是第一页的是否
+            var html = '<div id="wxNo" class="wxLast text-center fs-13 color-deep">已经没有更多数据</div>';
+            $("#punish").append(html);
+            return
+        }
+        for (var a in data) {
+            html += '<div class="bord-b">\n' +
+                '    \t\t\t\t<h6 class="mb-15">决定文书号</h6>\n' +
+                '    \t\t\t\t<table class="table fs-12 mb-0">\n' +
+                '    \t\t\t\t\t<tr>\n' +
+                '    \t\t\t\t\t\t<td class="color-deep">决定机关：</td>\n' +
+                '    \t\t\t\t\t\t<td>'+data[a].dptName+'</td>\n' +
+                '    \t\t\t\t\t</tr>\n' +
+                '    \t\t\t\t\t<tr>\n' +
+                '    \t\t\t\t\t\t<td class="color-deep">违法行为类型：</td>\n' +
+                '    \t\t\t\t\t\t<td>'+data[a].illegalType+'</td>\n' +
+                '    \t\t\t\t\t</tr>\n' +
+                '    \t\t\t\t\t<tr>\n' +
+                '    \t\t\t\t\t\t<td class="color-deep">行政处罚内容：</td>\n' +
+                '    \t\t\t\t\t\t<td>'+data[a].punishContent+'</td>\n' +
+                '    \t\t\t\t\t</tr>\n' +
+                '    \t\t\t\t</table>\n' +
+                '    \t\t\t</div>';
+        }
+        $("#punish").children("div").eq(0).append(html);
+        if(data.length < pagesize) {   //当请求的结果集合小于一页的时候
+            html = '<div id="wxNo" class="wxLast text-center fs-13 color-deep">已经没有更多数据</div>';
+            $("#punish").append(html);
+            $("#punMore").remove();  //移除点击更多
+        } else {
+            $("#punMore").attr('page',parseInt(page)+1);  //分页加一
+        }
+
+	}
+
+
+    /**
+     * 异常语言
+     * @param data
+     * @param page
+     * @param pagesize
+     */
+    function getCombinationAbnormal(data,page,pagesize) {
+        var html = "";
+        if(data == "" && page == 1) {  //当请求的是第一页且没数据的时候
+            var b = $("#abnormal").children();
+            html = "<div class=\"nodata text-center fs-13 color-deep pl-10\">暂无数据~</div>";
+            $("#abnormal").html(html);
+            return;
+        }
+        if(data == "" && page !=1) {   //当请求是第一页的是否
+            var html = '<div id="wxNo" class="wxLast text-center fs-13 color-deep">已经没有更多数据</div>';
+            $("#abnormal").append(html);
+            return
+        }
+        for (var a in data) {
+            html += '<div class="bord-b">\n' +
+                '    \t\t\t\t<table class="table fs-12 mb-0">\n' +
+                '    \t\t\t\t\t<tr>\n' +
+                '    \t\t\t\t\t\t<td width="35%" class="color-deep">异常日期：</td>\n' +
+                '    \t\t\t\t\t\t<td>'+data[a].inTime+'</td>\n' +
+                '    \t\t\t\t\t</tr>\n' +
+                '    \t\t\t\t\t<tr>\n' +
+                '    \t\t\t\t\t\t<td class="color-deep">决定机关：</td>\n' +
+                '    \t\t\t\t\t\t<td>'+data[a].decisiveOrg+'</td>\n' +
+                '    \t\t\t\t\t</tr>\n' +
+                '    \t\t\t\t\t<tr>\n' +
+                '    \t\t\t\t\t\t<td class="color-deep">异常原因：</td>\n' +
+                '    \t\t\t\t\t\t<td>'+inReason+'</td>\n' +
+                '    \t\t\t\t\t</tr>\n' +
+                '    \t\t\t\t</table>\n' +
+                '    \t\t\t</div>';
+        }
+
+        $("#abnormal").children("div").eq(0).append(html);
+        if(data.length < pagesize) {   //当请求的结果集合小于一页的时候
+            html = '<div id="wxNo" class="wxLast text-center fs-13 color-deep">已经没有更多数据</div>';
+            $("#abnormal").append(html);
+            $("#abMore").remove();  //移除点击更多
+        } else {
+            $("#abMore").attr('page',parseInt(page)+1);  //分页加一
+        }
+
+
+    }
+
+</script>

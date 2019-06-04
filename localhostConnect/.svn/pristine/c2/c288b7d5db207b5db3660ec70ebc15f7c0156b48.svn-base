@@ -1,0 +1,277 @@
+<?php
+namespace Service\Connect\Logic;
+
+use Common\Common\GraphDbHelper;
+use Service\Connect\Model\CompanyModel;
+use Service\Connect\Model\ConnectModel;
+use Service\Connect\Model\ConnectStudyModel;
+use Service\Connect\Model\ConnectWorkModel;
+use Service\Connect\Model\PersonModel;
+use Service\Connect\Model\SchoolModel;
+
+class MakeDataLogic {
+
+    public static function company()
+    {
+        $db = M('company');
+        $range_reg_time = [strtotime('1988-01-01'),strtotime('2018-01-01')];
+        $range_job = ['法人','股东','监事','CFO','CIO'];
+        $list = $db->query("select min(companyName) companyName,name from d_user_company where companyName is not NULL and companyName<>'' GROUP  by companyName ORDER  by userCompanyID");
+        $dt = time();
+        $arr = [];
+        foreach ($list as $item) {
+            $info = [
+                'registeredCapital'=>500000,
+                'addDatetime'=>$dt,
+            ];
+            $info['companyName'] = $item['companyName'];
+            $info['registeredCapital'] = rand(1,100)*100000;
+            $info['regDatetime'] = rand($range_reg_time[0],$range_reg_time[1]);
+            if($item['name']){
+                $info['businessExecutives'] = json_encode([
+                    $range_job[rand(0,count($range_job))]=>$item['name']
+                ],JSON_UNESCAPED_UNICODE);
+            }else{
+                $info['businessExecutives'] = '';
+            }
+            $arr[] = $info;
+            if(count($arr)>=20){
+                $db->addAll($arr);
+                $arr = [];
+            }
+        }
+        if(count($arr)>=0){
+            $db->addAll($arr);
+        }
+        return true;
+    }
+
+    public static function userCompany()
+    {
+        $db = M('user_company');
+        $range_comp_id = [8791,13141];
+        $range_job = ['开发','设计','销售','产品','经理'];
+        $list = $db->query("select userID from d_user");
+        $dt = time();
+        $arr = [];
+        foreach ($list as $item) {
+            if(rand(1,3)%2==0)continue;
+            $info = [
+                'addDatetime'=>$dt,
+            ];
+            $info['userID'] = $item['userID'];
+            $info['companyID'] = rand($range_comp_id[0],$range_comp_id[1]);
+            $info['job'] = $range_job[rand(0,count($range_job))];
+            $arr[] = $info;
+            if(count($arr)>=20){
+                $db->addAll($arr);
+                $arr = [];
+            }
+        }
+        if(count($arr)>=0){
+            $db->addAll($arr);
+        }
+        return true;
+    }
+
+    public static function userInfo(){
+        $db = M('user_info');
+        $range_city_job = ['北京','上海','广州','深圳','杭州','武汉','成都','天津','南京','西安','重庆'];
+        $range_city_born = ['长沙','株洲','汕头','清远','肇庆','武汉','成都','天津','南京','西安','重庆'];
+        $list_industry = $db->query("select * from d_sys_majob where level=2");
+        $list = $db->query("select a.userID,c.companyName from d_user_company a 
+ INNER JOIN d_company c on a.companyID=c.companyID order by companyName");
+        $company = '';
+        $job=[];
+        $arr = [];
+        $dt = time();
+        foreach ($list as $item) {
+            $info = [
+                'addDatetime'=>$dt,
+            ];
+            $info['userID'] = $item['userID'];
+            if($company!=$item['companyName']){
+                $job['city']=$range_city_job[rand(0,count($range_city_job)-1)];
+                $job['industry']=$list_industry[rand(0,count($list_industry)-1)];
+            }
+            $info['cityName'] = $range_city_born[rand(0,count($range_city_born)-1)];
+            $info['workCity'] =$job['city'];
+            $info['workMajorName'] =$job['industry']['jobname'];
+            $info['workMajorID'] =$job['industry']['majobID'];
+            $arr[] = $info;
+            if(count($arr)>=20){
+                $db->addAll($arr);
+                $arr = [];
+            }
+        }
+        if(count($arr)>=0){
+            $db->addAll($arr);
+        }
+        return true;
+    }
+
+    public static function userEducation(){
+        $db = M('user_educational');
+        $list_school = $db->query("select * from d_sys_school");
+        $list_major = $db->query("select * from d_sys_schoolmajob");
+        $list = $db->query("select userID from d_user order by rand() limit 1500");
+        $arr = [];
+        $dt = time();
+        foreach ($list as $item) {
+            $info = [
+                'addDatetime'=>$dt,
+            ];
+            $info['userID'] = $item['userID'];
+            $school = $list_school[rand(0,count($list_school)-1)];
+            $major = $list_major[rand(0,count($list_major)-1)];
+            $info['diploma'] =rand(4,8);
+            $info['schoolID'] =$school['schoolID'];
+            $info['schoolName'] =$school['name'];
+            $info['major'] =$major['name'];
+            $y_begin = rand(2000,2014);
+            $dt_begin = strtotime("$y_begin-09-01");
+            $dt_end = strtotime(($y_begin+4)."-07-01");
+            $info['startDatetime'] = $dt_begin;
+            $info['endDatetime'] = $dt_end;
+            $arr[] = $info;
+            if(count($arr)>=20){
+                $db->addAll($arr);
+                $arr = [];
+            }
+        }
+        if(count($arr)>=0){
+            $db->addAll($arr);
+        }
+        return true;
+    }
+
+    public static function multiUser()
+    {
+        $db = M('user');
+        $list = $db->query("select userId,phone from d_user where phone is not NULL and phone<>'' GROUP  by phone HAVING COUNT(0)>1 ORDER BY phone");
+        $arr = [];
+        foreach ($list as $item) {
+            $arr[] = "delete FROM d_user where phone='{$item['phone']}' and userId NOT IN(".$item['userId'].")";
+            if(count($arr)>=20){
+                $db->execute(implode(';',$arr));
+                $arr = [];
+            }
+        }
+        if(count($arr)>=0){
+            $db->execute(implode(';',$arr));
+        }
+        return true;
+    }
+
+    public static function multiUserMail()
+    {
+        $db = M('user');
+        $list = $db->query("select mid,userId,phone from d_user_maillist where phone is not NULL and phone<>'' GROUP  by userId,phone HAVING COUNT(0)>1 ORDER BY userId,phone");
+        $arr = [];
+        foreach ($list as $item) {
+            $arr[] = "delete FROM d_user_maillist where phone='{$item['phone']}' and userId={$item['userId']} and mid NOT IN(".$item['mid'].")";
+            if(count($arr)>=20){
+                $db->execute(implode(';',$arr));
+                $arr = [];
+            }
+        }
+        if(count($arr)>=0){
+            $db->execute(implode(';',$arr));
+        }
+        return true;
+    }
+
+    public static function userConnect2Graph()
+    {
+        $db = GraphDbHelper::getInstance();
+        $list = $db->query('match (n:Person) return n.user_id as id;');
+        shuffle($list);
+        $q = "match (n:Person{user_id:%d}),(m:Person{user_id:%d}) 
+            merge (n)-[r:FRIEND]->(m);";
+        for ($i=0;$i<count($list);$i++) {
+            $j = rand(0,count($list));
+            if($j!=$i) {
+                $query = sprintf($q, $list[$i]['id'], $list[$j]['id']);
+                $db->execute($query);
+            }
+
+            $j2 = rand(0,count($list));
+            if($j2!=$i && $j2!=$j) {
+                $query = sprintf($q, $list[$i]['id'], $list[$j2]['id']);
+                $db->execute($query);
+            }
+
+            $j3 = rand(0,count($list));
+            if($j3!=$i&& $j2!=$j3&& $j3!=$j) {
+                $query = sprintf($q, $list[$i]['id'], $list[$j3]['id']);
+                $db->execute($query);
+            }
+        }
+    }
+
+    public static function userCompany2Graph()
+    {
+        $db = M('user_company');
+        $list = $db->query("select a.companyID,c.companyName,a.job,a.userID,u.nickname,u.phone,i.workMajorName,i.workCity,i.cityName from d_user_company a 
+ INNER JOIN d_user u on a.userId=u.userId
+ INNER JOIN d_company c on a.companyID=c.companyID
+ LEFT JOIN d_user_info i on a.userId=i.userId");
+        $logic = new ConnectRelationLogic();
+        $i = 0;
+        foreach ($list as $item) {
+//            if($i++<2110)continue;
+            $person = new PersonModel();
+            $person->setMobile($item['phone'])->setCompany($item['companyName'])
+                ->setName($item['nickname'])
+                ->setUserId($item['userID'])
+                ->setProfession($item['job'])
+                ->setIndustry($item['workMajorName'])
+                ->setCity($item['workCity'])
+                ->setCityBorn($item['cityName']);
+
+            $company = new CompanyModel();
+            $company->setCompanyId($item['companyID']);
+            $company->setCompanyName($item['companyName']);
+            $company->setIndustry($item['workMajorName']);
+            $company->setCity($item['workCity']);
+
+            $connect = new ConnectWorkModel($person,$company);
+            $connect->setJobtitle($item['job']);
+
+            $logic->upsertWork($connect);
+        }
+        return true;
+    }
+
+    public static function userEducation2Graph()
+    {
+        $db = M('user_company');
+        $list = $db->query("select a.schoolID,a.schoolName,a.major,a.userID,a.startDatetime,a.endDatetime,u.nickname,u.phone,i.workMajorName,i.workCity,i.cityName from d_user_educational a 
+ INNER JOIN d_user u on a.userId=u.userId
+ LEFT JOIN d_user_info i on a.userId=i.userId");
+        $logic = new ConnectRelationLogic();
+        $i = 0;
+        foreach ($list as $item) {
+//            if($i++<755)continue;
+            $person = new PersonModel();
+            $person->setMobile($item['phone'])
+                ->setName($item['nickname'])
+                ->setUserId($item['userID'])
+                ->setIndustry($item['workMajorName'])
+                ->setCity($item['workCity'])
+                ->setCityBorn($item['cityName']);
+
+            $school = new SchoolModel();
+            $school->setSchoolId($item['schoolID']);
+            $school->setSchoolName($item['schoolName']);
+
+            $connect = new ConnectStudyModel($person,$school);
+            $connect->setMajor($item['major']);
+            $connect->setStarttime($item['startDatetime']);
+            $connect->setEndTime($item['endDatetime']);
+
+            $logic->upsertStudy($connect);
+        }
+        return true;
+    }
+}

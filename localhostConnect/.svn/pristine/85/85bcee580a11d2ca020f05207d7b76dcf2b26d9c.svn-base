@@ -1,0 +1,57 @@
+<?php
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+namespace Service\Company\Logic;
+
+class CompanyLogic {
+
+    private $model;
+
+    public function __construct() {
+        $this->model = new \Service\Company\Model\CompanyModel();
+    }
+
+    /**
+     * 获取企业信息
+     */
+    public function getCompanyList($where, $whereArr, $limit) {
+        $result = $this->model->getCompanyList($where, $whereArr, $limit);
+        if (empty($result['rows'])) {
+            return $result;
+        }
+        return $result;
+    }
+
+    /**
+     * 获取企业平台成员
+     */
+    public function getCompanyMember($where, $whereArr, $limit) {
+        $result = $this->model->getCompanyMember($where, $whereArr, $limit);
+        return $result;
+    }
+    
+    /**
+     * 获取公司基本信息
+     */
+    public function getCompanyBaseInfo($companyID){
+        if($companyID*1 < 1){
+            return false;
+        }
+        $filed = '';
+        $where['companyID'] = $companyID;
+        return $this->model->getCompanyBaseInfo($filed,$where);
+    }
+   
+    /**
+     * 获取公司成员列表
+     */
+    public function memberList($where, $whereArr, $limit){
+        $result = $this->model->memberList($where, $whereArr, $limit);
+        return $result;
+    }
+}

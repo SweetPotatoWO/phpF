@@ -1,0 +1,217 @@
+<?php
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+/**
+ * 后台系统基类
+ *
+ * @author DREAM
+ */
+
+namespace Backend\Controller;
+
+use Common\Controller\BaseController;
+use Service\Backend\Logic;
+use Common\Plugins\BackPage;
+use Common\Plugins\Ueditor\Common;
+use Common\Common\Authorized;
+use Common\Common\Redis;
+use Common\Plugins\UploadClient;
+use Org\Util\Rbac;
+
+class BaseEndController extends BaseController {
+
+    public function _initialize() {
+        parent::_initialize();
+        $this->_init();
+    }
+
+    private function _init() {
+        $this->getLoginStutas();
+        $userID = C('userID');
+        if ($userID * 1 < 1) {
+            $param = I("get."); //
+            $key = $param["key"] . $param["token"] . "kanxf";
+            $token = md5($key);
+            $redis = Redis::GetInstance();
+            $redis->set("QIMAI" . session_id(), $token, 10800);
+            $url = $this->curURL(); //获取当前的URL
+            if (IS_AJAX) {
+                echo "<literal><script>location.href='" . $url . "'; </script></literal>'; ";
+            } else {
+                redirect($url);
+            }
+        }
+    }
+
+    /**
+     * 检测权限。
+     */
+    protected function checkAuthority() {
+        $notAuth = in_array(MODULE_NAME, explode(',', C('NOT_AUTH_MODULE'))) || in_array(ACTION_NAME, C('NOT_AUTH_ACTION'));
+        if (C('USER_AUTH_ON') && !$notAuth) {
+            $result = Rbac::AccessDecision($userID);
+            if (!$result) {
+                if (IS_AJAX) {
+                    echo '你没有该权限！';
+                    exit;
+                    $this->jsonReturn(0, "你没有该权限！");
+                } else {
+                    $this->error("你没有该权限！");
+                }
+            }
+        }
+    }
+
+    public function curURL() {
+        $pageURL = 'http';
+        if ($_SERVER["HTTPS"] == "on") {
+            $pageURL .= "s";
+        }
+        $pageURL .= "://";
+        $URI = stripos($_SERVER["REQUEST_URI"], "Backend") > 0 ? "Backend" : "";
+        if ($_SERVER["SERVER_PORT"] != "80") {
+            $pageURL .= $_SERVER["SERVER_NAME"] . ":" . $_SERVER["SERVER_PORT"] . "/" . $URI . "/Login/login";
+        } else {
+            $pageURL .= $_SERVER["SERVER_NAME"] . "/" . $URI . "/Login/login";
+        }
+        return $pageURL;
+    }
+
+    /**
+     * 获取子菜单
+     */
+    public function getSubMenu() {
+        $parentID = I("post.parentID");
+        $userID = C("userID");
+        if ($userID * 1 > 0) {
+            $sub = new Logic\ConsoleMenuLogic();
+            //$result = $sub->getSubMenu($parentID);
+            $result = $sub->getUserSubMenu($parentID, $userID);
+        }
+        $this->ajaxSK($result, 'JSON');
+    }
+
+    /**
+     * 获取用户登录情况
+     */
+    private function getLoginStutas() {
+        $login = Authorized::getEndAuth(C("SHORT_CODE") . "_Login_End");
+        if (is_array($login)) {
+            C('userID', $login["userID"]);
+            C('realName', aes($login["realName"], 'DECODE'));
+            C('userName', $login["userName"]);
+            $this->realName = aes($login["realName"], 'DECODE');
+        } else {
+            C('userID', null);
+            C('realName', null);
+            C('userName', null);
+        }
+    }
+
+    /**
+     * 获取分页limit
+     * @return type
+     */
+    public function getPage() {
+        $page = I("post.p") * 1 > 0 ? I("post.p") * 1 : I("get.p") * 1;
+        if (!preg_match('/^\d+$/', $page)) {
+            $page = 0;
+        }
+        $page = ($page * 1 == 0 ? 0 : $page * 1 - 1) * 1 * C("PAGE_SIZE");
+        return $page . "," . C("PAGE_SIZE");
+    }
+
+    /**
+     * 获取起始序号。
+     * @return type
+     */
+    public function getStartLineNum() {
+        $page = I("post.p") * 1 > 0 ? I("post.p") * 1 : I("get.p") * 1;
+        if (!preg_match('/^\d+$/', $page)) {
+            $page = 0;
+        }
+        return ($page * 1 == 0 ? 0 : $page * 1 - 1) * 1 * C("PAGE_SIZE");
+    }
+
+    /**
+     * 显示分页
+     * @param type $count
+     * @return type
+     */
+    function showPage($count) {
+        $Page = new BackPage($count, C('PAGE_SIZE'));
+        return $Page->show(); // 分页显示输出 
+    }
+
+    /**
+     * 编辑器上传
+     */
+    public function uploader() {
+        $action = htmlspecialchars($_GET['action']);
+        $callbak = $_GET["callback"];
+        $ueditor = new Common();
+        $result = $ueditor->handle($action, $callbak);
+        echo $result;
+    }
+
+    /**
+     * 保存文件
+     * @param type $rootPath 第一级文件名
+     * @param type $subPath 最后一级文件名
+     * @return \Think\Upload
+     */
+    public function uploadImg($rootPath, $subPath = "") {
+        $file = $_FILES["Filedata"];
+        $del = I("post.DelFilePath");
+        $client = new UploadClient();
+        $result = $client->upLoadSingle($rootPath, $file, $subPath, $del);
+        if (is_array($result)) {
+            $msg["status"] = true;
+            $msg["file"] = $result;
+        } else {
+            $msg["status"] = false;
+            $msg["msg"] = $result;
+        }
+        return $msg;
+    }
+
+    public function exportExcel($data = array(), $title = array(), $savefile = null, $method = 0) {
+        header("Content-type: text/html; charset=UTF-8");
+        header("Content-type:application/vnd.ms-excel");
+        header("Content-Disposition: attachment;filename=" . $savefile . ".xls");
+        header("Content-Type: application/vnd.ms-excel; charset=UTF-8");
+        $html = "<HTML>";
+        $html .= "<HEAD>";
+        $html .= "<META http-equiv=Content-Type content=\"text/html; charset=utf-8\">";
+        $html .= "</HEAD>";
+        $html .= "<BODY>";
+        $html .= "<TABLE BORDER=1>";
+        $html .= '<tr>';
+        foreach ($title as $v) {
+            $html .= "<td style='width:150px'>{$v}</td>";
+        }
+        $html .= '</tr>';
+        foreach ((array) $data as $r => $value) {
+            $html .= '<tr>';
+            foreach ((array) $value as $c => $v) {
+                if (strripos($v, '.') > 0) {
+                    $html .= "<td style='text-align:right;' >" . $v . "</td>";
+                } else {
+                    $html .= "<td style='vnd.ms-excel.numberformat:@' >" . " " . $v . "</td>";
+                }
+            }
+            $html .= '</tr>';
+        }
+        $html .= "</TABLE>";
+        $html .= "</BODY>";
+        $html .= "</HTML>";
+        echo $html;
+        exit;
+    }
+
+}

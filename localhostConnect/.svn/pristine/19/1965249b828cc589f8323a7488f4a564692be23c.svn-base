@@ -1,0 +1,64 @@
+<div id="sub-User-list">
+    <script type="text/javascript" src="{$Think.BPATH}js/datejs/WdatePicker.js"></script> 
+    <h4 class="title">用户通讯录统计 <span class="titleqit">默认查询通讯录数量大于零的用户</span></h4>
+    <form class="form-inline" id="query_User"> 
+        <div class="form-group ">
+            <label class="control-label">基本信息:</label>
+            <input type="text" class="form-control ipt mr-10" value="{$Think.post.txtphone}" name="txtphone" id="txtphone" placeholder="手机号"> 
+            <input type="text" class="form-control ipt mr-10" value="{$Think.post.txtrealName}" name="txtrealName" id="txtrealName" placeholder="姓名">       
+        </div>    
+        <div class="form-group mr-10">
+            <label class="control-label">好友数量:</label>
+            <select class="form-control mr-10" name="mailCount" id="mailCount" style="width: 100px">
+                <option value="-1">所有</option>
+                <option value="2">=0</option>
+                <option value="1">>0</option>
+                <option value="100">>99</option>
+                <option value="500">>499</option>
+                <option value="100">>999</option>
+            </select>  
+        </div>
+         <div class="form-group">
+            <a href="{:U(ACTION_NAME, $_GET)}"  onclick="$Util.openQuery(this, event, 'query_User')"  class="btn btn-info"><i class="icon-search"></i>查询</a> 
+        </div>
+    </form>
+    <table class="table table-striped table-bordered">
+        <thead>
+            <tr> 
+                <th>用户名</th>
+                <th>手机</th>
+                <th>通讯数量</th>
+                <th>已邀请数量</th>
+                <th>邀请且加入启脉</th>
+                <th>已加入启脉</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody>
+        <volist name="result" id="vo">
+            <tr>  
+                <td >{$vo.nickname}</td>
+                <td>{$vo.phone}</td>
+                <td >{$vo.total|default=0}</td>
+                <td >{$vo.inviteTotal|default=0}</td>
+                <td >{$vo.inviteAndJoyin|default=0}</td>
+                <td >{$vo.hasjoyin|default=0}</td>
+                <td><a class="btn btn-xs btn-primary pr-10" href="/Backend/User/getUserMailList/id/{$vo.userID}"  onclick="$Util.openWin(this, event)"><span class="icon-search"></span>通讯录列表</a></td>
+            </tr>
+        </volist>
+        </tbody>
+    </table>
+    <nav class=" pagination-centered">
+        <ul class="pagination">
+            {$page}
+        </ul>
+    </nav>
+    <script type="text/javascript" >
+        $(function ($) {
+            $("#mailCount").val("{$Think.post.mailCount|default=1}");
+        });
+    </script>
+</div>
+
+
+

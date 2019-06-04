@@ -1,0 +1,95 @@
+<div class="modal-body">
+    <input  type="hidden" name="hidAction" id="hidAction" value="view" >
+    
+    <form class="form-horizontal" id="form-Tdk">  
+        <input  type="hidden" name="parentID" id="parentID" value="{$data.parentID}" >
+        <input type="hidden" name='menuID' id='menuID' value="{$data.menuID}"/>
+        <div class="form-group has-info">
+            <label class="control-label col-sm-2" for="inputInfo">菜单名称：</label>
+            <div class=" col-sm-7">
+                  <input type="text" id="menuName" name="menuName" value="{$data.menuName}" class="form-control" disabled="true">    
+            </div>
+        </div>
+        <div class="form-group has-info">
+            <label class="control-label col-sm-2" for="inputInfo">菜单URL：</label>
+            <div class=" col-sm-7">
+                 <input type="text" id="functionUrl" name="functionUrl" value="{$data.functionUrl}" class="form-control" disabled="true">    
+            </div>
+        </div>
+        <div class="form-group  has-info">
+            <label class="control-label col-sm-2" for="inputInfo">关键字：</label>
+            <div class="col-sm-8">
+                <textarea name="keyword" id="keyword" rows="5" cols="60">{$data.keyword} </textarea>
+            </div>
+        </div>
+        <div class="form-group  has-info">
+            <label class="control-label col-sm-2" for="inputInfo">标题：</label>
+            <div class="col-sm-8">
+                <textarea name="menuTitle" id="menuTitle"  rows="5" cols="60">{$data.menuTitle}</textarea>
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="control-label col-sm-2" for="inputInfo">描述：</label>
+            <div class="col-sm-8">
+                <textarea name="description" id="description"  rows="5" cols="60"  >{$data.description}</textarea>
+            </div>
+        </div>
+    </form>
+</div>
+<div class="modal-footer">
+    <button type="button" id="butCancel" class="btn btn-default" data-dismiss="modal">关闭</button>
+    <button type="button" id="butSaveTdk" class="btn btn-primary" >保存</button>
+</div>  
+<script type="text/javascript" >
+    $(function($) {
+        tdkvalid();
+        $("#butSaveTdk").click(function() {
+            var isOK = $("#form-Tdk").valid();
+            if (isOK) {
+                saveTdk();
+            }
+        });
+    });
+
+    function saveTdk() {
+        var data = $Util.getData($("#form-Tdk"));
+        $.ajax({
+            type: "post",
+            url: "/Backend/Spread/saveTdk",
+            data: {'par': data},
+            dataType: "json",
+            beforeSend: function(XMLHttpRequest) {
+                $(".sub-content").showLoading();
+            },
+            success: function(data, textStatus) {
+                $(".sub-content").hideLoading();
+                if (data.status == 1) {
+                    $("#hidAction").val("edit");
+                    $win.confirm(data.msg + ",是否关闭窗口？").on(function() {
+                        $('#butCancel').trigger("click");
+                    });
+                } else {
+                    $win.warn(data.msg);
+                }
+            },
+            complete: function(XMLHttpRequest, textStatus) {
+                $(".sub-content").hideLoading();
+            },
+            error: function() {
+                $(".sub-content").hideLoading();
+            }
+        });
+    }
+    function tdkvalid() {
+        $("#form-Tdk").validate({
+            rules: {
+                keyword: {required: true},
+                menuTitle: {required: true},
+            },
+            messages: {
+                keyword: {required: "关键字不能为空!"},
+                menuTitle: {required: "标题不能为空!"},
+            }
+        });
+    }
+</script>

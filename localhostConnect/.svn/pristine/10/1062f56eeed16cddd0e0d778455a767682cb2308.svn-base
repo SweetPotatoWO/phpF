@@ -1,0 +1,76 @@
+<?php
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+namespace Service\Spread\Model;
+
+use Think\Model;
+use Common\Model\SlaveModel;
+use Think\Exception;
+
+/**
+ * 友情链接
+ *
+ * @author Administrator
+ */
+class HomeLinkModel extends SlaveModel {
+
+    /**
+     * 获取友情链接 查询从库
+     * @return type
+     */
+    public function getlink($where, $whereArr, $limit) {
+        $result["total"] = $this->SlaveDB()->table("d_home_link")->where($where, $whereArr)->count();
+        $field = "*";
+        $result["rows"] = $this->SlaveDB()->table("d_home_link")->where($where, $whereArr)->field($field)->order('addDatetime desc')->limit($limit)->select();
+        return $result;
+    }
+
+    /**
+     * 获取友情链接
+     * @return type
+     */
+    public function getAll() {
+        $field = "linkName,linkUrl";
+        $result = $this->SlaveDB()->table("d_home_link")->field($field)->where("linkStatus=1")->order("linkSort desc,linkID desc")->select();
+        return $result;
+    }
+
+    /**
+     * 获取友情链接
+     * @param type $where
+     * @return type
+     */
+    public function getEntity($where) {
+        $result = $this->SlaveDB()->table("d_home_link")->where($where)->find();
+        return $result;
+    }
+
+    /**
+     * 保存友情链接
+     * @param type $data
+     * @param type $where
+     * @return boolean
+     */
+    public function saveLink($data, $where) {
+        try {
+            $model = M("HomeLink");
+            if (is_array($where) && count($where) > 0) {
+                $result = $model->where($where)->data($data)->save();
+                return $result * 1 > 0 ? $where["linkID"] : false;
+            } else {
+                return $model->add($data);
+            }
+            return false;
+        } catch (Exception $ex) {
+            logger(__METHOD__, $ex->getMessage());
+//             $e->getTraceAsString()
+            return false;
+        }
+    }
+
+}

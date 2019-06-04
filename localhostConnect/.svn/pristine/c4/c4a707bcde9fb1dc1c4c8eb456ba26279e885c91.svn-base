@@ -1,0 +1,15 @@
+<?php
+
+namespace Service\UserCenter\Logic;
+
+use Service\UserCenter\Model\labelModel;
+
+class labelLogic {
+
+    public function  labelList() {
+        $model = new labelModel();
+        return $model->labelList();
+    }
+}
+
+?>

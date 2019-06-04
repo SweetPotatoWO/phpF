@@ -1,0 +1,41 @@
+<?php
+
+namespace Service\Connect\Model;
+/**
+ * 个人信息完善度枚举
+ * Class CompleteGradeEnum
+ * @package Service\Connect\Model
+ */
+class CompleteGradeEnum
+{
+    /**
+     * 默认
+     */
+    const INIT = 0;
+    /**
+     * 基本信息已填充
+     */
+    const BASE = 1;
+    /**
+     * 名片认证
+     */
+    const CARD_AUTH = 2;
+    /**
+     * 姓名已认证
+     */
+    const NAME_AUTH = 4;
+    /**
+     * 公司&职位已认证
+     */
+    const CORP_AUTH = 8;
+
+    public static function add($r,$i)
+    {
+        return $r | $i;
+    }
+
+    public static function sub($r,$i)
+    {
+        return $r & ~$i;
+    }
+}

@@ -1,0 +1,232 @@
+<?php
+
+namespace Service\Connect\Model;
+
+use GraphAware\Neo4j\OGM\Annotations as OGM;
+
+/**
+ *人脉关系实体模型
+ * @OGM\RelationshipEntity
+ */
+class ConnectModel extends BaseGraphModel
+{
+    /**
+     *  等级上限10级
+     *  评分上限1000分
+     */
+    #region const
+    const MAX_LEVEL = 10;
+    const MAX_GRADE = 1000;
+    #endregion
+
+    //region property
+    /**
+     * @var int
+     *
+     * @OGM\GraphId()
+     */
+    protected $id;
+    /**
+     * 来源节点
+     * @OGM\StartNode(targetEntity="PersonModel")
+     * @var PersonModel
+     */
+    protected $from = null;
+    /**
+     * 目标节点
+     * @OGM\EndNode(targetEntity="PersonModel")
+     * @var PersonModel
+     */
+    protected $to = null;
+    /**
+     * 关系类型
+     * @OGM\Property(type="int")
+     * @var int
+     */
+    protected $type = ConnectTypeEnum::FRIEND;
+    /**
+     * 关系标题 同事关系为公司名称，同学关系为学校名称
+     * @OGM\Property(type="string")
+     * @var null
+     */
+    protected $title = null;
+    /**
+     * 关系备注 一般指通讯录中好友分组
+     * @OGM\Property(type="string")
+     * @var null
+     */
+    protected $desc = null;
+    /**
+     * 关系等级 等级越高越亲密
+     * @OGM\Property(type="int")
+     * @var int
+     */
+    protected $level = 0;
+    /**
+     * 关系评分 评分越高越亲密
+     * @OGM\Property(type="int")
+     * @var int
+     */
+    protected $grade = 0;
+
+    public function __construct(PersonModel $from, PersonModel $to)
+    {
+        $this->from = $from;
+        $this->to = $to;
+    }
+
+    /**
+     * @return int
+     */
+    public function getId()
+    {
+        return $this->id;
+    }
+
+    /**
+     * @return PersonModel
+     */
+    public function getFrom()
+    {
+        return $this->from;
+    }
+
+    /**
+     * @return PersonModel
+     */
+    public function getTo()
+    {
+        return $this->to;
+    }
+
+    /**
+     * @return int
+     */
+    public function getType()
+    {
+        return $this->type;
+    }
+
+    /**
+     * @param int $type
+     * @return ConnectModel
+     */
+    public function setType($type)
+    {
+        $this->type = $type;
+        return $this;
+    }
+
+    /**
+     * @return null
+     */
+    public function getTitle()
+    {
+        return $this->title;
+    }
+
+    /**
+     * @param null $title
+     * @return ConnectModel
+     */
+    public function setTitle($title)
+    {
+        $this->title = $title;
+        return $this;
+    }
+
+    /**
+     * @return null
+     */
+    public function getDesc()
+    {
+        return $this->desc;
+    }
+
+    /**
+     * @param null $desc
+     * @return ConnectModel
+     */
+    public function setDesc($desc)
+    {
+        $this->desc = $desc;
+        return $this;
+    }
+
+    /**
+     * @return int
+     */
+    public function getLevel()
+    {
+        return $this->level;
+    }
+
+    /**
+     * @param int $level
+     * @return ConnectModel
+     */
+    public function setLevel($level)
+    {
+        $this->level = $level;
+        return $this;
+    }
+
+    /**
+     * @return int
+     */
+    public function getGrade()
+    {
+        return $this->grade;
+    }
+
+    /**
+     * @param int $grade
+     * @return ConnectModel
+     */
+    public function setGrade($grade)
+    {
+        $this->grade = $grade;
+        return $this;
+    }
+    //endregion
+
+
+    //region function
+    /**
+     * 获取实体编辑参数串和参数
+     * @param string $alias
+     * @param array $ignore 不需要获取的字段（一般指查询字段）
+     * @return array
+     */
+    public function getEditParam($alias='r',$ignore=['type'])
+    {
+        return $this->getSetArray('type,title,desc,level,grade',$alias,$ignore);
+    }
+    //endregion
+
+    //region static function
+    /**
+     * 根据等级获取评分
+     * @param $level
+     * @return int
+     */
+    public static function level2Grade($level)
+    {
+        $segment = self::MAX_GRADE/self::MAX_LEVEL;
+        return self::MAX_GRADE-($segment*(self::MAX_LEVEL-$level));
+    }
+
+    /**
+     * 根据评分获取等级
+     * @param $grade
+     * @return int
+     */
+    public static function grade2Level($grade)
+    {
+        $segment = self::MAX_GRADE/self::MAX_LEVEL;
+        $level = $grade/$segment;
+        $level = min($level,10);
+        return $level;
+    }
+    //endregion
+}

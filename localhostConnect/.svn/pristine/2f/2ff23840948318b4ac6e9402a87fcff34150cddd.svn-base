@@ -1,0 +1,38 @@
+/*
+Navicat MySQL Data Transfer
+
+Source Server         : 钱盒子测试
+Source Server Version : 50631
+Source Host           : 120.25.85.171:3306
+Source Database       : devmbox_hx
+
+Target Server Type    : MYSQL
+Target Server Version : 50631
+File Encoding         : 65001
+
+Date: 2018-08-08 14:46:44
+*/
+
+SET FOREIGN_KEY_CHECKS=0;
+
+-- ----------------------------
+-- Table structure for d_wx_share
+-- ----------------------------
+DROP TABLE IF EXISTS `d_wx_share`;
+CREATE TABLE `d_wx_share` (
+  `shareID` int(11) NOT NULL AUTO_INCREMENT COMMENT '分享ID',
+  `shareName` varchar(50) DEFAULT NULL COMMENT '分享名称',
+  `shareCode` varchar(50) DEFAULT NULL COMMENT '标示，关键值',
+  `shareTitle` varchar(150) DEFAULT NULL COMMENT '分享标题',
+  `shareDesc` varchar(200) DEFAULT NULL COMMENT '分享描述',
+  `shareImg` varchar(150) DEFAULT NULL COMMENT '分享图片',
+  `shareStatus` tinyint(4) DEFAULT '1' COMMENT '0 删除 1 正常',
+  `remark` varchar(200) DEFAULT NULL COMMENT '备注',
+  `addUserID` int(11) NOT NULL COMMENT '创建人ID',
+  `addUserName` varchar(50) DEFAULT NULL COMMENT '创建人',
+  `addDatetime` int(11) NOT NULL COMMENT '创建时间',
+  `editUserID` int(11) DEFAULT NULL COMMENT '修改人ID',
+  `editUserName` varchar(50) DEFAULT NULL COMMENT '修改人',
+  `editDatetime` int(11) DEFAULT NULL COMMENT '修改时间',
+  PRIMARY KEY (`shareID`)
+) ENGINE=InnoDB AUTO_INCREMENT=42 DEFAULT CHARSET=utf8;

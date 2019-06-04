@@ -1,0 +1,26 @@
+<div class="modal-body">
+    <input  type="hidden" name="hidAction" id="hidAction" value="view" >
+    <table class="table table-striped table-bordered">
+        <thead>
+            <tr> 
+                <th>手机号</th>
+                <th>设备</th>
+                <th>登录IP</th>
+                <th>终端</th>           
+                <th>登录时间</th>               
+            </tr>           
+        </thead>
+        <tbody>
+        <volist name="result" id="vo">
+            <tr>  
+                <td>{$vo.phone}</td>
+                <td>{$vo.equipment}</td>        
+                <td>{$vo.loginIP}</td>
+                <td>{$vo.terminal|formatterminal}</td>
+                <td>{$vo.loginDatetime|formatlongDate}</td> 
+            </tr>
+        </volist>
+        </tbody>
+    </table>   
+</div>
+

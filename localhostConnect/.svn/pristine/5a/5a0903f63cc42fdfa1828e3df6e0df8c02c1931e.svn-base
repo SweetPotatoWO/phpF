@@ -1,0 +1,54 @@
+<?php
+
+namespace Frontend\Controller;
+
+use Common\Common\CodeGenerator;
+use     Think\Controller;
+
+/**
+ * Class IndexController pc端首页
+ * @package Home\Controller
+ */
+class IndexController extends Controller {
+
+    /**
+     * 主入口
+     */
+    public function index() {
+
+
+        if($_GET['type'] != 1) {
+            if(isMobile()) {
+                $this->redirect("wechat/index");
+                exit;
+            }
+        }
+		$this->display();
+    }
+	
+	/**
+     * 关于
+     */
+    public function about() {
+		$this->display("about");
+    }	
+	
+	/**
+     *错误页,暂放
+     */
+    public function error() {
+		$this->display("error");
+    }	
+	
+	/**
+     *404,暂放
+     */
+    public function notFound() {
+		$this->display("notFound");
+    }	
+
+    public function getApp(){
+        $this->display();
+    }
+
+}

@@ -1,0 +1,26 @@
+<div class="modal-body">
+    <input  type="hidden" name="hidAction" id="hidAction" value="view" >
+    <table class="table table-striped table-bordered" style="table-layout:fixed;word-wrap:break-word;">
+        <caption><span style='float:left;'>{$companyInfo.companyName}</span> <span style='float:right;'>更新时间：{$result.manager.updateTime}</span></caption>
+        <tr>
+            <th width="50%">
+               职位
+            </th>
+            <th width="50%">
+                姓名
+            </th>
+        </tr> 
+        <volist name="result.manager.datas" id="vo">
+        <tr>
+            <td width="50%">
+                {$vo.post}
+            </td>
+            <td width="50%">
+                {$vo.name}
+            </td>
+        </tr>
+        </volist>
+    </table>
+</div>
+<div class="modal-footer">
+</div>  

@@ -1,0 +1,103 @@
+<?php
+
+namespace MobileApi\Api;
+
+use MobileApi\Common\MobileApiBase;
+use Service\Connect\Logic\ConnectRelationLogic;
+use Service\JavaService\Logic\SiteLogic;
+use Service\User\Logic\IndexLogic;
+use Service\User\Logic\UserLogic;
+
+
+/**
+ * Description of index
+ *
+ * @author Administrator
+ */
+class ApiAuth extends MobileApiBase
+{
+
+
+    private $return  = array("code"=>1,"msg"=>"","info"=>array());
+
+    public function getRules()
+    {
+        return array(
+            'index' => array(),
+            "indexRecommend"=>array(
+                'isCity' => array("name" => "isCity", "type" => "int", "desc" => "0 不选 1选中 同城"),
+                'isIdenty'=> array("name" => "isIdenty", "type" => "int", "desc" => "0 不选 1选中 同行"),
+                "isActive"=> array("name" => "isActive", "type" => "int", "desc" => "0 不选 1选中 活跃度"),
+                'pageindex' => array('name' => 'pageindex', 'type' => 'int', 'default' => 1, 'desc' => '页码'),
+                'pagesize' => array('name' => 'pagesize', 'type' => 'int', 'default' => 15, 'desc' => '每页显示数量')
+            ),
+            "search"=>array(
+                "type"=>array("name" => "type", "type" => "int",'require'=>false, "desc" => "法人为 3 公司 为2 用户为1","default"=>1),
+                "value"=>array("name"=> "value", "type"=>"string","require"=>false,"desc"=>"查询的内容",),
+                'pageindex' => array('name' => 'pageindex', 'type' => 'int', 'default' => 1, 'desc' => '页码'),
+                'pagesize' => array('name' => 'pagesize', 'type' => 'int', 'default' => 15, 'desc' => '每页显示数量')
+            ),
+        );
+    }
+
+
+    /**
+     * 首页推荐列表
+     * @desc 首页推荐
+     * @return int    code         操作码，0表示成功， 1表示失败
+     * @return  array  info         返回数据
+     * @return  string msg          提示信息
+     * @return string list        信息列表
+     * @return int    userCompanyID              userCompanyID
+     * @return string    userKey       用来通信的唯一标识
+     * @return string list.userID     用户的ID
+     * @return string list.name     姓名
+     * @return string list.userHeadUrl     头像
+     * @return string list.relationship     关系
+     * @return string list.vip     用户的Vip
+     * @return int list.showType  显示类型 1是用户 其他的是 选择的标签
+     * @return string list.phone     电话号码
+     * @return string list.job 职业
+     * @return string list.status 状态 0陌生人 1申请中  2申请成功 3名片用户(此时按钮需要为邀请按钮)
+     * @return string list.companyName  公司
+     * @return string list.title  标题
+     * @return string list.titleType  标签的类型 0 不是标签 2  是想要的 1是熟悉的
+     * @return int list.inviteStatus  是否邀请的字段 2表示非名片用户 无需处理 1 表示名片用户且已经邀请过 0 标识没邀请过
+     */
+    public function authUpload() {
+        $this->userCheck();
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+}

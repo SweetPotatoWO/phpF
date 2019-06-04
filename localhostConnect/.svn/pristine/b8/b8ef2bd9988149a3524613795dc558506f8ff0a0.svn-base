@@ -1,0 +1,64 @@
+<div id="sub-User-list">
+    <script type="text/javascript" src="{$Think.BPATH}js/datejs/WdatePicker.js"></script> 
+    <input type="hidden" name="hidrefurl" id="hidrefurl" value="{:U(ACTION_NAME, $_GET)}">
+    <h4 class="title">公司成员统计查询</h4>
+    <form class="form-inline" id="query_User"> 
+        <div class="form-group ">
+            <label class="control-label">基本信息:</label>
+            <input type="text" class="form-control ipt mr-10" value="{$Think.post.txtcompanyName}" name="txtcompanyName" id="txtcompanyName" placeholder="企业名称">       
+        </div>    
+        <div class="form-group">
+            <a href="{:U(ACTION_NAME, $_GET)}"  onclick="$Util.openQuery(this, event, 'query_User')"  class="btn btn-info"><i class="icon-search"></i>查询</a> 
+            <a href="" id="dowonload"></a>
+        </div>
+    </form>
+    <table class="table table-striped table-bordered">
+        <thead>
+            <tr> 
+                <th>公司名称</th>
+                <th>公司简介</th>
+                <th>加入启脉人数</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody>
+        <volist name="result" id="vo">
+            <tr>  
+                <td>{$vo.companyName}</td>
+                <td><a href="#"   data-toggle="popover" data-placement="bottom" data-content="{$vo.companyIntroduction}" title="" data-original-title="提示">{$vo.companyIntroduction|sub_str=0,5,'...'}</a></td>
+                <td>{$vo.total}</td>
+                <td>
+                    <a class="btn btn-xs btn-primary pr-10" href="/Backend/Company/memberList/id/{$vo.companyID}"  onclick="$Util.openWin(this, event)"><span class="icon-search"></span>成员列表</a>
+                   <a class="btn btn-xs btn-success pr-10" href="/Backend/Company/companyDetail/id/{$vo.companyID}"  onclick="$Util.openWin(this, event)"><span class="icon-search"></span>公司详情</a>
+                </td>
+            </tr>
+        </volist>
+        </tbody>
+    </table>
+    <nav class=" pagination-centered">
+        <ul class="pagination">
+            {$page}
+        </ul>
+    </nav>
+    <script type="text/javascript" >
+        $(function ($) {
+            $("[data-toggle='popover']").popover().on("mouseenter", function () {
+                var _this = this;
+                $(this).popover("show");
+                $(this).siblings(".popover").on("mouseleave", function () {
+                    $(_this).popover('hide');
+                });
+            }).on("mouseleave", function () {
+                var _this = this;
+                setTimeout(function () {
+                    if (!$(".popover:hover").length) {
+                        $(_this).popover("hide")
+                    }
+                }, 100);
+            });
+        });
+    </script>
+</div>
+
+
+

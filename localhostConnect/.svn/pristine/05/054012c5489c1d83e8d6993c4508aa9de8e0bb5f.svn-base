@@ -1,0 +1,75 @@
+<div class="modal-body">
+    <input  type="hidden" name="hidAction" id="hidAction" value="view" >
+    <form class="form-horizontal" id="form-Audit">       
+        <input type="hidden" name='userID' id='userID' value="{$data.userID}"/>
+        <div class="form-group has-success">
+            <label class="control-label col-sm-2" for="inputInfo">手机号：</label>
+            <label class="control-label" for="inputInfo"> {$data.phone}</label>
+        </div>
+
+        <div class="form-group has-info">
+            <label class="control-label col-sm-2" for="inputInfo">状态：</label>
+            <select class="form-control" name="userStatus" id="userStatus" style="width: 180px">            
+                <option value="1">启用状态</option>          
+                <option value="0">注销用户</option>             
+            </select>     
+        </div>       
+        <div class="form-group has-info">
+            <label class="control-label col-sm-2" for="inputInfo">用户类型：</label>
+            <select class="form-control" name="userType" id="userType" style="width: 180px">            
+                <foreach name="userTypeArr" item="vo" key="k">
+                    <option value="{$k}">{$vo}</option>
+                </foreach>
+            </select>     
+        </div>       
+    </form>
+</div>
+<div class="modal-footer">
+    <button type="button" id="butCancel" class="btn btn-default" data-dismiss="modal">取消</button>
+    <button type="button" id="butSaveUser" class="btn btn-primary" >保存</button>
+</div>  
+<script type="text/javascript" >
+    $(function($) {
+        $("#userType").val("{$data.userType}");
+        $("#userStatus").val("{$data.userStatus}");
+        $("#attendantID").val("{$data.attendantID}");
+        $("#butSaveUser").click(function() {
+            saveUser();
+        });
+    });
+
+    function saveUser() {
+        var data = {};
+        data.userID = $("#userID").val();
+        data.attendantID = $("#attendantID").val();
+        data.attendantUserName = $("#attendantID").find("option:selected").text();
+        data.userStatus = $("#userStatus").val();
+        data.userType = $("#userType").val();
+        $.ajax({
+            type: "post",
+            url: "/Backend/User/saveUser",
+            data: {'par': data},
+            dataType: "json",
+            beforeSend: function(XMLHttpRequest) {
+                $(".sub-content").showLoading();
+            },
+            success: function(data, textStatus) {
+                $(".sub-content").hideLoading();
+                if (data.status == 1) {
+                    $("#hidAction").val("edit");
+                    $win.message(data.msg).on(function() {
+                        $('#butCancel').trigger("click");
+                    });
+                } else {
+                    $win.warn(data.msg);
+                }
+            },
+            complete: function(XMLHttpRequest, textStatus) {
+                $(".sub-content").hideLoading();
+            },
+            error: function() {
+                $(".sub-content").hideLoading();
+            }
+        });
+    }
+</script>

@@ -1,0 +1,97 @@
+<?php
+
+namespace Service\Spread\Logic;
+
+use Think\Exception;
+use Service\Spread\Model;
+
+class WxShareLogic {
+
+    /**
+     * 获取微信分享的信息
+     * @param string $where
+     * @param type $whereArr
+     * @param type $limit
+     * @return type
+     */
+    public function getShare($where, $whereArr, $limit) {
+        $logic = new Model\WxShareModel();
+        $where.=" AND shareStatus = '%d'";
+        array_push($whereArr, 1);
+        $result = $logic->getShare("(1=1)" . $where, $whereArr, $limit);
+        return $result;
+    }
+
+    /**
+     * 删除微信分享的信息
+     * @param type $key
+     * @return boolean
+     */
+    public function delShare($shareID) {
+        if ($shareID * 1 < 1) {
+            return FALSE;
+        }
+        $data["shareStatus"] = 0;
+        $where["shareID"] = $shareID;
+        $mod = new Model\WxShareModel();
+        $result = $mod->saveShare($data, $where);
+        return $result;
+    }
+
+    /**
+     * 保存微信分享信息
+     * @param type $data
+     * @return boolean
+     */
+    public function saveShare($data) {
+        try {
+            $where = array();
+            if ($data["shareID"] * 1 > 0 && count($data) > 0) {
+                $where["shareID"] = $data["shareID"];
+                $data ['editUserID'] = C('userID');
+                $data ['editUserName'] = C('userName');
+                $data ['editDatetime'] = time();
+                unset($data["shareID"]);
+            } else {
+                $data ['addUserID'] = C('userID');
+                $data ['addUserName'] = C('userName');
+                $data ['addDatetime'] = time();
+            }
+            $model = new Model\WxShareModel();
+            $result = $model->saveShare($data, $where);
+            return $result;
+        } catch (Exception $ex) {
+            logger(__METHOD__, $ex->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * 获取编辑微信分享时的信息
+     * @param type $shareID
+     * @return boolean
+     */
+    public function getSinShare($shareID) {
+        $model = new Model\WxShareModel();
+        if ($shareID * 1 < 1) {
+            return FALSE;
+        }
+        $where["shareID"] = $shareID;
+        $where["shareStatus"] = 1;
+        $result = $model->getSinShare($where);
+        return $result;
+    }
+
+    /**
+     * 获取微信分享通过类型
+     * @param type $code
+     */
+    public function getWxshare($code) {
+        $model = new Model\WxShareModel();
+        $where["shareCode"] = $code;
+        $where["shareStatus"] = 1;
+        $result = $model->getSinShare($where);
+        return $result;
+    }
+
+}

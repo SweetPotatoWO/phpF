@@ -1,0 +1,134 @@
+<include file="Common:header" />
+<div class="register">
+	<div class="banner">
+		<div class="invite text-center color-white fs-16"><font>{$name}</font>邀请您加入启脉</div>
+	</div>
+	
+	<div class="content">
+		<div class="reg-form">
+			<div class="bg-white">
+				<form>
+					<div class="form-group mb-20">
+						<input type="number" class="form-control" id="phone" placeholder="请输入手机号" oninput="if(value.length>11)value=value.slice(0,11)">
+					</div>
+					<div class="form-group relative">
+						<input type="number"  id = "code" class="form-control" placeholder="请输入验证码" oninput="if(value.length>6)value=value.slice(0,6)">
+						<a href="javascript:;"  id= "codeBtn" class="absolute yzm" num="0" >发送验证码</a>
+					</div>
+					<input type="hidden"  id = "key" class="form-control" value = "{$key}" />
+					<a href="javascript:;" id= "saveBtn" class="btn-primary block color-white text-center">立即加入</a>
+				</form>
+			</div>
+		</div>
+
+		<div class="recommend pt-30">
+			<div class="bg-white">
+				<div class="clearfix pt-30">
+					<div class="fl icon01"></div>
+					<div class="fr text text1 pt-10">拥有海量商业资源<br />找公司，找人脉，轻松搜一搜</div>
+				</div>
+				<div class="clearfix pt-15">
+					<div class="fl text text2 pt-20">智能人脉推荐<br />为您推荐感兴趣的人与您结识</div>
+					<div class="fr icon02"></div>
+				</div>
+				<div class="clearfix pt-10">
+					<div class="fl icon03"></div>
+					<div class="fr text text3 pt-30">高效名片管理<br />人脉共享，行走的客户资源库</div>
+				</div>
+				<a href="javascript:;" class="btn-primary block color-white text-center">立即下载</a>
+			</div>
+		</div>
+	</div>	
+</div>
+</body>
+</html>
+<script>
+
+	var type= "{$type}";
+	//发送短信
+	$("#codeBtn").click(function () {
+	    var a = $("#phone").val();
+	    var num = $(this).attr('num');
+	    if(num != "0") {   //限制发送
+	        return;
+		}
+
+	    if(a=="undefined" || a == "" ) {
+	        $.toast("请输入手机号码", "text");
+	        return
+		}
+		var attr = {"phone":a};
+        $.ajax({
+            url:"/wechat/user/sms",
+            type:"post",
+            data:attr,
+			dataType:'json',
+            success:function(data){
+                if(data.err == 0) {   //成功
+                    CountDown();   //倒计时效果
+                    $.toast("发送成功", "text");
+				} else {
+                    $.toast(data.msg, "text");
+				}
+            },
+            error:function(data){
+                $.toast("请求错误", "text");
+            },
+        });
+	});
+
+	//登录注册
+	$("#saveBtn").click(function () {
+	    var a = $("#phone").val();
+        var code = $("#code").val();
+        var key = $("#key").val();
+	    if(a == "" || a=="undefind") {
+	        $.toast("请输入手机号码", "text");
+	        return;
+		}
+	    if(code== "" || code=="undefind") {
+	        $.toast("请输入短信验证码", "text");
+	        return;
+		}
+		var data = {"phone":a,"code":code,'key':key,'type':type};
+        $.ajax({
+            url:"/wechat/user/handleRegister",
+            type:"post",
+            data:data,
+            dataType:'json',
+            success:function(data){
+                if(data.err == 0) {   //成功
+                    window.location.href="/wechat/user/registerSuccess/key/{$key}/otherkey/"+data.data;
+                } else if(data.err == 2) {
+                    window.location.href="/wechat/user/registerSuccess/isReg/1/key/{$key}/otherkey/"+data.data;
+				}else {
+                    $.toast(data.msg, "text");
+                }
+            },
+            error:function(data){
+                $.toast("请求错误", "text");
+            },
+        });
+    });
+
+	//倒计时效果
+	function CountDown() {
+		var num = 60;
+		var text = num+'s';
+        var num = $("#codeBtn").attr('num',num);  //初始值
+		$("#codeBtn").html(text);
+		time = setInterval(function() {
+		    var num = $("#codeBtn").attr("num");
+		    if(num == '0') {
+		        clearInterval(time);
+                $("#codeBtn").html("发送验证码");
+		        return;
+			}
+			num--;
+            var text = num+'s';
+            var num = $("#codeBtn").attr('num',num);  //初始值
+            $("#codeBtn").html(text);
+		},1000);
+	}
+</script>
+

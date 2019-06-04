@@ -1,0 +1,121 @@
+<?php
+
+namespace Backend\Controller;
+
+use Backend\Controller\BackendController;
+use Service\User\Logic\UserLogic;
+use Service\Search\Logic\SearchLogic;
+class BusinessController extends BackendController {
+
+    /**
+     * 平台消息
+     */
+    public function getSiteNews() {
+        $par = I("post.");
+        $where = "";
+        $whereArr = array();
+        if (!is_null($par["txtphone"]) && !empty($par["txtphone"])) {
+            $where.="AND B.phone='%s'";
+            array_push($whereArr, $par["txtphone"]);
+        }
+        if (!is_null($par["txtrealName"]) && !empty($par["txtrealName"])) {
+            $where .= "AND A.userName like '%s'";
+            array_push($whereArr, '%' . $par["txtrealName"] . '%');
+        }
+        if (!is_null($par["txtTitle"]) && !empty($par["txtTitle"])) {
+            $where .= "AND A.title like '%s'";
+            array_push($whereArr, '%' . $par["txtTitle"] . '%');
+        }
+        if (!is_null($par["isRead"]) && $par["isRead"] !== "") {
+            $where.="AND A.status='%s'";
+            array_push($whereArr, $par["isRead"] - 1);
+        }
+        if (!is_null($par["isDel"]) && $par["isDel"] !== "") {
+            $where.="AND A.del='%s'";
+            array_push($whereArr, $par["isDel"] - 1);
+        }
+        if (!is_null($par["txtDateStart"]) && !empty($par["txtDateStart"])) {
+            $where.="AND A.addDatetime>'%d'";
+            array_push($whereArr, strtotime($par["txtDateStart"]));
+        }
+        if (!is_null($par["txtDateEnd"]) && !empty($par["txtDateEnd"])) {
+            $where.="AND A.addDatetime<'%d'";
+            array_push($whereArr, strtotime('+1 day', strtotime($par["txtDateEnd"])));
+        }
+        if (empty($where)) {
+            $where .= "AND A.addDatetime>'%d'";
+            $startDate = date('Y-m-d', strtotime('-7 days'));
+            array_push($whereArr, strtotime($startDate));
+            $_POST["txtDateStart"] = $startDate;
+            $_POST["txtDateEnd"] = date('Y-m-d', time());
+        }
+
+        $limit = $this->getPage();
+        $logic = new UserLogic();
+        $result = $logic->getNewsList($where, $whereArr, $limit);
+        $this->assign("result", $result["rows"]);
+        $this->assign("page", $this->showPage($result["total"]));
+        $this->display("siteNewsList");
+    }
+    
+    /**
+     * 热词搜索
+     */
+    public function  hotSearch(){
+        $par = I("post.");
+        $where = "";
+        $whereArr = array();
+        if (!is_null($par["status"]) && !empty($par["status"])) {
+            $where.=" AND status= %d";
+            array_push($whereArr, $par["status"]);
+        }
+        if (!is_null($par["word"]) && !empty($par["word"])) {
+            $where .= " AND word like '%s'";
+            array_push($whereArr, '%' . $par["word"] . '%');
+        }
+        if (!is_null($par["searchType"]) && !empty($par["searchType"])) {
+            $where.=" AND searchType=%d";
+            array_push($whereArr, $par["searchType"]);
+        }
+        $limit = $this->getPage();
+        $logic = new SearchLogic();
+        $result = $logic->hotWordList($where, $whereArr, $limit);
+        $this->assign("result", $result["rows"]);
+        $this->assign("page", $this->showPage($result["total"]));
+        $this->display("wordList");
+    }
+    
+     /**
+     * 编辑或新增 热词
+     */
+    public function editWord() {
+        $key = I("get.key");
+        if ($key * 1 > 0) {
+                $logic = new SearchLogic();
+                $result = $logic->getWordInfo($key);
+                $this->assign('data', $result);
+        }
+//        $siteLogic = new \Service\JavaService\Logic\SiteLogic();
+//        $hotWord = $siteLogic->hotSearchWorld();
+//        $this->assign('hotList', $hotWord['list']);
+        $this->display("editWord");
+    }
+
+    /**
+     * 保存热词
+     */
+    public function saveWord() {
+        $par = I("post.par");
+        if (count($par)) {
+            $logic = new SearchLogic();
+            $result = $logic->saveWord($par);
+            if ($result * 1 > 0) {
+                return $this->jsonReturn(1, "保存成功!", $result);
+            }else{
+                return $this->jsonReturn(0, $result);
+            }
+        }
+        return $this->jsonReturn(0, '保存失败!');
+    }
+
+}

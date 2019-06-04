@@ -1,0 +1,840 @@
+<?php
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+namespace Backend\Controller;
+
+use Service\Spread\Logic;
+use Service\System\Logic as sys;
+use Common\Common\Redis;
+
+/**
+ * 文案以及推广控制器
+ *
+ * @author Administrator
+ */
+class SpreadController extends BaseEndController {
+
+    /**
+     * 文章
+     */
+    public function getArticle() {
+        $par = I("post.");
+        $where = "";
+        $whereArr = array();
+        if (!is_null($par["txtTypeID"]) && !empty($par["txtTypeID"])) {
+            $where.= " AND typeID = '%s'";
+            array_push($whereArr, $par["txtTypeID"]);
+        }
+        if (!is_null($par["txtTitle"]) && !empty($par["txtTitle"])) {
+            $where.= " AND articleTitle like '%s'";
+            array_push($whereArr, "%" . $par["txtTitle"] . "%");
+        }
+        $limit = $this->getPage();
+        $logicsys = new sys\DictionaryLogic();
+        $logic = new Logic\HomeArticleLogic();
+        $htmlType = $logicsys->getDicHTML(9, $par["txtTypeID"]);
+        $result = $logic->getArticle($where, $whereArr, $limit);
+        $this->assign("htmlType", $htmlType);
+        $this->assign('article', $result["rows"]);
+        $this->assign('pageHtml', $this->showPage($result["total"]));
+        $this->display("articleList");
+    }
+
+    /**
+     * 编辑文章
+     */
+    public function editArticle() {
+        $key = I("get.key");
+        if ($key * 1 > 0) {
+            $logic = new Logic\HomeArticleLogic();
+            $result = $logic->getSinArticle($key);
+            if (in_array($result['typeID'], array(196, 197, 198))) {  //当是信息披露修改的时候
+                $result['isInformation'] = 1;
+            } else {
+                $result['isInformation'] = 0;
+            }
+            $this->assign('data', $result);
+        }
+        $logicsys = new sys\DictionaryLogic();
+        $htmlType = $logicsys->getDicHTML(9, $result["typeID"]);
+        $this->assign("htmlType", $htmlType);
+        $this->display("articleEdit");
+    }
+
+    /**
+     * 保存文章
+     */
+    public function saveArticle() {
+        $par = I("post.par");
+        if (count($par) * 1 > 0) {
+            $logic = new Logic\HomeArticleLogic();
+            $result = $logic->saveArticle($par);
+            if ($result['articleID'] * 1 > 0) {
+                $this->jsonReturn(1, "操作成功", $result);
+            }
+        }
+        $this->jsonReturn(0, "操作失败!" . $result);
+    }
+
+    /**
+     * 删除文章
+     */
+    public function delArticle() {
+        $key = I("post.key");
+        if ($key * 1 > 0) {
+            $logic = new Logic\HomeArticleLogic();
+            $result = $logic->delArticle($key);
+            if ($result * 1 > 0) {
+                $this->jsonReturn(1, "操作成功!", $result);
+            }
+        }
+        $this->jsonReturn(0, "操作失败!");
+    }
+
+    /**
+     * 上传文章图片
+     */
+    public function saveArtImg() {
+        //  $files = $_FILES["Filedata"];      
+        $picture = $this->uploadImg("artice");
+        echo json_encode($picture);
+    }
+
+    /**
+     * 友情链接
+     */
+    public function getlink() {
+        $par = I("post.");
+        $where = "";
+        $whereArr = array();
+        if (!is_null($par["txtlinkName"]) && !empty($par["txtlinkName"])) {
+            $where.= " AND linkName = '%s'";
+            array_push($whereArr, $par["txtlinkName"]);
+        }
+        if (!is_null($par["txtlinkMan"]) && !empty($par["txtlinkMan"])) {
+            $where.= " AND linkMan = '%s'";
+            array_push($whereArr, $par["txtlinkMan"]);
+        }
+        $limit = $this->getPage();
+        $logic = new Logic\HomeLinkLogic();
+        $result = $logic->getLink($where, $whereArr, $limit);
+        $this->assign('Link', $result["rows"]);
+        $this->assign('pageHtml', $this->showPage($result["total"]));
+        $this->display("linkList");
+    }
+
+    public function editLink() {
+        $key = I("get.key");
+        if ($key * 1 > 0) {
+            $logic = new Logic\HomeLinkLogic();
+            $result = $logic->getSingleLink($key);
+            $this->assign('data', $result);
+        }
+        $this->display("linkEdit");
+    }
+
+    /**
+     * 保存友情链接
+     */
+    public function saveLink() {
+        $par = I("post.par");
+        if (count($par) * 1 > 0) {
+            $logic = new Logic\HomeLinkLogic();
+            $result = $logic->saveLink($par);
+            if ($result * 1 > 0) {
+                $this->jsonReturn(1, "操作成功", $result);
+            }
+        }
+        $this->jsonReturn(0, "操作失败!" . $result);
+    }
+
+    /**
+     * 删除友情链接
+     */
+    public function delLink() {
+        $key = I("post.key");
+        if ($key * 1 > 0) {
+            $logic = new Logic\HomeLinkLogic();
+            $result = $logic->delLink($key);
+            if ($result * 1 > 0) {
+                $this->jsonReturn(1, "操作成功!", $result);
+            }
+        }
+        $this->jsonReturn(0, "操作失败!");
+    }
+
+    /**
+     * TDK
+     */
+    public function getTDK() {
+        $par = I("post.");
+        $where = "";
+        $whereArr = array();
+        if (!is_null($par["txtmenuName"]) && !empty($par["txtmenuName"])) {
+            $where.="AND menuName = '%s'";
+            array_push($whereArr, $par["txtmenuName"]);
+        }
+        $tdkId = 1;
+        $logic = new sys\HomeMenuLogic();
+        $result = $logic->getTDK($where, $whereArr);
+        $this->assign("result", $result);
+        $this->assign("tdkId", $tdkId);
+        $this->display("TDKList");
+    }
+
+    /**
+     * 编辑TDK管理
+     */
+    public function editTdk() {
+        $key = I("get.key");
+        if ($key * 1 > 0) {
+            $logic = new sys\HomeMenuLogic();
+            $data = $logic->getSinTdk($key);
+            $this->assign("data", $data);
+        }
+        $this->display("TDKEdit");
+    }
+
+    /**
+     * 保存TDK
+     */
+    public function saveTdk() {
+        $par = I("post.par");
+        if (count($par) > 0) {
+            $logic = new sys\HomeMenuLogic();
+            $result = $logic->saveMenu($par);
+            if ($result * 1 > 0) {
+                $this->jsonReturn(1, "保存成功", $result);
+            }
+        }
+        $this->jsonReturn(0, "保存失败");
+    }
+
+    /**
+     * 微信分享管理
+     */
+    public function getShare() {
+        $txtshareName = I("post.txtshareName");
+        $txtshareCode = I("post.txtshareCode");
+        $limit = $this->getPage();
+        $where = "";
+        $whereArr = array();
+        if (!is_null($txtshareName) && !empty($txtshareName)) {
+            $where.= " AND shareName like  '%s'";
+            array_push($whereArr, "%" . $txtshareName . "%");
+        }
+        if (!is_null($txtshareCode) && !empty($txtshareCode)) {
+            $where.= " AND shareCode like '%s'";
+            array_push($whereArr, "%" . $txtshareCode . "%");
+        }
+        $logic = new Logic\WxShareLogic();
+        $result = $logic->getShare($where, $whereArr, $limit);
+        $this->assign("wxinfo", $result["rows"]);
+        $this->assign("page", $this->showPage($result["total"]));
+        $this->display("shareList");
+    }
+
+    /**
+     * 上传微信图片
+     */
+    public function saveShareImg() {
+        $picture = $this->uploadImg("share");
+        echo json_encode($picture);
+    }
+
+    /**
+     * 编辑微信分享
+     */
+    public function editShare() {
+        $key = I("get.key");
+        if ($key * 1 > 0) {
+            $logic = new Logic\WxShareLogic();
+            $result = $logic->getSinShare($key);
+            $this->assign("data", $result);
+        }
+        $this->display(shareEdit);
+    }
+
+    /**
+     * 保存微信分享
+     */
+    public function saveShare() {
+        $par = I("post.par");
+        if (count($par) * 1 > 0) {
+            $logic = new Logic\WxShareLogic();
+            $result = $logic->saveShare($par);
+            if ($result * 1 > 0) {
+                $this->jsonReturn(1, "操作成功", $result);
+            }
+        }
+        $this->jsonReturn(0, "操作失败!" . $result);
+    }
+
+    /**
+     * 删除微信分享
+     */
+    public function delShare() {
+        $key = I("post.key");
+        if ($key * 1 > 0) {
+            $logic = new Logic\WxShareLogic();
+            $result = $logic->delShare($key);
+            if ($result * 1 > 0) {
+                $this->jsonReturn(1, "操作成功!", $result);
+            }
+        }
+        $this->jsonReturn(0, "操作失败!");
+    }
+
+    /**
+     * 文字碎片
+     */
+    public function getPatch() {
+        $txtpName = I("POST.txtpName");
+        $where = "";
+        $whereArr = array();
+        $limit = $this->getPage();
+        if (!is_null($txtpName) && !empty($txtpName)) {
+            $where.="AND pName like '%s'";
+            array_push($whereArr, "%" . $txtpName . "%");
+        }
+        $logic = new Logic\HomePatchLogic();
+        $result = $logic->getPatch($where, $whereArr, $limit);
+        $this->assign("page", $this->showPage($result["total"]));
+        $this->assign("result", $result["rows"]);
+        $this->display("patchList");
+    }
+
+    /**
+     * 编辑文字碎片
+     */
+    public function editPatch() {
+        $key = I("get.key");
+        if ($key * 1 > 0) {
+            $logic = new Logic\HomePatchLogic();
+            $result = $logic->getSinPatch($key);
+            $this->assign("data", $result);
+        }
+        $this->display("patchEdit");
+    }
+
+    /*
+     * 保存文字碎片
+     */
+
+    public function savePatch() {
+        $par = I("post.par");
+        if (count($par) * 1 > 0) {
+            $logic = new Logic\HomePatchLogic();
+            $result = $logic->savePatch($par);
+            if ($result * 1 > 0) {
+                $this->jsonReturn(1, "操作成功", $result);
+            }
+        }
+        $this->jsonReturn(0, "操作失败!" . $result);
+    }
+
+    /**
+     * 删除文字碎片
+     */
+    public function delPatch() {
+        $key = I("post.key");
+        if ($key * 1 > 0) {
+            $logic = new Logic\HomePatchLogic();
+            $result = $logic->delPatch($key);
+            if ($result * 1 > 0) {
+                $this->jsonReturn(1, "删除成功");
+            }
+        }
+        $this->jsonReturn(0, "删除失败");
+    }
+
+    /**
+     * 广告图
+     */
+    public function getBanner() {
+        $txtName = I("post.txtName");
+        $txtType = I("post.txtType");
+        $where = "";
+        $whereArr = array();
+        $limit = $this->getPage();
+        if (!is_null($txtName) && !empty($txtName)) {
+            $where.= " AND bannerName like  '%s'";
+            array_push($whereArr, "%" . $txtName . "%");
+        }
+        if (!is_null($txtType) && !empty($txtType)) {
+            $where.= " AND dicType = '%s'";
+            array_push($whereArr, $txtType);
+        }
+        $logicsys = new sys\DictionaryLogic();
+        $logic = new Logic\HomeBannerLogic();
+        $htmlType = $logicsys->getDicHTML(29, $txtType);
+        $result = $logic->getBanner($where, $whereArr, $limit);
+        $this->assign("htmlType", $htmlType);
+        $this->assign("result", $result["rows"]);
+        $this->assign("page", $this->showPage($result["total"]));
+        $this->display("bannerList");
+    }
+
+    /**
+     * 上传广告图
+     */
+    public function saveBannerImg() {
+        $picture = $this->uploadImg("banner");
+        echo json_encode($picture);
+    }
+
+    /**
+     * 删除广告图
+     */
+    public function delBanner() {
+        if (IS_POST) {
+            $key = I("post.key");
+            if ($key * 1 > 0) {
+                $logic = new Logic\HomeBannerLogic();
+                $result = $logic->delBanner($key);
+                if ($result * 1 > 0) {
+                    $this->jsonReturn(1, "删除成功");
+                }
+            }
+            $this->jsonReturn(0, "删除失败");
+        }
+    }
+
+    /**
+     * 添加广告图
+     * 编辑广告图
+     */
+    public function editBanner() {
+        $key = I("get.key");
+        if ($key * 1 > 0) {
+            $logic = new Logic\HomeBannerLogic();
+            $result = $logic->getSinBanner($key);
+            $this->assign("data", $result);
+        }
+        $logicsys = new sys\DictionaryLogic();
+        $htmlType = $logicsys->getDicHTML(29, $result["dicType"]);
+        $this->assign("htmlType", $htmlType);
+        $this->display("bannerEdit");
+    }
+
+    /**
+     * 保存添加的广告信息
+     */
+    public function saveBanner() {
+        $par = I("post.par");
+        if (count($par) * 1 > 0) {
+            $logic = new Logic\HomeBannerLogic();
+            $result = $logic->saveBanner($par);
+            if ($result * 1 > 0) {
+                $this->jsonReturn(1, "操作成功", $result);
+            }
+        }
+        $this->jsonReturn(0, "操作失败!" . $result);
+    }
+
+    /**
+     * 点击量查看
+     */
+    public function getViews() {
+        $par = I("post.");
+        $where = "";
+        $whereArr = array();
+        $limit = $this->getPage();
+        if (!empty($par["hiddays"]) && is_array($par)) {
+            $redis = Redis::GetInstance();
+            $day = date("Y-m-d");
+            $list = $redis->getAll("_TotalTimes_" . $day);
+            $data = array();
+            foreach ($list as $val) {
+                $data[] = $redis->get($val);
+            }
+            $totalPage = count($data);
+            $this->assign("page", $this->showPage($totalPage));
+            $this->assign("result", $data);
+        } else {
+            if (!is_null($par["pagename"]) && !empty($par["pagename"])) {
+                $where.= " AND name like  '%s'";
+                array_push($whereArr, "%" . $par["pagename"] . "%");
+            }
+            if (!is_null($par["txtstart"]) && !empty($par["txtstart"])) {
+                $where.= " AND clickDate >=  '%s'";
+                array_push($whereArr, strtotime($par["txtstart"]));
+            }
+            if (!is_null($par["txtend"]) && !empty($par["txtend"])) {
+                $where.= " AND clickDate <  '%s'";
+                array_push($whereArr, strtotime($par["txtend"] . "+1 day"));
+            }
+            if (empty($where)) { //默认三天
+                $where.= " AND clickDate > '%d'";
+                array_push($whereArr, strtotime(date('Y-m-d', strtotime('-3 day'))));
+            }
+            $logic = new Logic\HomeViewsLogic();
+            $result = $logic->getViews($where, $whereArr, $limit);
+            $this->assign("page", $this->showPage($result["total"]));
+            $this->assign("result", $result["rows"]);
+        }
+        $this->display("viewList");
+    }
+
+    /**
+     * 获取用户APP的
+     */
+    public function getAPP() {
+        $par = I("post.");
+        $where = "";
+        $whereArr = array();
+        if (!is_null($par["type"]) && !empty($par["type"])) {
+            $where.= " AND A.type =  '%s'";
+            array_push($whereArr, $par["type"]);
+        }
+        if (!is_null($par["terminal"]) && !empty($par["terminal"])) {
+            $where.= " AND A.terminal =  '%s'";
+            array_push($whereArr, $par["terminal"]);
+        }
+        if (!is_null($par["txtDateStart"]) && !empty($par["txtDateStart"])) {
+            $where.= " AND A.addDatetime >=  '%s'";
+            array_push($whereArr, strtotime($par["txtDateStart"]));
+        }
+        if (!is_null($par["txtDateEnd"]) && !empty($par["txtDateEnd"])) {
+            $where.= " AND A.addDatetime <  '%s'";
+            array_push($whereArr, strtotime($par["txtDateEnd"] . "+1 day"));
+        }
+        if (!is_null($par["isFirst"]) && !empty($par["isFirst"])) {
+            $where.= $par["isFirst"] == 1 ? " AND T.firstID IS NOT NULL" : " AND T.firstID IS NULL";
+        }
+        if (!is_null($par["versions"]) && !empty($par["versions"])) {
+            $where.= " AND A.versions =  '%s'";
+            array_push($whereArr, $par["versions"]);
+        }
+        if (empty($where)) {
+            $where .= "AND A.addDatetime>='%d'";
+            $startDate = date('Y-m-d', strtotime('-7 days'));
+            array_push($whereArr, strtotime($startDate));
+            $_POST["txtDateStart"] = $startDate;
+            $_POST["txtDateEnd"] = date('Y-m-d', time());
+        }
+        $limit = $this->getPage();
+        $logic = new Logic\AppInfoLogic();
+        $result = $logic->getAppInfo($where, $whereArr, $limit);
+        $appVersion = $logic->getAppVersion();
+        $this->assign("versionSelect", $appVersion);
+        $this->assign("page", $this->showPage($result["total"]));
+        $this->assign("result", $result["rows"]);
+        $this->display("appList");
+    }
+
+    /**
+     * app数据导出
+     */
+    public function exporAppInfo() {
+        $par = I("post.data");
+        $where = "";
+        $whereArr = array();
+        if (!is_null($par["type"]) && !empty($par["type"])) {
+            $where.= " AND A.type =  '%s'";
+            array_push($whereArr, $par["type"]);
+        }
+        if (!is_null($par["terminal"]) && !empty($par["terminal"])) {
+            $where.= " AND A.terminal =  '%s'";
+            array_push($whereArr, $par["terminal"]);
+        }
+        if (!is_null($par["txtDateStart"]) && !empty($par["txtDateStart"])) {
+            $where.= " AND A.addDatetime >=  '%s'";
+            array_push($whereArr, strtotime($par["txtDateStart"]));
+        }
+        if (!is_null($par["txtDateEnd"]) && !empty($par["txtDateEnd"])) {
+            $where.= " AND A.addDatetime <  '%s'";
+            array_push($whereArr, strtotime($par["txtDateEnd"] . "+1 day"));
+        }
+        if (!is_null($par["isFirst"]) && !empty($par["isFirst"])) {
+            $where.= $par["isFirst"] == 1 ? " AND T.firstID IS NOT NULL" : " AND T.firstID IS NULL";
+        }
+        if (!is_null($par["versions"]) && !empty($par["versions"])) {
+            $where.= " AND A.versions =  '%s'";
+            array_push($whereArr, $par["versions"]);
+        }
+        if (empty($where)) {
+            $where .= "AND A.addDatetime>='%d'";
+            $startDate = date('Y-m-d', strtotime('-7 days'));
+            array_push($whereArr, strtotime($startDate));
+            $_POST["txtDateStart"] = $startDate;
+            $_POST["txtDateEnd"] = date('Y-m-d', time());
+        }
+        $logic = new Logic\AppInfoLogic();
+        $result = $logic->getAppInfo($where, $whereArr, "0,50000");
+        $dir = "cache/";
+        $fileName = $dir . "AppInfoList_" . date('Ymdhis') . ".csv";
+        if (empty($result['rows'])) {
+            $this->jsonReturn(0, "导出失败,没有所要导出的数据");
+        }
+        $title = array(
+            "设备ID",
+            "类型",
+            "客户端APP版本号",
+            "手机信息",
+            "终端",
+            "省份",
+            "城市",
+            "区",
+            "首次下载",
+            "发生时间"
+        );
+        $data = array();
+        foreach ($result['rows'] as $k => $v) {
+            $data[$k]['equipmentID'] = iconv('utf-8', 'GBK', $v['equipmentID']);
+            $vtype = $v['type'] == 1 ? '安装' : ($v['type'] == 2 ? '活跃' : '未知');
+            $data[$k]['type'] = iconv('utf-8', 'GBK', $vtype);
+            $data[$k]['versions'] = iconv('utf-8', 'GBK', $v['versions']);
+            $data[$k]['phoneInfo'] = iconv('utf-8', 'GBK', $v['phoneInfo']);
+            $data[$k]['terminal'] = iconv('utf-8', 'GBK', formatterminal($v['terminal']));
+            $data[$k]['province'] = iconv('utf-8', 'GBK', $v['province']);
+            $data[$k]['city'] = iconv('utf-8', 'GBK', $v['city']);
+            $data[$k]['area'] = iconv('utf-8', 'GBK', $v['area']);
+            $visfirst = empty($v['firstID']) ? '否' : '是';
+            $data[$k]['isFirst'] = iconv('utf-8', 'GBK', $visfirst);
+            $data[$k]['addDatetime'] = iconv('utf-8', 'GBK', formatlongDate($v['addDatetime']));
+        }
+        $export = new \Service\Common\CollectiveLogic();
+        $export->export($fileName, $title, $data);
+        $this->jsonReturn(1, "导出成功，请点击Dowonload下载", $fileName);
+    }
+
+    /**
+     * APP版本
+     */
+    public function getAppVer() {
+        $par = I("post.");
+        $where = "";
+        $whereArr = array();
+        if (!is_null($par["versionName"]) && !empty($par["versionName"])) {
+            $where.="AND versionName='%s'";
+            array_push($whereArr, $par["versionName"]);
+        }
+        if (!is_null($par["terminal"]) && !empty($par["terminal"])) {
+            $where.="AND terminal='%s'";
+            array_push($whereArr, $par["terminal"]);
+        }
+        $where.=" AND  status>'%s'";
+        array_push($whereArr, 0);
+        $limit = $this->getPage();
+        $logic = new Logic\AppVersionsLogic();
+        $result = $logic->getAppList($where, $whereArr, $limit);
+        $this->assign("result", $result["rows"]);
+        $this->assign("pageHtml", $this->showPage($result["total"]));
+        $this->display("appVerList");
+    }
+
+    /**
+     * 增加APP版本
+     */
+    public function getAllAPP() {
+        $key = I("get.key");
+        if ($key * 1 > 0) {
+            $logic = new Logic\AppVersionsLogic();
+            $result = $logic->getAllApp($key);
+            $this->assign("data", $result);
+        }
+        $this->display("appVerEdit");
+    }
+
+    /**
+     * 更新APP版本
+     */
+    public function saveAppVer() {
+        $par = I("post.par");
+        if (count($par) * 1 > 0) {
+            $logic = new Logic\AppVersionsLogic();
+            $result = $logic->saveAppVer($par);
+            if ($result * 1 > 0) {
+                $this->jsonReturn(1, "操作成功", $result);
+            }
+        }
+        $this->jsonReturn(0, "操作失败!" . $result);
+    }
+
+    /**
+     * APP版本
+     */
+    public function delAppVer() {
+        $key = I("post.key");
+        if ($key * 1 > 0) {
+            $logic = new Logic\AppVersionsLogic();
+            $result = $logic->delAppVer($key);
+            if ($result * 1 > 0) {
+                $this->jsonReturn(1, "删除成功");
+            }
+        }
+        $this->jsonReturn(0, "删除失败");
+    }
+
+    /**
+     * 微信自定义菜单列表
+     */
+    public function getWxMenu() {
+        $title = htmlspecialchars(I('post.txtmenuName'));
+        $where = array();
+        if (!empty($title)) {
+            $where['menuName'] = array('like', "%" . $title . "%");
+        }
+        $wxLogic = new Logic\WxMenuLogic();
+        $menulist = $wxLogic->getWxMenuList($where);
+        $this->menuTypes = $wxLogic->menuTypes;
+        $this->result = $menulist;
+        $this->display('wxMenu');
+    }
+
+    /**
+     * 编辑微信自定义菜单
+     */
+    public function wxMenuEdit() {
+        $key = I("get.key");
+        $wxLogic = new Logic\WxMenuLogic();
+        $result = $wxLogic->getWxMenu($key);
+        $this->menu = $wxLogic->getParentMenus();
+        $this->data = $result;
+        $this->menuTypes = $wxLogic->menuTypes;
+        $this->display('wxMenuEdit');
+    }
+
+    /**
+     * 保存微信菜单
+     */
+    public function saveWxMenu() {
+        if (!IS_AJAX) {
+            $this->jsonReturn(0, "非法请求");
+        }
+        $post = I('post.par');
+        $data['parentID'] = intval($post['parentID']);
+        $data['menuType'] = $post['menuType'];
+        $data['menuName'] = trim(htmlspecialchars($post['menuName']));
+        $data['menuAction'] = trim(htmlspecialchars($post['menuAction']));
+        $data['isAuthorize'] = intval($post['isAuthorize']);
+        $data['sort'] = intval($post['sort']);
+        $wxLogic = new Logic\WxMenuLogic();
+        $result = $wxLogic->saveOrAddWxMenu($data, $post['menuID']);
+        if ($result) {
+            $this->jsonReturn(1, "保存成功");
+        } else {
+            $this->jsonReturn(0, "保存失败");
+        }
+    }
+
+    /**
+     * 删除微信自定义菜单
+     */
+    public function delWxMenu() {
+        if (!IS_AJAX) {
+            $this->jsonReturn(1, '非法请求');
+        }
+        $wxMenuID = intval(I('post.key'));
+        $wxLogic = new Logic\WxMenuLogic();
+        $data = $wxLogic->getWxMenu($wxMenuID);
+        if (!empty($data) && $data['parentID'] * 1 == 0) {
+            $count = $wxLogic->getMenuCount($wxMenuID);
+            if ($count * 1 > 0) {
+                $this->jsonReturn(0, "该菜单下面有子菜单，请先删除子菜单");
+            }
+        }
+        $result = $wxLogic->delReply($wxMenuID);
+        if ($result) {
+            $this->jsonReturn(1, "删除成功");
+        } else {
+            $this->jsonReturn(0, "删除失败");
+        }
+    }
+
+    /**
+     * 重新生成微信服务号菜单
+     */
+    public function createWxMenu() {
+        if (!IS_AJAX) {
+            $this->jsonReturn(1, '非法请求');
+        }
+        $wxLogic = new Logic\WxMenuLogic();
+        $result = $wxLogic->createWxMenu();
+        if ($result === true) {
+            $this->jsonReturn(1, '微信菜单创建成功');
+        } else {
+            $this->jsonReturn(0, "操作失败：" . $result);
+        }
+    }
+
+    /**
+     * 微信消息推送管理，数据列表
+     */
+    public function getWxReplys() {
+        $par = I("post.");
+        $where = "";
+        $whereArr = array();
+        if (!is_null($par["replyType"]) && !empty($par["replyType"])) {
+            $where .= " AND replyType = '%s'";
+            array_push($whereArr, $par["replyType"]);
+        }
+        if (!is_null($par["keyword"]) && !empty($par["keyword"])) {
+            $where .= " AND keyword like '%s'";
+            array_push($whereArr, "%" . $par["keyword"] . "%");
+        }
+        $limit = $this->getPage();
+        $wxLogic = new Logic\WxReplyLogic();
+        $result = $wxLogic->getList($where, $whereArr, $limit);
+        $this->replyTypes = $wxLogic->replyTypes;
+        $this->contentTypes = $wxLogic->contentTypes;
+        $this->result = $result['rows'];
+        $this->pageHtml = $this->showPage($result["total"]);
+        $this->display('wxReply');
+    }
+
+    /**
+     * 微信消息推送，编辑界面
+     */
+    public function wxReplyEdit() {
+        $key = I("get.key");
+        $wxLogic = new Logic\WxReplyLogic();
+        $result = $wxLogic->getEntity($key);
+        $this->replyTypes = $wxLogic->replyTypes;
+        $this->contentTypes = $wxLogic->contentTypes;
+        $this->data = $result;
+        $this->display('wxReplyEdit');
+    }
+
+    /**
+     * 保存微信回复消息
+     */
+    public function saveWxReply() {
+        if (!IS_AJAX) {
+            $this->jsonReturn(0, "非法请求");
+        }
+        $par = I("post.par");
+        if (count($par) * 1 > 0) {
+            $logic = new Logic\WxReplyLogic();
+            $result = $logic->saveReply($par);
+            if ($result * 1 > 0) {
+                $this->jsonReturn(1, "操作成功", $result);
+            }
+        }
+        $this->jsonReturn(0, "操作失败!" . $result);
+    }
+
+    /**
+     * 删除微信回复
+     */
+    public function delWxReply() {
+        if (!IS_AJAX) {
+            $this->jsonReturn(1, '非法请求');
+        }
+        $replyID = intval(I('post.key'));
+        $wxLogic = new Logic\WxReplyLogic();
+        $result = $wxLogic->delReply($replyID);
+        if ($result * 1 > 0) {
+            $this->jsonReturn(1, "删除成功", $result);
+        } else {
+            $this->jsonReturn(1, "删除失败", $result);
+        }
+    }
+
+}

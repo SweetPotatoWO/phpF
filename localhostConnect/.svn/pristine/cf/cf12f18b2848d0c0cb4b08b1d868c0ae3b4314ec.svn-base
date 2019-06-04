@@ -1,0 +1,35 @@
+<?php
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+namespace Service\Spread\Model;
+
+use Think\Model;
+use Common\Model\SlaveModel;
+use Think\Exception;
+
+class HomeViewsModel extends SlaveModel {
+
+    /**
+     * 点击量查询 查询从库
+     * @param type $where
+     * @param type $whereArr
+     * @return type
+     */
+    public function getViews($where, $whereArr, $limit) {
+        $result["total"] = $this->SlaveDB()->table("d_home_views")->where($where, $whereArr)->count();
+        $field = "*";
+        $result["rows"] = $this->SlaveDB()->table("d_home_views")->field($field)->where($where, $whereArr)->limit($limit)->select();
+        return $result;
+    }
+
+    public function addAllData($data){
+        if (empty($data) || !is_array($data))
+            return false;
+        return $this->addAll($data);
+    }
+}

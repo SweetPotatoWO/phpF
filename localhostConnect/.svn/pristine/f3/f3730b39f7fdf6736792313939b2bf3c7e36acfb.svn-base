@@ -1,0 +1,131 @@
+<?php
+
+namespace MobileApi\Api;
+
+use Common\Common\CodeGenerator;
+use Common\Common\ThirdApi\ChuanglanSmsApi;
+use MobileApi\Common\MobileApiBase;
+use Service\Connect\Logic\ConnectRelationLogic;
+use Service\JavaService\Logic\SiteLogic;
+use Service\User\Logic\IndexLogic;
+use Service\User\Logic\UserLogic;
+use Service\UserCenter\Logic\UserCenterLogic;
+use Service\UserCenter\Model\companyModel;
+
+/**
+ * Description of index
+ *
+ * @author Administrator
+ */
+class ApiCompany extends MobileApiBase
+{
+
+
+    private $return  = array("code"=>1,"msg"=>"","info"=>array());
+
+    public function getRules()
+    {
+        return array(
+            'index' => array(),
+            "companyIndex"=>array(
+                'companyID' => array("name" => "companyID", "type" => "int", "desc" => "公司的ID"),
+            ),
+            "search"=>array(
+                "type"=>array("name" => "type", "type" => "int",'require'=>false, "desc" => "公司 为2 用户为1","default"=>1),
+                "value"=>array("name"=> "value", "type"=>"string","require"=>false,"desc"=>"查询的内容",),
+                'pageindex' => array('name' => 'pageindex', 'type' => 'int', 'default' => 1, 'desc' => '页码'),
+                'pagesize' => array('name' => 'pagesize', 'type' => 'int', 'default' => 15, 'desc' => '每页显示数量')
+            ),
+        );
+    }
+
+
+    /**
+     * 公司的基本信息
+     * @desc 公司的主页的基本信息
+     * @return int    code         操作码，0表示成功， 1表示失败
+     * @return  array  info         返回数据
+     * @return  string msg          提示信息
+     * @return string companyName        公司的名称
+     * @return string regCapital        注册资金
+     * @return int regDatetime        注册时间
+     * @return int img        公司的图片 没有就用默认的
+     * @return string bssScope     公司介绍
+     */
+    public function companyIndex() {
+        $this->userCheck();
+        $this->companyID = 335;
+        $site = new SiteLogic();
+        $data = $site->getChattelMortgage($this->companyID);
+        if(empty($data)) {
+            $this->return['code'] = 1;
+            $this->return['msg'] = "没有数据";
+            return $this->return;
+        }
+        $info['companyName'] =  strip_tags($data['companyName']); //公司名字
+        $info['regCapital'] = $data['regCapital']; //注册资本
+        $info['regDatetime'] = floor((time()-strtotime($data['regDatetime']))/31536000); //注册时间
+        $info['bssScope'] = (empty($data['bssScope']))?"暂无介绍":$data['bssScope']; //注册时间
+        $info['img'] = "";
+        $this->return['code'] = 0;
+        $this->return['info'] = $info;
+        return $this->return;
+    }
+
+
+    /**
+     * 公司的高层股东信息
+     * @desc 搜索
+     * @return int    code         操作码，0表示成功， 1表示失败
+     */
+    public function companyManager() {
+        $this->userCheck();
+        $this->companyID = 340;
+        $javaService = new SiteLogic();
+        $sarr = $javaService->getShareholder($this->companyID);  //股东信息
+        $marr = $javaService->getManagers($this->companyID);   //高层信息
+        if(empty($sarr) && empty($marr)) {  //表示没有数据
+            $this->return['code'] = 1;
+            $this->return['msg'] = "没有数据";
+            return $this->return;
+        }
+        $allSarr = [];  //初始化
+        foreach ($sarr['list'] as $key=>$value) {   //先处理股东
+            $one['name'] = $value['name'];   //股东的名字
+            $one['proportion'] = $value['proportion'];   //股份
+            $one['post'] = "";   //职位
+            if(!empty($marr['list'])) {
+                foreach ($marr['list'] as $k=>$v){
+                    if($one['name'] == $v['name']) {     //相等 就是同时是股东 又同时是高层
+                        $one['post'] = $v['post'];   //职位
+                    }
+                }
+            }
+            $allSaName[] = $one['name'];  //全部股东的姓名
+            $allSarr[] = $one;   //查出全部股东的职位
+        }
+
+        foreach ($marr['list'] as $key=>$value) {   //返回高管信息
+            if(!in_array($value['name'],$allSaName)) {   //股东存在高管中
+                $mdata['name'] = $value['name'];
+                $mdata['post'] = $value['post'];
+                $mdata['proportion'] = 0;
+                $allSarr[] = $mdata;
+            }
+        }
+        $this->return['code'] = 0;
+        $this->return['info'] = $allSarr;
+        return $this->return;
+    }
+
+
+
+
+
+
+
+
+
+
+
+}

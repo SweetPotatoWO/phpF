@@ -1,0 +1,83 @@
+<?php
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+namespace Service\User\Logic;
+
+use Service\User\Model\UserInviteModel;
+
+class UserInviteLogic {
+
+    private $model = null;
+
+    public function __construct() {
+        $this->model = new UserInviteModel();
+    }
+
+    /**
+     * 添加邀请的记录
+     */
+    public function addInvite($data) {
+        return $this->model->addInvite($data);
+    }
+    /**
+     * 邀请记录查询
+     * @param type $where
+     * @param type $whereArr
+     * @param type $limit
+     */
+    public function getInvite($where, $whereArr, $limit) {
+        $result = $this->model->getInvite($where, $whereArr, $limit);
+        return $result;
+    }
+
+    /**
+     * 处理邀请中的结果
+     */
+    public function saveInvite($userID,$phone,$inviteUserID) {
+        $model = new UserInviteModel();
+        return $model->saveInvite($userID,$phone,$inviteUserID);
+    }
+
+
+    /**
+     * 获取到列表
+     */
+    public function getList($userID) {
+        $model = new UserInviteModel();
+        $info = $model->getList($userID);
+        foreach ($info as $key=>$value) {
+            $value['nickname'] = (empty($value['nickname']))?"未填写":$value['nickname'];
+            $value['phone'] = hidPhone($value['phone']);
+            $return[] = $value;
+        }
+        return $return;
+    }
+
+
+    /**
+     * 获取到确定的条邀请的记录
+     */
+    public function getInviteOne($userID,$phone) {
+        $model = new UserInviteModel();
+        return $model->getInviteOne($userID,$phone);
+    }
+
+
+    /**
+     * 插入
+     * @param $data
+     * @return bool|string
+     */
+    public function addAll($data) {
+        $model = new UserInviteModel();
+        return $model->addAllData($data);
+    }
+
+
+
+}

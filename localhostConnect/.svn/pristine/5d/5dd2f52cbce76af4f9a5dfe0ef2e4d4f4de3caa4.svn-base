@@ -1,0 +1,39 @@
+/*
+Navicat MySQL Data Transfer
+
+Source Server         : 钱盒子测试
+Source Server Version : 50631
+Source Host           : 120.25.85.171:3306
+Source Database       : devmbox_hx
+
+Target Server Type    : MYSQL
+Target Server Version : 50631
+File Encoding         : 65001
+
+Date: 2018-08-08 14:48:18
+*/
+
+SET FOREIGN_KEY_CHECKS=0;
+
+-- ----------------------------
+-- Table structure for d_wx_menu
+-- ----------------------------
+DROP TABLE IF EXISTS `d_wx_menu`;
+CREATE TABLE `d_wx_menu` (
+  `menuID` int(11) NOT NULL AUTO_INCREMENT COMMENT '主键',
+  `parentID` smallint(4) unsigned NOT NULL DEFAULT '0' COMMENT '如果是菜单，parentID有效',
+  `menuName` varchar(10) NOT NULL DEFAULT '' COMMENT '菜单标题，一级不超过4个汉字，2级不超过7个汉字',
+  `menuType` varchar(16) NOT NULL DEFAULT '' COMMENT '根据微信消息推送接口来：even[click，view]',
+  `menuAction` varchar(100) NOT NULL DEFAULT '' COMMENT '菜单动作',
+  `isAuthorize` tinyint(1) unsigned NOT NULL DEFAULT '0' COMMENT '0：不用授权，1：需要授权',
+  `sort` smallint(4) unsigned NOT NULL DEFAULT '0' COMMENT '菜单排序',
+  `status` tinyint(1) unsigned NOT NULL DEFAULT '1' COMMENT '状态：1 有效  0：删除',
+  `addDatetime` int(11) unsigned NOT NULL COMMENT '添加时间',
+  `addUserID` int(11) unsigned NOT NULL COMMENT '添加人id',
+  `addUserName` varchar(50) NOT NULL DEFAULT '' COMMENT '创建人',
+  `editUserID` int(11) unsigned NOT NULL COMMENT '修改人id',
+  `editDatetime` int(11) unsigned NOT NULL COMMENT '修改时间',
+  `editUserName` varchar(50) NOT NULL DEFAULT '' COMMENT '修改人',
+  `operateIP` varchar(50) NOT NULL DEFAULT '' COMMENT '操作IP地址',
+  PRIMARY KEY (`menuID`)
+) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8 COMMENT='微信自定义菜单表';

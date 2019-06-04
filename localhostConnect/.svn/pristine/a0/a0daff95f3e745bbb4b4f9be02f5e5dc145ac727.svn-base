@@ -1,0 +1,77 @@
+<?php
+
+namespace Backend\Controller;
+
+/**
+ * Description of IndexController
+ *
+ * @author Administrator
+ */
+
+use Service\Backend\Logic;
+use Think\Cache;
+use Service\User\Logic\UserBackactionLogLogic;
+
+class IndexController extends BaseEndController {
+
+    public function index() {
+        
+        $userID = C("userID");
+        if ($userID * 1 > 0) {
+            $logic = new Logic\ConsoleMenuLogic();
+            //  $result = $logic->getAllMenu();
+            $result = $logic->getUserMenu($userID);
+            $this->assign('menu', $result);
+            $logicsys = new UserBackactionLogLogic();
+            $where = " AND B.userID=%d AND B.action='%s' AND B.ret='%s'";
+            $whereArr = array($userID, "后台修改密码", "修改成功");
+            $logInfo = $logicsys->getBackActLog($where, $whereArr, "0,1");
+            if ($logInfo["total"] * 1 < 1 || ($logInfo["rows"][0]["addDatetime"] + 90 * 24 * 60 * 60) <= time()) {
+                $this->assign('isFirst', 1); //判断是否是第一次登陆,或者是否距离了三个月未改密码
+            }
+        }
+        $this->display("main");
+    }
+
+    /**
+     * 修改用户的密码
+     */
+    public function savePass() {
+        $par = I("post.par");
+        if (count($par) > 0) {
+            $par["userID"] = C("userID");
+            if (strcmp($par["newPass"], $par["oldPass"]) == 0) {
+                $this->jsonReturn(0, "新密码和旧密码一样!");
+            }
+            $logic = new Logic\ConsoleUserLogic();
+            $result = $logic->savePass($par);
+            $logicsys = new UserBackactionLogLogic();
+            if ($result * 1 > 0) {
+                $logicsys->addLog(C("userID"), C("realName"), get_client_ip(), "后台修改密码", "修改成功");
+                $this->jsonReturn(1, "密码修改成功，请使用新密码重新登录!", $result);
+            } else {
+                $logicsys->addLog(C("userID"), C("realName"), get_client_ip(), "后台修改密码", "修改失败");
+            }
+        }
+        $this->jsonReturn(0, "原密码错误!");
+    }
+
+    public function loginOut() {
+        $logicsys = new UserBackactionLogLogic();
+        $logicsys->addLog(C("userID"), aes(C("realName")), get_client_ip(), "后台退出", "退出成功");
+        cookie(C("SHORT_CODE") . "_Login_End_", null);
+        $userID = C("userID");
+        $memcache = Cache::getInstance();
+        if ($userID * 1 > 0) {
+            $memcache->DEL(C("SHORT_CODE") . "_Login_End_" . $userID);
+            $memcache->del(C("USER_AUTH_CACH_KEY") . $userID);
+        }
+        redirect("/Backend/Login/login");
+        exit();
+    }
+
+
+
+
+
+}

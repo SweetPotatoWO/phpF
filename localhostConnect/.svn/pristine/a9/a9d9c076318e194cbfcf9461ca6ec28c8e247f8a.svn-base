@@ -1,0 +1,188 @@
+<?php
+
+namespace MobileApi\Api;
+
+use Common\Common\CodeGenerator;
+use Common\Common\ThirdApi\ChuanglanSmsApi;
+use MobileApi\Common\MobileApiBase;
+use Service\Connect\Logic\ConnectRelationLogic;
+use Service\JavaService\Logic\SiteLogic;
+use Service\User\Logic\IndexLogic;
+use Service\User\Logic\UserFriendLogic;
+use Service\User\Logic\UserLogic;
+use Service\UserCenter\Logic\UserCenterLogic;
+use Think\Upload;
+
+/**
+ * Description of index
+ *
+ * @author Administrator
+ */
+class ApiIndex extends MobileApiBase
+{
+
+
+    private $return  = array("code"=>1,"msg"=>"","info"=>array());
+
+    public function getRules()
+    {
+        return array(
+            'index' => array(),
+            "indexRecommend"=>array(
+                'isCity' => array("name" => "isCity", "type" => "int", "desc" => "0 不选 1选中 同城"),
+                'isIdenty'=> array("name" => "isIdenty", "type" => "int", "desc" => "0 不选 1选中 同行"),
+                "isActive"=> array("name" => "isActive", "type" => "int", "desc" => "0 不选 1选中 活跃度"),
+                'pageindex' => array('name' => 'pageindex', 'type' => 'int', 'default' => 1, 'desc' => '页码'),
+                'pagesize' => array('name' => 'pagesize', 'type' => 'int', 'default' => 15, 'desc' => '每页显示数量')
+            ),
+            "search"=>array(
+                "type"=>array("name" => "type", "type" => "int",'require'=>false, "desc" => "法人为 3 公司 为2 用户为1","default"=>1),
+                "value"=>array("name"=> "value", "type"=>"string","require"=>false,"desc"=>"查询的内容",),
+                'pageindex' => array('name' => 'pageindex', 'type' => 'int', 'default' => 1, 'desc' => '页码'),
+                'pagesize' => array('name' => 'pagesize', 'type' => 'int', 'default' => 15, 'desc' => '每页显示数量')
+            ),
+        );
+    }
+
+
+    /**
+     * 首页推荐列表
+     * @desc 首页推荐
+     * @return int    code         操作码，0表示成功， 1表示失败
+     * @return  array  info         返回数据
+     * @return  string msg          提示信息
+     * @return string list        信息列表
+     * @return int    userCompanyID              userCompanyID
+     * @return string    userKey       用来通信的唯一标识
+     * @return string list.userID     用户的ID
+     * @return string list.name     姓名
+     * @return string list.userHeadUrl     头像
+     * @return string list.relationship     关系
+     * @return string list.vip     用户的Vip
+     * @return string list.job 职业
+     * @return string list.status 状态 0陌生人 1申请中  2申请成功
+     * @return string list.companyName  公司
+     */
+    public function indexRecommend() {
+        $this->userCheck();
+        $userLogic = new UserLogic();
+        $indexLogic = new IndexLogic();
+
+        $userInfo = $userLogic->getInforMation($this->userID);   //用户的全部数据
+        $limit = $this->getLimit($this->pageindex, $this->pagesize);
+
+        if(!empty($userInfo['identy']) && $this->isIdenty) {
+            $this->return['msg'] = "尚未完善行业信息";
+            return $this->return;
+        }
+        if(!empty($userInfo['workCity']) && $this->isCity) {
+            $this->return['msg'] = "尚未完善城市信息";
+            return $this->return;
+        }
+
+        $identy = $this->isIdenty;
+        $workCity = $this->isCity;
+        $isActive = $this->isActive;
+
+        $connect = new ConnectRelationLogic();
+        $objlist = $connect->getRecommendFriend(floor($this->userID),$limit,$identy,$workCity,$isActive);
+        if(empty($objlist)) {
+            $this->return['msg'] = "没有数据";
+            return $this->return;
+        }
+        $str = "";
+        foreach ($objlist as $key=>$value) {
+            $objValue['userID'] = $value->getUserId();
+            $objValue['name'] = $value->getName();
+            $objValue['userHeadUrl'] = $value->getHeadPic();
+            $objValue['companyName'] = $value->getCompany();
+            $objValue['job'] = $value->getProfession();
+            $objValue['jobAuth'] = $value->getJobGrade();
+            $objValue['vip'] = $value->getVipGrade();
+            $objValue['relationship'] = $value->getLabel();
+            $return[] = $objValue;
+            $str .=  $value->getUserId().",";
+        }
+        $str = trim($str,',');
+        $list = $indexLogic->getUserIndex($return,$str,$this->userID);   //首页推荐的逻辑
+        if(empty($list)) {
+            $this->return['msg'] = "没有数据";
+        } else {
+            $this->return['code'] = 0;
+            $this->return['info'] = $list;
+        }
+        return $this->return;
+    }
+
+
+    /**
+     * 搜索的接口
+     * @desc 搜索
+     * @return int    code         操作码，0表示成功， 1表示失败
+     * @return  array  info         返回数据
+     * @return  string msg          提示信息
+     * @return int totalRecords  总的记录数
+     * @return string info.userCompany["companylogo"] 公司头像
+     * @return string info.userCompany["legalName"]  法人
+     * @return string info.userCompany["companyName"] 公司名字,
+     * @return int info.userCompany["regCapital"] 公司的注册资金,
+     * @return int info.userCompany["regDatetime"]  公司的注册时间
+     * @return string info.userCompany["companyId"]  公司的ID
+     *
+     *
+     *
+     *@return int totalRecords  总的记录数
+     *@return string userInfo['companyName']  用户的公司名字
+     *@return string userInfo['userHeadUrl']  用户的头像
+     *@return string userInfo['name']  用户的名字
+     *@return string userInfo['job']  用户的职位
+     *@return int  userInfo['userID'] 用户的ID
+     *@return string  userInfo['userkey'] 用户的通讯标识
+     *@return string  userInfo['phone'] 电话号码
+     *@return string  userInfo['phone'] 隐藏号码
+     *@return string  userInfo['dataFrom'] 数据来源 qimai代表自己系统的用户 import代表外来的用户 card名片 myself自己
+     *
+     *
+     */
+    public function search() {
+        $this->userCheck();
+        $type = $this->type;
+        $javaService = new SiteLogic();
+        switch ($type) {
+            case 1:
+                $info = $javaService->SearchPeople($this->userID,$this->value,array($this->pageindex-1,$this->pagesize));
+                break;
+            case 2:
+                $info = $javaService->SearchCompany($this->userID,$this->value,array($this->pageindex-1,$this->pagesize));
+                break;
+            case 3:
+                $info = $javaService->SearchLegal($this->userID,$this->value,array($this->pageindex-1,$this->pagesize));
+                break;
+        }
+        if(empty($info['list'])) {
+            $this->return['code'] = 1;
+            $this->return['msg'] = "数据为空";
+            return $this->return;
+        }
+        if($info['code'] != 0) { //不为0就是失败
+            $this->return['code'] = 1;
+            $this->return['msg'] = $info['msg'];
+        } else {
+            $this->return['info'] = $info;
+            $this->return['code'] = 0;
+        }
+        return $this->return;
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+}

@@ -1,0 +1,37 @@
+<include file="Common:header" />
+<div class="register regsucceed">
+	<div class="banner">
+		<div class="invite text-center color-white fs-16"><font>{$Invitephone}</font>邀请您加入启脉</div>
+		
+		<div class="color-white fs-18 text-center pt-15">
+			<p class="mb-10">{$phone}</p>
+			<!--注册成功-->
+			<!--<p class="fw-b mb-20">恭喜您，注册成功</p>-->
+			<!--已注册-->
+			<p class="fw-b mb-20">您已注册过 “启脉”，请直接登录</p>
+			<a href="scheme://DIDI/startapp?test=test" class="toApp block color-white text-center">前往启脉</a>
+		</div>
+	</div>
+	
+	<div class="content">
+		<div class="recommend pt-30">
+			<div class="bg-white">
+				<div class="clearfix pt-30">
+					<div class="fl icon01"></div>
+					<div class="fr text text1 pt-10">拥有海量商业资源<br />找公司，找人脉，轻松搜一搜</div>
+				</div>
+				<div class="clearfix pt-15">
+					<div class="fl text text2 pt-20">智能人脉推荐<br />为您推荐感兴趣的人与您结识</div>
+					<div class="fr icon02"></div>
+				</div>
+				<div class="clearfix pt-10">
+					<div class="fl icon03"></div>
+					<div class="fr text text3 pt-30">高效名片管理<br />人脉共享，行走的客户资源库</div>
+				</div>
+				<a href="javascript:;" class="btn-primary block color-white text-center">立即下载</a>
+			</div>
+		</div>
+	</div>	
+</div>
+</body>
+</html>

@@ -1,0 +1,99 @@
+
+<include file="Common:header" />
+<style>
+	body {overflow: hidden;}
+</style>
+<div class="index">
+	<div id="dowebok">
+    	<div class="section">
+       	 	<div class="section-ct section-ct-1 relative">
+       	 		<div class="clearfix container">
+       	 			<a href="{$url}" class="fr text-center toPc">电脑版</a>
+       	 		</div>
+       	 		<div class="text-center">
+       	 			<div class="logo"><img src="/Public/wechat/images/company/logo.png"></div>
+       	 			<h1 class="fw-b">开启你的人脉和机遇</h1>
+       	 			<h3 class="fs-16">科学算法实现真实人脉的拓展</h3>
+       	 			<div class="absolute" style="width: 100%;bottom: 11%;">
+       	 				<a href="https://a.app.qq.com/o/simple.jsp?pkgname=com.hehuoren.hhr&fromcase=40003" class="download fs-18">立即下载</a>
+       	 			</div>       	 			
+       	 		</div>
+       	 		<div class="next absolute">
+        			<a href="javascript:;" onclick="$.fn.fullpage.moveSectionDown();"></a>
+        		</div>
+       	 	</div>
+    	</div>
+    	<div class="section">
+        	<div class="section-ct section-ct-2 relative">
+        		<div class="clearfix color-white">
+        			<div class="fl fw-b">重视用户隐私</div>
+        			<div class="fr">始于启脉<br />，源与责任</div>
+        		</div>
+        		<div class="next absolute">
+        			<a href="javascript:;" onclick="$.fn.fullpage.moveSectionDown();"></a>
+        		</div>
+        	</div>
+    	</div>
+    	<div class="section">
+        	<div class="section-ct section-ct-3 relative">
+        		<div class="text-center color-white">
+        			<h2 class="fw-b title">上启脉，拓圈子</h2>
+        			<p class="des">认识更多的朋友</p>
+        			<p class="des">发现更多的合作机会</p>
+        			<p class="des">加入更多的圈子</p>
+        		</div>
+        		<div class="next absolute">
+        			<a href="javascript:;" onclick="$.fn.fullpage.moveSectionDown();"></a>
+        		</div>
+        	</div>	
+    	</div>
+    	<div class="section">
+        	<div class="section-ct section-ct-4 relative">
+        		<div class="text-center color-white">
+        			<h2 class="fw-b title">找人、查公司</h2>
+        			<p class="des">找同行、同事、校友、投资人、供应商...</p>
+        			<p class="des">查公司法人、经营状况，全方位了解公司</p>
+        		</div>
+        		<div class="next absolute">
+        			<a href="javascript:;" onclick="$.fn.fullpage.moveSectionDown();"></a>
+        		</div>
+        	</div>
+    	</div>
+    	<div class="section">
+        	<div class="section-ct section-ct-5 relative">
+        		<div class="text-center color-white">
+        			<h2 class="fw-b title">云名片</h2>
+        			<p class="des">传统的卡制名片太多，不好管理？</p>
+        			<p class="des">使用“扫名片”功能，</p>
+        			<p class="des">轻松将名片免费保存在云端</p>
+        		</div>
+        		<div class="next absolute">
+        			<a href="#page1"  onclick="$.fn.fullpage.moveTo(1);">返回顶部</a>
+        		</div>
+        	</div>
+    	</div>
+	</div>
+</div>
+<script type="text/javascript" src="{$Think.WXPATH}js/jquery.fullPage.min.js?v={$Think.WNO}"></script>
+<script>
+$(function(){
+    $('#dowebok').fullpage();
+});
+
+
+//需要分享代码
+window.qhzapp = new QHZAPP({
+    api: ['default', 'share'], //'share'可选填
+    wxHost: '{$Think.WECHAT}',
+    actcode: 'Index',
+    shareurl: '{$shareUrl}'//选填，不需要获取分享信息可以不填
+});
+
+
+
+
+
+
+</script>
+</body>
+</html>

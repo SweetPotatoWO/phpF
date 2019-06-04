@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>后台管理</title>
+        <meta name="description" content="网站后台" />
+        <meta name="author" content="えう">
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge, chrome=1" />      
+        <link type="text/css" rel="stylesheet" href="{$Think.BPATH}style/bootstrap.css" />
+        <link type="text/css" rel="stylesheet" href="{$Think.BPATH}style/bootstrap-responsive.css" />
+        <link type="text/css" rel="stylesheet" href="{$Think.BPATH}fonts/css/font-awesome.min.css?version={$Think.BNO}" />
+        <!--[if lte IE 7]>
+            <link rel="stylesheet" href="{$Think.BPATH}fonts/css/font-awesome-ie7.min.css?version={$Think.BNO}" />
+        <![endif]--> 
+        <link type="text/css" rel="stylesheet" href="{$Think.BPATH}style/toastr.css?version={$Think.BNO}" />
+        <link type="text/css" rel="stylesheet" href="{$Think.BPATH}style/gallery.css?version={$Think.BNO}" />   
+        <link type="text/css" rel="stylesheet" href="{$Think.BPATH}style/jquery.treetable.css?version={$Think.BNO}" />           
+        <link type="text/css" rel="stylesheet" href="{$Think.BPATH}style/qianbox.css?version={$Think.BNO}" />   
+        <link type="text/css" rel="stylesheet" href="{$Think.BPATH}js/loading/css/showLoading.css?version={$Think.BNO}" />   
+
+    </head>
+    <body class="ht">      
+        <!--头部导航开始-->
+        <div id="in-nav">
+            <div class="clearfix">
+                <ul class="pull-right" style="margin-right: 45px;">
+                    <li class="dropdown">
+                        <a class="dropdown-toggle" data-toggle="dropdown" href="javascript:;">{$realName}<b class="caret"></b></a>
+                        <ul class="dropdown-menu">
+                            <li><a href="/Backend/Index/loginOut">退出</a></li>
+                        </ul>
+                    </li>
+                    <li><a  href="#mdlpassword" data-toggle="modal" >修改密码</a></li>                
+
+                </ul>
+                <div class="fl">
+                    <ul>
+                        <li>
+                            <a id="logo" href="http://www.qianhezi.cn/" class="logo"></a>
+                        </li>
+                        <li><a href="javascript:;">管理控制台</a></li>                     
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <!--头部导航结束-->
+        <div class="row-fluid  sidebarfull viewbody">    	
+            <!--左侧菜单开始-->
+            <div class="sidebar">
+                <div class="sidebaricon">
+                    <i class="icon-reorder"></i>
+                </div>
+                <ul class="col-nav">  
+                    <volist name="menu" id="main">
+                        <if condition="$main.IfRight eq 0 ">
+                            <li>
+                                <a href="#pane{$main.menuID}" data-toggle="collapse" class="accordion-toggle">
+                                    <i class="pull-left icon-caret-down"></i>{$main.menuName}</a>          	
+                            </li>  
+                            <li id="pane{$main.menuID}" class="collapse in">
+                                <ul>
+                                    <li>
+                                    <volist name="main.children" id="children">
+                                        <a href="{$children.menuUrl}" class="children-menu"> <i class="pull-left icon-plane"></i>{$children.menuName}</a>                                     
+                                    </volist>
+                            </li>
+                            </ul>
+                            </li>
+                            <else />
+                            <li>
+                                <a href="javascript:;" data-toggle="collapse" id="{$main.menuID}" name="{$main.menuName}" class="mainmenuclick accordion-toggle">
+                                    <i class="pull-left icon-align-right"></i>{$main.menuName}</a>          	
+                            </li> 
+                        </if>
+                    </volist>                   
+                </ul>
+            </div>
+            <block name="body"> </block>
+        </div>      
+        <script type="text/javascript"  src="{$Think.BPATH}js/jquery.min.js"></script>
+        <link type="text/css" rel="stylesheet" href="{$Think.BPATH}js/loading/css/showLoading.css?version={$Think.BNO}" />
+        <script type="text/javascript"  src="{$Think.BPATH}js/loading/jquery.showLoading.min.js"></script>
+        <link type="text/css" rel="stylesheet" href="{$Think.BPATH}js/qtip/css/jquery.qtip.min.css?version={$Think.BNO}" />
+        <script type="text/javascript"  src="{$Think.BPATH}js/jquery.validate.min.js"></script>
+        <script type="text/javascript"  src="{$Think.BPATH}js/qtip/jquery.qtip.js"></script>
+        <script type="text/javascript"  src="{$Think.BPATH}js/bootstrap.min.js"></script>   
+        <script type="text/javascript"  src="{$Think.BPATH}js/back.js?version={$Think.BNO}"></script>
+        <script type="text/javascript" src="{$Think.BPATH}js/echarts-all.js"></script>
+    <block name="script"></block>
+    <div id="mdlpassword" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" <notempty name='isFirst'>class="modal fade in" aria-hidden="true" data-backdrop="static" style="display: block;"<else />class="modal fade"</notempty>>
+        <div class="modal-dialog" role="document" >
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" <empty name='isFirst'>data-dismiss="modal"</empty> aria-hidden="true">×</button>
+                    <h4 class="title modal-title" id="dialogdModalLabel">修改密码</h4></div>
+                <div class="modalcontent"><div class="modal-body">                      
+                        <form class="form-horizontal" id="form-word" >
+                            <div class="form-group has-info">
+                                <label class="control-label col-sm-2" for="inputInfo">姓名：</label>
+                                <div class=" col-sm-5">
+                                    <label class="control-label" for="inputInfo"> {$realName} </label>
+                                </div>
+                            </div>
+                            <div class="form-group has-info">
+                                <label class="control-label col-sm-2" for="inputInfo">原密码：</label>
+                                <div class=" col-sm-6">
+                                    <input type="password" id="oldPass" name="oldPass" maxlength="30" value="" class="form-control">         
+                                </div>
+                            </div>
+                            <div class="form-group has-info">
+                                <label class="control-label col-sm-2" for="inputInfo">新密码：</label>
+                                <div class="col-sm-6">
+                                    <input type="password" id="newPass" name="newPass" maxlength="30" value="" class="form-control">          
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" id="butCancelPass" class="btn btn-default" <empty name='isFirst'>data-dismiss="modal"</empty>>关闭</button>
+                        <button type="button" id="butSavePass" class="btn btn-primary">保存</button>
+                    </div>
+                    <script type="text/javascript" >
+                        $(function($) {       
+                            PassValid();
+                            $("#butSavePass").click(function() {
+                                var isOK = $("#form-word").valid();
+                                if (isOK) {
+                                    savePass();
+                                }
+                            });
+                        });
+                        function savePass() {
+                            var data = {};
+                            data.oldPass = $("#oldPass").val();
+                            data.newPass = $("#newPass").val();
+                            $.ajax({
+                                type: "post",
+                                url: "/Backend/Index/savePass",
+                                data: {'par': data},
+                                dataType: "json",
+                                beforeSend: function(XMLHttpRequest) {
+                                    $(".sub-content").showLoading();
+                                },
+                                success: function(data, textStatus) {
+                                    $(".sub-content").hideLoading();
+                                    if (data.status == 1) {
+                                        $win.message(data.msg).on(function() { 
+                                            $('#butCancelPass').trigger("click");
+                                            window.location.href="/Backend/Index/loginOut";
+                                            
+                                        });
+                                       
+                                    } else {
+                                        $win.warn(data.msg);
+                                    }
+                                },
+                                complete: function(XMLHttpRequest, textStatus) {
+                                    $(".sub-content").hideLoading();
+                                },
+                                error: function() {
+                                    $(".sub-content").hideLoading();
+                                }
+                            });
+                        }
+                        function PassValid() {
+                            $("#form-word").validate({
+                                rules: {
+                                    oldPass: {required: true, maxlength: 30},
+                                    newPass: {required: true, maxlength: 30}
+                                },
+                                messages: {
+                                    oldPass: {required: "请输入!", maxlength: "最大长度30个字符"},
+                                    newPass: {required: "请输入!", maxlength: "最大长度30个字符"}
+                                }
+                            });
+                        }
+                        //侧边栏收缩
+                        $('.sidebaricon').click(function () {
+                            $(".sidebar").toggleClass("sidebar-close");
+                            $(".reght-content").toggleClass("sidebar-close");
+                        })
+                    </script>
+                </div>
+            </div>
+        </div>
+    </div>   
+
+</body>
+</html>

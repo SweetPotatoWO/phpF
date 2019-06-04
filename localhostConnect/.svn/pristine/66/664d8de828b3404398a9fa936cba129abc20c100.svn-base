@@ -1,0 +1,69 @@
+/*
+Navicat MySQL Data Transfer
+
+Source Server         : 钱盒子测试
+Source Server Version : 50631
+Source Host           : 120.25.85.171:3306
+Source Database       : devmbox_hx
+
+Target Server Type    : MYSQL
+Target Server Version : 50631
+File Encoding         : 65001
+
+Date: 2018-08-08 10:23:16
+*/
+
+SET FOREIGN_KEY_CHECKS=0;
+
+-- ----------------------------
+-- Table structure for d_console_role
+-- ----------------------------
+DROP TABLE IF EXISTS `d_console_role`;
+CREATE TABLE `d_console_role` (
+  `roleID` int(11) NOT NULL AUTO_INCREMENT COMMENT '角色ID',
+  `roleCode` varchar(50) DEFAULT NULL COMMENT '角色编码，或者key值，用于扩展字典',
+  `roleName` varchar(50) DEFAULT NULL COMMENT '角色名字',
+  `roleRemark` varchar(200) DEFAULT NULL COMMENT '角色备注',
+  `status` tinyint(4) DEFAULT '1' COMMENT '1,可用，0 删除',
+  `addUserID` int(11) NOT NULL COMMENT '创建人ID',
+  `addUserName` varchar(50) DEFAULT NULL COMMENT '创建人',
+  `addDatetime` int(11) NOT NULL COMMENT '创建时间',
+  `editUserID` int(11) DEFAULT NULL COMMENT '修改人ID',
+  `editUserName` varchar(50) DEFAULT NULL COMMENT '修改人',
+  `editDatetime` int(11) DEFAULT NULL COMMENT '修改时间',
+  `operateIP` varchar(50) DEFAULT NULL COMMENT '操作IP',
+  PRIMARY KEY (`roleID`)
+) ENGINE=InnoDB AUTO_INCREMENT=35 DEFAULT CHARSET=utf8;
+
+-- ----------------------------
+-- Records of d_console_role
+-- ----------------------------
+INSERT INTO `d_console_role` VALUES ('1', null, '管理员', '管理员', '1', '2', '管理员', '1415197462', null, null, null, '127.0.0.1');
+INSERT INTO `d_console_role` VALUES ('2', null, '财务经理', '财务经理', '1', '2', '管理员', '1415197489', null, null, null, '127.0.0.1');
+INSERT INTO `d_console_role` VALUES ('3', null, '财务', '财务', '1', '2', '管理员', '1415197502', null, null, null, '127.0.0.1');
+INSERT INTO `d_console_role` VALUES ('4', null, '客服经理', '客服经理', '1', '2', '管理员', '1415197516', null, null, null, '127.0.0.1');
+INSERT INTO `d_console_role` VALUES ('7', null, '客服主管', '客服主管', '1', '2', '管理员', '1415238325', '15', 'mbox', '1458191762', '183.38.71.18');
+INSERT INTO `d_console_role` VALUES ('9', null, '活动策划', '活动策划', '0', '2', '管理员', '1423108639', '1', 'weilei', '1477961700', '113.116.30.53');
+INSERT INTO `d_console_role` VALUES ('10', null, '推广经理', '运营部', '1', '2', '管理员', '1433129942', '1', 'weilei', '1477962141', '183.38.71.200');
+INSERT INTO `d_console_role` VALUES ('11', null, '开发测试', '开发测试', '1', '7', 'mbox', '1437386067', null, null, null, '113.97.182.43');
+INSERT INTO `d_console_role` VALUES ('12', null, '管理层', '', '1', '2', 'weilei', '1439200431', null, null, null, '113.90.220.233');
+INSERT INTO `d_console_role` VALUES ('14', null, '品牌', '', '0', '1', 'weilei', '1453196003', '15', 'mbox', '1474541700', '116.24.135.179');
+INSERT INTO `d_console_role` VALUES ('15', null, '运营总监', '运营总监', '0', '1', 'weilei', '1455584542', '1', 'weilei', '1461295152', '113.116.30.165');
+INSERT INTO `d_console_role` VALUES ('16', null, '发标专员', '发标专员', '1', '1', 'weilei', '1455873150', '1', 'weilei', '1510546112', '14.153.2.243');
+INSERT INTO `d_console_role` VALUES ('18', null, '客服', '客服', '1', '15', 'mbox', '1458271897', null, null, null, '14.153.2.101');
+INSERT INTO `d_console_role` VALUES ('19', null, '评审', '', '0', '1', 'weilei', '1459390729', null, null, null, '113.116.31.69');
+INSERT INTO `d_console_role` VALUES ('20', null, '借款管理', '借款管理', '1', '1', 'weilei', '1460080980', null, null, null, '59.40.134.9');
+INSERT INTO `d_console_role` VALUES ('21', null, '活动策划', '', '1', '1', 'weilei', '1461818820', null, null, null, '113.90.222.18');
+INSERT INTO `d_console_role` VALUES ('22', null, '数据分析', '', '0', '1', 'weilei', '1468303425', null, null, null, '113.116.30.178');
+INSERT INTO `d_console_role` VALUES ('23', null, '推广专员', '推广专员', '1', '1', 'weilei', '1470735828', '15', 'mbox', '1491805849', '113.102.151.134');
+INSERT INTO `d_console_role` VALUES ('24', null, '百米运营', '', '0', '1', 'weilei', '1471914178', null, null, null, '113.102.148.93');
+INSERT INTO `d_console_role` VALUES ('25', null, '运营总监', '', '1', '1', 'weilei', '1476238336', null, null, null, null);
+INSERT INTO `d_console_role` VALUES ('26', null, 'SEO', '', '1', '1', 'weilei', '1477360200', null, null, null, null);
+INSERT INTO `d_console_role` VALUES ('27', null, '商户经理', '商户经理', '1', '15', 'mbox', '1478851970', null, null, null, null);
+INSERT INTO `d_console_role` VALUES ('28', null, '运营经理', '运营部', '1', '1', 'weilei', '1479189469', '1', 'weilei', '1479189493', null);
+INSERT INTO `d_console_role` VALUES ('29', null, '董事长', '', '1', '1', 'weilei', '1482248373', null, null, null, null);
+INSERT INTO `d_console_role` VALUES ('30', null, '品牌部', '品牌经理', '1', '15', 'mbox', '1495001229', '15', 'mbox', '1495001565', null);
+INSERT INTO `d_console_role` VALUES ('31', null, '审核员', '审核员', '1', '15', 'mbox', '1511752754', null, null, null, null);
+INSERT INTO `d_console_role` VALUES ('32', null, '财务还款', '财务还款', '1', '15', 'mbox', '1513059420', null, null, null, null);
+INSERT INTO `d_console_role` VALUES ('33', null, '无权限', '无权限', '1', '15', 'mbox', '1520402233', null, null, null, null);
+INSERT INTO `d_console_role` VALUES ('34', null, '贷后管理', '贷后管理', '1', '15', 'mbox', '1523409477', null, null, null, null);

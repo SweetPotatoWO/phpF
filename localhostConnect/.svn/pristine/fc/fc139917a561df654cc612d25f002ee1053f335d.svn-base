@@ -1,0 +1,40 @@
+/*
+Navicat MySQL Data Transfer
+
+Source Server         : 钱盒子测试
+Source Server Version : 50631
+Source Host           : 120.25.85.171:3306
+Source Database       : devmbox_hx
+
+Target Server Type    : MYSQL
+Target Server Version : 50631
+File Encoding         : 65001
+
+Date: 2018-08-08 10:37:48
+*/
+
+SET FOREIGN_KEY_CHECKS=0;
+
+-- ----------------------------
+-- Table structure for d_app_versions
+-- ----------------------------
+DROP TABLE IF EXISTS `d_app_versions`;
+CREATE TABLE `d_app_versions` (
+  `verID` int(10) unsigned NOT NULL AUTO_INCREMENT COMMENT '主键',
+  `versionName` varchar(50) NOT NULL DEFAULT '' COMMENT '版本名称',
+  `versionCode` varchar(50) NOT NULL DEFAULT '' COMMENT '版本号',
+  `terminal` tinyint(4) unsigned NOT NULL DEFAULT '2' COMMENT '终端类型（ 2 安卓 3 IOS）',
+  `appSize` decimal(5,2) unsigned NOT NULL DEFAULT '0.00' COMMENT 'APP大小',
+  `checkCode` varchar(50) NOT NULL DEFAULT '' COMMENT '校验码（MD5值  IOS不需要此项）',
+  `updateDesc` varchar(100) NOT NULL DEFAULT '' COMMENT '更新说明',
+  `updateUrl` varchar(100) NOT NULL DEFAULT '' COMMENT '更新地址（用于安卓）',
+  `isForced` tinyint(4) unsigned NOT NULL DEFAULT '0' COMMENT '是否强制更新（0：不强制更新  1：强制更新）',
+  `status` tinyint(4) unsigned NOT NULL DEFAULT '1' COMMENT '状态（0：删除  1：有效  2：过往版本）',
+  `addDatetime` int(11) unsigned NOT NULL DEFAULT '0' COMMENT '添加时间',
+  `addUserID` int(10) unsigned NOT NULL DEFAULT '0' COMMENT '添加用户ID',
+  `addUserName` varchar(50) NOT NULL DEFAULT '' COMMENT '添加用户名',
+  `editDatetime` int(11) unsigned NOT NULL DEFAULT '0' COMMENT '编辑时间',
+  `editUserID` int(10) unsigned NOT NULL DEFAULT '0' COMMENT '编辑用户ID',
+  `editUserName` varchar(50) NOT NULL DEFAULT '' COMMENT '编辑用户名',
+  PRIMARY KEY (`verID`)
+) ENGINE=InnoDB AUTO_INCREMENT=35 DEFAULT CHARSET=utf8;

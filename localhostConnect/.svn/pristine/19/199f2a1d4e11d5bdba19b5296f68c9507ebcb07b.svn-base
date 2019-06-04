@@ -1,0 +1,10 @@
+<include file="Common:header" />
+<style>
+	.development img {width: 40%;margin-top: 10rem;}
+</style>
+<div class="development">
+	<div class="text-center"><img src="/Public/wechat/images/company/empolder.png"></div>
+	<p class="text-center pt-10">正在开发中~</p>
+</div>
+</body>
+</html>

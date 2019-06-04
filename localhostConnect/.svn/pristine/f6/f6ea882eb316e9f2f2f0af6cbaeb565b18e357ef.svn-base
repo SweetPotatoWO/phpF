@@ -1,0 +1,61 @@
+<?php
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+namespace Service\System\Model;
+
+use Common\Model\SlaveModel;
+
+class LabelModel extends SlaveModel {
+
+    /**
+     * 标签列表
+     */
+    public function getLableList($where, $whereArr, $limit) {
+        $sqlcount = 'SELECT count(labelID) as total
+            FROM d_label WHERE(1=1) ' . $where;
+        $total = $this->query($sqlcount, $whereArr);
+        $result['total'] = $total[0]['total'];
+        array_push($whereArr, $limit);
+        $sql = 'SELECT labelID,labelDesc,labelCode,labelLogo,editUserName,addUserName,addDatetime,editDatetime
+            FROM d_label WHERE(1=1) ' . $where . ' ORDER BY addDatetime DESC limit %s';
+        $result['rows'] = $this->query($sql, $whereArr);
+        return $result;
+    }
+
+    /**
+     * 获取标签信息
+     */
+    public function getLabelInfo($labelId) {
+        $where['labelID'] = $labelId;
+        $field = 'labelID,labelDesc,labelCode,labelLogo';
+        return $this->field($field)->where($where)->find();
+    }
+
+    /*
+     * 保存标签
+     */
+    public function saveLabel($data, $where) {
+        try {
+            if (is_array($where) && count($where) > 0) {
+                $data ['editUserName'] = C('userName');
+                $data ['editDatetime'] = time();
+                $result = $this->where($where)->data($data)->save();
+                return $result * 1 > 0 ? $where["labelID"] : false;
+            } else {
+                $data ['addUserName'] = C('userName');
+                $data ['addDatetime'] = time();
+                return $this->add($data);
+            }
+            return false;
+        } catch (Exception $ex) {
+            logger(__METHOD__, $ex->getMessage());
+            return false;
+        }
+    }
+
+}

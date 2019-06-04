@@ -1,0 +1,269 @@
+<?php
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+namespace Frontend\Controller;
+
+use Common\Controller\BaseController;
+use Common\Plugins\FrontPage;
+use Service\System\Logic;
+use Common\Common\Authorized;
+
+/**
+ * 前台控制器基类
+ *
+ * @author DREAM
+ */
+class BaseFrontController extends BaseController {
+
+    //检测控制器方法下，允许被使用的参数名
+    public $checkParam = array(
+        "income", "p", "month", "invitecode", "parentid", "txtid", "error", "type", "limit", "days", "money",
+        "apr", "detail", "borrowno", "investamount", "num", "hidnum", "txtmoney", "txtpassword", "txtcode", "hidticketid",
+        "returnurl", "phone", "imgcode", "password", "verifycode", "channel", "phonecode", "source", "txtphone", "smscode",
+        "code", "realname", "origin", "txtname", "txtcardid", "key", 'tnum', "ishot", "addressid", "singlenumber", "goodsid", "goodsname",
+        "amount", "hidnum", "hidticketid", "preinvestamount", "txtcode", "txtmoney", "anchor", "_", "callback", "url", 'checkfx', 'riskevalstatus', 'hiddebenum'
+    );
+    //参与检测的URL地址 ,key为空controller , array()里面具体方法名，
+    public $checkUrl = array("index" => array("index"),
+        "about" => array(),
+        "activity" => array(),
+        "project" => array(),
+        "help" => array(),
+        "user" => array(),
+        "index"=>array(),
+        'agreement'=>array(),
+        'advert'=>array(),
+        "loan"=>array("browse","apply","loanthree","loanthree","calculator","getcompute"),
+        "security"=>array(),
+        "shop"=>array(),
+    );
+
+    public function _initialize() {
+        parent::_initialize();
+//        if (!IS_AJAX && !IS_POST && isMobile() && 'COMMON' != strtoupper(CONTROLLER_NAME)) {
+//            $inviteCode = I("get.inviteCode");
+//            if (strtoupper(CONTROLLER_NAME) == "USER" && strtoupper(ACTION_NAME) == "REGISTER") {
+//                header('Location:/Wechat/User/register/inviteCode/' . $inviteCode);
+//                exit;
+//            }
+//            header('Location:/Wechat/Project/plist');
+//            exit;
+//        }
+        $this->fliterParam();
+        $this->_init(); //初始化加载
+    }
+
+    /**
+     * 过滤特殊字符并且，检测参数是否存在
+     * 
+     */
+    public function fliterParam() {
+        //过滤特殊字符，并检验参数名是否正确
+        $param = I('param.');
+        $checkUrl = strtolower("/" . CONTROLLER_NAME . "/" . ACTION_NAME);
+        foreach ($param as $key => $value) {
+            $paramKey = strtolower($key);
+            if (strpos($paramKey, $checkUrl) !== FALSE) {
+                continue;
+            }
+            $this->checkParamName($key, $value);
+            if ($value != fliter_str($value) && !is_array($value)) {
+                if (IS_AJAX) {
+                    $this->jsonReturn(0, "非法输入字符", '');
+                }
+                $this->error("请求失败。原因：" . '您的请求有非法输入');
+            }
+            if ($value != fliter_script($value) && !is_array($value)) {
+                if (IS_AJAX) {
+                    $this->jsonReturn(0, "非法输入字符", '');
+                }
+                $this->error("请求失败。原因：" . '您的请求有非法输入');
+            }
+        }
+    }
+
+    /**
+     * 校验参数名是否存在
+     * @param type $key
+     * @param type $value 是否是二级参数传递
+     */
+    private function checkParamName($key, $value = "") {
+        $checkURl = array_change_key_case($this->checkUrl, CASE_LOWER);  //要检测的url
+        $checkController = strtolower(CONTROLLER_NAME);               
+        $checkMethod = strtolower(ACTION_NAME);
+        $checkParam = $this->checkParam;  //允许使用的参数
+
+        //只检测需要检测的controller,否则将不检查
+        if (!array_key_exists($checkController, $checkURl)) {
+            return true;
+        }
+        //方法为空代表全部检查 ,具体检查的方法
+        $methodArr = $checkURl[$checkController];
+        if (!empty($methodArr) && !in_array($checkMethod, $methodArr)) {
+            return true;
+        }
+
+        $error = false;
+        $key = strtolower($key);
+        //是否二级参数
+        if (is_array($value)) {
+            foreach ($value as $k => $v) {
+                $k = strtolower($k);
+                $error = (!in_array($k, $checkParam)) ? true : $error;
+            }
+        } else {
+            $error = (!in_array($key, $checkParam)) ? true : $error;
+        }
+        if ($error) {
+            if (IS_AJAX) {
+                $this->jsonReturn(0, "非法参数", '');
+            }
+            $this->error("请求失败。原因：" . '非法参数');
+        }
+    }
+
+    function _empty() {
+        header("HTTP/1.0 404 Not Found");
+        $this->display('Public:404');
+    }
+
+    function index() {
+        header("HTTP/1.0 404 Not Found");
+        $this->display('Public:404');
+    }
+
+    /**
+     * 基类的初始化函数
+     */
+    private function _init() {
+        $this->getLoginStutas();
+        $this->phone = C('phone');
+        $this->getZCUserInfo();
+    }
+    
+    public function getZCUserInfo(){
+        $userID = C("userID");
+        if(!empty($userID)){
+            $userLogic = new \Service\User\Logic\UserLogic();
+            $userInfo = $userLogic->getUser($userID);
+            $userType = ($userLogic->isLoanUser($userInfo["userType"])) ? 1 : 0;
+            $this->assign("zckey", $userInfo['userKey']);
+            $this->assign("isLoan", $userType); //是否是融资用户   1 是 0 否
+        }
+        
+    }
+
+    /**
+     * 登录跳转
+     * @param type $fun
+     */
+    protected function redirectLogin($fun = '') {
+        $userID = C('userID');
+        $returnurl = '/User/login/';
+        if (!isset($userID) && !IS_AJAX) {
+            $url = $this->getPageUrl();
+            if (!empty($fun)) {
+                $url = $fun;
+            }
+            $returnurl = "/User/login/returnurl/" . base64_encode($url);
+            if (strpos($returnurl, "find") > 0) {
+                $returnurl = "/User/login/";
+                header('Location:' . $returnurl);
+                exit;
+            } else {
+                $this->redirect($returnurl);
+                exit;
+            }
+        } elseif (IS_AJAX && !isset($userID)) {
+            $this->jsonReturn(-1, "登录超时");
+        }
+    }
+
+    /**
+     * 获取用户登录情况
+     */
+    private function getLoginStutas() {
+        $login = Authorized::getAuthorized(1);
+        if (is_array($login)) {
+            C('userID', $login["userID"]);
+            C('phone', $login["phone"]);
+        } else {
+            C('userID', null);
+            C('phone', null);
+        }
+    }
+
+    /**
+     * 头部方法
+     */
+    protected function header() {
+        $logic = new Logic\HomeMenuLogic();
+        $menu = $logic->getMenu();
+        $topMenu = array();
+        $seoInfo = array();
+        $fun = ACTION_NAME;
+        $modename = CONTROLLER_NAME;
+        $url = "/" . $modename . "/" . $fun . ".html";
+        if ($modename == "Index") {
+            $url = "/";
+        }
+        $url = str_replace("index/", "", $url);
+        $this->urlActive = $url;
+        foreach ($menu as $value) {
+            if ($value["parentID"] * 1 == 2 && $value["menuDisplay"] * 1 == 1) {
+                $value["functionUrl"] = $value["functionUrl"];
+                array_push($topMenu, $value);
+            }
+            if ($value["functionUrl"] == $url) {
+                $seoInfo = $value;
+            }
+        }
+        $this->exitsSEO($seoInfo);
+        $this->topMenu = $topMenu;
+    }
+
+    private function getSEO() {
+        $seoInfo['menuTitle'] = "测试环境请勿操作真实数据";
+        $seoInfo['keyword'] = "测试环境请勿操作真实数据";
+        $seoInfo['description'] = "测试环境请勿操作真实数据";
+        $this->seoInfo = $seoInfo;
+    }
+
+    private function exitsSEO($value) {
+        $seoInfo['menuTitle'] = strlen($value["menuTitle"]) < 2 ? C("COMPANY") . "-" . $this->title : $value["menuTitle"];
+        $seoInfo['keyword'] = strlen($value["keyword"]) < 2 ? C("COMPANY") . "-" . $this->title : $value["keyword"];
+        $seoInfo['description'] = strlen($value["description"]) < 2 ? C("COMPANY") . "-" . $this->title : $value["description"];
+        $this->seoInfo = $seoInfo;
+    }
+
+    /**
+     * 获取分页limit
+     * @return type
+     */
+    public function getPage($size = 0) {
+        $size = $size == 0 ? C("PAGE_SIZE") : $size;
+        $page = I("post.p") * 1 > 0 ? I("post.p") * 1 : I("get.p") * 1;
+        if (!preg_match('/^\d+$/', $page)) {
+            $page = 0;
+        }
+        $page = ($page * 1 == 0 ? 0 : $page * 1 - 1) * 1 * $size;
+        return $page . "," . $size;
+    }
+
+    /**
+     * 显示分页
+     * @param type $count
+     * @return type
+     */
+    function showPage($count, $size = 0) {
+        $size = $size == 0 ? C("PAGE_SIZE") : $size;
+        $Page = new FrontPage($count, $size);
+        return $Page->show(); // 分页显示输出 
+    }
+
+}

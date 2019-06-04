@@ -1,0 +1,199 @@
+<div id="sub-article-edit">
+    <script type="text/javascript" src="{$Think.BPATH}js/article/ueditor.config.js?version={$Think.BNO}" ></script>    
+    <script type="text/javascript" charset="utf-8" src="/Public/plugins/ueditor/ueditor.all.min.js"></script>
+    <script type="text/javascript" charset="utf-8" src="{$Think.BPATH}js/uploader/webuploader.min.js"></script>
+    <script type="text/javascript" charset="utf-8" src="{$Think.BPATH}js/uploader/uploader.js"></script>
+    <h4 class="title">编辑-文章</h4>
+    <input  type="hidden" name="hidAction" id="hidAction" value="view" >
+    <form class="form-horizontal" id="form-article">
+        <ul id="myTab" class="nav nav-tabs">
+            <li class="active"><a href="#home" data-toggle="tab">基本信息</a></li>
+            <if condition="$data.isInformation eq 0">
+                <li><a href="#tdk" data-toggle="tab">SEO信息</a></li>
+            </if>
+        </ul>
+        <input type="hidden" id="articleID" name="articleID" value="{$data.articleID}">
+        <input type="hidden" id="oldTypeID" name="oldTypeID" value="{$data.typeID}">
+        <input type="hidden" id="hidUpURL" value="{$Think.UPLOAD}">
+        <div id="myTabContent" class="tab-content">
+            <div class="tab-pane fade in active" id="home" style="position: relative;">
+                <if condition="$data.isInformation eq 0">
+                <div style="position: absolute;top:5px;left:45%;margin-left: 10px;">
+                    <div class="uppic">	
+                        <if condition="strlen($data['articlePhoto']) gt 0">
+                            <img src="{$Think.UPLOAD}{$data.articlePhoto}" id="imgcard1" style="width: 240px;height: 180px;display: block;margin-bottom: 15px;" />
+                            <else /> <img src="/Public/backend/images/graybox.jpg" id="imgcard1" style="width: 240px;height: 180px;display: block;margin-bottom: 15px;" />
+                        </if>                        
+                    </div>
+                    <div class="upfilebox">                      
+                        <label class="upload-box upload-img">上传图片</label>                    
+                    </div>                  
+                </div>
+                </if>
+                <div class="form-group  has-info pt-10">
+                    <label class="col-sm-1 control-label" >文章标题：</label>
+                    <div class="col-sm-4">
+                        <input class="form-control" type="text" id="articleTitle" placeholder="文章标题" <if condition="$data.isInformation eq 1">disabled</if> name="articleTitle" value="{$data.articleTitle}">
+                    </div>
+                </div>
+                <if condition="$data.isInformation eq 0">
+                    <div class="form-group has-info">
+                        <label class="col-sm-1 control-label" >文章类型：</label>
+                        <div class="col-sm-4">
+                            <select  name="typeID" id="typeID" class="span12 form-control">
+                                {$htmlType}
+                            </select>
+                        </div>
+                    </div>
+                </if>
+                <if condition="$data.isInformation eq 0">
+                <div class="form-group">
+                    <label class="col-sm-1 control-label" for="inputInfo">文章封面：</label>
+                    <div class="col-sm-4">
+                        <input type="text" id="articlePhoto" name="articlePhoto" value="{$data.articlePhoto}" readonly="readonly"  class="form-control">         
+                    </div>
+                </div>
+                </if>
+                <if condition="$data.isInformation eq 0">
+                <div class="form-group">
+                    <label class="col-sm-1 control-label" for="inputInfo">外部链接：</label>
+                    <div class="col-sm-4">
+                        <input type="text" id="articleUrl" name="articleUrl" value="{$data.articleUrl}" class="form-control" placeholder="链接到站点外部" >          
+                    </div>
+                </div>
+                </if>
+                <if condition="$data.isInformation eq 0">
+                <div class="row has-success">
+                    <label class="col-sm-1 control-label" for="inputInfo">发布状态：</label>
+                    <div class="col-sm-2">
+                        <select  name="status" id="status" class="span12 form-control">
+                            <option <eq name="data.status" value="2">selected = "selected"</eq> value ="2">直接发布</option>
+                            <option <eq name="data.status" value="1">selected = "selected"</eq> value ="1">审核发布</option>                           
+                        </select>
+                    </div>
+                    <label class="col-sm-1 control-label">排序：</label>
+                    <div class="col-sm-1">
+                        <input type="text" id="articleSort" name="articleSort" value="{$data.articleSort|default=0}" placeholder="越大越靠前" class="form-control">
+                    </div>
+                </div>
+                </if>
+                <if condition="$data.isInformation eq 0">
+                <div class="form-group">
+                    <label class="col-sm-1 control-label" for="inputInfo">文章摘要：</label>
+                    <div class="col-sm-5">
+                        <textarea  class="area_edit span12 form-control" cols="50" rows="3" name="abstract" id="abstract" >{$data.abstract}</textarea>
+                    </div>
+                </div>
+                    </if>
+                <div class="form-group has-info">
+                    <label class="col-sm-1 control-label" for="inputInfo">文章内容：</label>
+                    <div class="col-sm-1">
+                        <textarea  class="area_edit span12" cols="50" rows="4" name="articleContent" id="articleContent">{$data.articleContent}</textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="tab-pane fade" id="tdk"> 
+                <div class="form-group pt-10">
+                    <label class="col-sm-1 control-label" for="inputInfo">文章SeoTitle：</label>
+                    <div class="col-sm-4">
+                        <textarea  class="area_edit span12 form-control" cols="50" rows="4" name="seoTitle" id="seoTitle" >{$data.seoTitle}</textarea>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-1 control-label" for="inputInfo">文章SeoKeys：</label>
+                    <div class="col-sm-4">
+                        <textarea  class="area_edit span12 form-control" cols="50" rows="4" name="seoKeys" id="seoKeys">{$data.seoKeys}</textarea>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-1 control-label" for="inputInfo">文章SeoDes：</label>
+                    <div class="col-sm-4">
+                        <textarea  class="area_edit span12 form-control" cols="50" rows="4" name="seoDescription" id="seoDescription">{$data.seoDescription}</textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="col-sm-1 control-label" ></label>
+            <div class="col-sm-4">      
+                <a class="btn btn-primary mt_10 butSaveArticle" href="javascript:;">保存</a>  
+                <a class="btn btn-info mt_10 butReturn" href="javascript:;">返回</a> 
+            </div>
+        </div>   
+
+    </form>
+    <script type="text/javascript" >
+        $(function() {
+            $(".upload-img").InitUploader({filesize: "3",
+                sendurl: "/Backend/Spread/saveArtImg",
+                inputID: "articlePhoto", //路径控件ID
+                browseID: "imgcard1", //浏览ID
+                swf: "{$Think.BPATH}js/uploader/uploader.swf",
+                filetypes: "jpg,jpge,png,gif"}
+            );
+            var ue = UE.getEditor('articleContent');//初始化编辑器
+            $(".butReturn").click(function() {
+                $Util.returnRefresh();
+            });
+            articlevalid();
+            $(".butSaveArticle").click(function() {
+                var isOK = $("#form-article").valid();
+                if (isOK) {
+                    saveArticle();
+                }
+            });
+        });
+        function saveArticle() {
+            var data = $Util.getData($("#form-article"));
+            var typeName = $("#typeID").find("option:selected").text();
+            console.log(typeName);
+            if(typeName!="") {
+                data.typeName = typeName;
+            }
+            $.ajax({
+                type: "post",
+                url: "/Backend/Spread/saveArticle",
+                data: {'par': data},
+                dataType: "json",
+                beforeSend: function(XMLHttpRequest) {
+                    $(".sub-content").showLoading();
+                },
+                success: function(data, textStatus) {
+                    $(".sub-content").hideLoading();
+                    if (data.status == 1) {
+                        $("#articleID").val(data.data.articleID);
+                        $("#oldTypeID").val(data.data.typeID);
+                        $("#hidAction").val("edit");
+                        $win.confirm(data.msg + ",是否关闭窗口？").on(function() {
+                            $('.butReturn').trigger("click");
+                        });
+                    } else {
+                        $win.warn(data.msg);
+                    }
+                },
+                complete: function(XMLHttpRequest, textStatus) {
+                    $(".sub-content").hideLoading();
+                },
+                error: function() {
+                    $(".sub-content").hideLoading();
+                }
+            });
+        }
+        function articlevalid() {
+            $("#form-article").validate({
+                rules: {
+                    articleTitle: {required: true, maxlength: 30},
+                    typeID: {required: true},
+                    articleSort: {digits: true},
+                    articleUrl: {url: true}
+                },
+                messages: {
+                    articleTitle: {required: "名称不能为空!", maxlength: "最大长度30个字符"},
+                    typeID: {required: "请选择类型"},
+                    articleSort: {digits: "排序为0~999的正整数!"},
+                    articleUrl: {url: "URL不正确"}
+                }
+            });
+        }
+    </script>
+</div>

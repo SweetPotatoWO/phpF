@@ -1,0 +1,600 @@
+<?php
+namespace Service\JavaService\Logic;
+
+
+use Common\Common\CodeGenerator;
+
+/**
+ * 调取java的一些服务
+ * Class SiteLogic
+ * @package Service\JavaService\Logic
+ */
+class SiteLogic {
+
+
+    private  $return = array('msg'=>"","code"=>1);
+    /**
+     * 查询用户
+     */
+    public function SearchPeople($userID,$searchText,$page=array(0,15)) {
+        $url = JAVASERVICE.'/searchservice/search/'.$userID.'/user/'.urlencode($searchText).'?pageNum='.$page[0].'&pageSize='.$page[1];
+        $json =  $this->curl_request($url);
+
+
+        $data = json_decode($json,true);
+
+
+
+        $ErrMsg = $this->switchErrMsg($data);
+        if($ErrMsg['code'] != 0 ) {
+            return $ErrMsg;
+        }
+        $datalist = $data['data']['datas'];
+
+
+        $info['list'] = array();
+
+        foreach ($datalist as $key=>$value) {
+            $one['companyName'] = $value['companyName'];
+            $one['name']  = $value['nickname'];
+            $one['userHeadUrl'] = ($value['headUrl'])?UPLOAD.$value['headUrl']:"";
+            $one['job'] = $value['job'];
+            $one['label'] = array(
+            );
+            $one['phone'] = $value['phone'];
+            $one['dataFrom'] =($value['userID'] == $userID)? "myself":$value['dataFrom'];
+            $one['userID'] = ($value['userID'])? $value['userID']:0;
+            $gen = new CodeGenerator();
+            $one['userKey'] = $gen->createCode($one['userID']);
+            $info['list'][] = $one;
+        }
+        $info['totalRecords'] = $data['data']['page']['totalRecords'];
+        return $ErrMsg['info'] = $info;
+    }
+
+
+    /**
+     * 查询公司
+     */
+    public function SearchCompany($userID,$searchText,$page = array(0,15)) {
+        $url = JAVASERVICE.'/searchservice/search/'.$userID.'/company/'.urlencode($searchText).'?pageNum='.$page[0].'&pageSize='.$page[1];
+        $json =  $this->curl_request($url);
+        $data = json_decode($json,true);
+        $ErrMsg = $this->switchErrMsg($data);
+        if($ErrMsg['code'] != 0 ) {
+            return $ErrMsg;
+        }
+        $datalist = $data['data']['datas'];
+        $info['list'] = array();
+        foreach ($datalist as $key=>$value) {
+            $one['legalName'] = $value['legalName']; //法人
+            $one['companyName']  = $value['name'];
+            $one['regDatetime'] = $value['startDate'];
+            $one['regCapital'] = getNumByStr($value['regCapital']).'万';
+            $one['companyID'] = $value['companyID'];
+            $one['companyLogo'] = "";
+            $info['list'][] = $one;
+        }
+        $info['totalRecords'] = $data['data']['page']['totalRecords'];
+        return $ErrMsg['info'] = $info;
+    }
+
+    /**
+     * 查询公司
+     */
+    public function SearchAccCompany($userID,$searchText) {
+        $url = JAVASERVICE.'/searchservice/search/companyInfo/'.$userID.'/'.urlencode($searchText);
+        $json =  $this->curl_request($url);
+        $data = json_decode($json,true);
+        $ErrMsg = $this->switchErrMsg($data);
+        if($ErrMsg['code'] != 0 ) {
+            return $ErrMsg;
+        }
+        $datalist = $data['data']['datas'];
+        $info['list'] = array();
+        foreach ($datalist as $key=>$value) {
+            $one['legalName'] = $value['legalName']; //法人
+            $one['companyName']  = $value['name'];
+            $one['regDatetime'] = $value['startDate'];
+            $one['regCapital'] = $value['regCapital'];
+            $one['companyID'] = $value['companyID'];
+            $one['companyLogo'] = "";
+            $info['list'][] = $one;
+        }
+        $info['totalRecords'] = $data['data']['page']['totalRecords'];
+        return $ErrMsg['info'] = $info;
+    }
+    /**
+     * 查询法人
+     */
+    public function SearchLegal($userID,$searchText,$page = array(0,15)) {
+        $url = JAVASERVICE.'/searchservice/search/'.$userID.'/legal/'.urlencode($searchText).'?pageNum='.$page[0].'&pageSize='.$page[1];
+        $json =  $this->curl_request($url);
+        $data = json_decode($json,true);
+        $ErrMsg = $this->switchErrMsg($data);
+        if($ErrMsg['code'] != 0 ) {
+            return $ErrMsg;
+        }
+        $datalist = $data['data']['datas'];
+        $info['list'] = array();
+        foreach ($datalist as $key=>$value) {
+            $one['legalName'] = $value['legalName']; //法人
+            $one['companyName']  = $value['name'];
+            $one['regDatetime'] = $value['startDate'];
+            $one['regCapital'] = $value['regCapital'];
+            $one['companyID'] = $value['companyID'];
+            $one['companyLogo'] = "";
+            $info['list'][] = $one;
+        }
+        $info['totalRecords'] = $data['data']['page']['totalRecords'];
+        return $ErrMsg['info'] = $info;
+    }
+
+
+    /**
+     * 热门查询
+     * @param $data
+     * @return array
+     */
+    public function hotSearchWorld() {
+        $url = JAVASERVICE.'/searchservice/search/hot?pageNum=0&pageSize=20';
+        $json =  $this->curl_request($url);
+        $data = json_decode($json,true);
+        $ErrMsg = $this->switchErrMsg($data);
+        if($ErrMsg['code'] != 0 ) {
+            return $ErrMsg;
+        }
+        $datalist = $data['data']['datas'];
+        $info['list'] = array();
+        foreach ($datalist as $key=>$value) {
+            $one['value'] = $value['content'];
+            $one['key'] = "code";
+            $one['type'] = 2;
+            $info['list'][] = $one;
+        }
+        $info['totalRecords'] = $data['data']['page']['totalRecords'];
+        return $ErrMsg['info'] = $info;
+    }
+
+
+    /**
+     * 高管
+     * @param $data
+     * @return array
+     */
+    public function getManagers($id) {
+        $url = JAVASERVICE.'/companyservice/company/managers/'.$id;
+
+        $json =  $this->curl_request($url);
+        $data = json_decode($json,true);
+        $ErrMsg = $this->switchErrMsg($data);
+        if($ErrMsg['code'] != 0 ) {
+            return $ErrMsg;
+        }
+        $datalist = $data['data'];
+        $info['list'] = array();
+        foreach ($datalist as $key=>$value) {
+            $list[$value['name']]['name'] = $value['name'];
+            $list[$value['name']]['post'] .= $value['post'].',';
+        }
+
+        foreach ($list as $k=>$v) {
+            $v['post'] = trim($v['post'],',');
+            $return[] = $v;
+        }
+        $info['list'] = $return;
+        return $ErrMsg['info'] = $info;
+    }
+
+
+    /**
+     * 获取到股东
+     * @param $data
+     * @return array
+     */
+    public function getShareholder($id) {
+        $url = JAVASERVICE.'/companyservice/company/stockHolder/'.$id;
+
+        $json =  $this->curl_request($url);
+        $data = json_decode($json,true);
+
+        $ErrMsg = $this->switchErrMsg($data);
+        if($ErrMsg['code'] != 0 ) {
+            return $ErrMsg;
+        }
+        $datalist = $data['data'];
+        $info['list'] = array();
+        foreach ($datalist as $key=>$value) {
+            $one['proportion'] = (is_numeric($value['proportion']) && (int)$value['proportion'] != 0)?$value['proportion'].'%':$value['proportion']; //股权比例
+            $one['name'] = $value['name'];
+            $info['list'][] = $one;
+        }
+
+        //根据股份排序
+        $sort = array(
+            'direction' => 'SORT_DESC', //排序顺序标志 SORT_DESC 降序；SORT_ASC 升序
+            'field'     => 'proportion',       //排序字段
+        );
+        $arrSort = array();
+        foreach($info['list'] AS $uniqid => $row){
+            foreach($row AS $key=>$value){
+                $arrSort[$key][$uniqid] = $value;
+            }
+        }
+        if($sort['direction']){
+            array_multisort($arrSort[$sort['field']], constant($sort['direction']), $info['list']);
+        }
+        return $ErrMsg['info'] = $info;
+    }
+
+
+    /**
+     * 获取到工商信息
+     * @param $data
+     * @return array
+     */
+    public function getChattelMortgage($id) {
+        $url = JAVASERVICE.'/companyservice/company/chattelMortgage/'.$id;
+        $json =  $this->curl_request($url);
+        $data = json_decode($json,true);
+        $ErrMsg = $this->switchErrMsg($data);
+        if($ErrMsg['code'] != 0 ) {
+            return $ErrMsg;
+        }
+        return $ErrMsg['info'] = $data['data'];
+    }
+
+
+    /**
+     * 查询交易信息
+     * @param $id
+     * @param array $page
+     * @return array
+     */
+    public function changeInfos($id,$page=array(0,15)) {
+        $url = JAVASERVICE.'/companyservice/company/changeInfos/'.$id.'?pageNum='.$page[0].'&pageSize='.$page[1];
+        $json =  $this->curl_request($url);
+        $data = json_decode($json,true);
+        $ErrMsg = $this->switchErrMsg($data);
+
+        if($ErrMsg['code'] != 0 ) {
+            return $ErrMsg;
+        }
+        $datalist = $data['data']['datas'];
+        $info['list'] = array();
+        foreach ($datalist as $key=>$value) {
+            $one['changeInfoID'] = $value['changeInfoID'];
+            $one['changeTime']  = $value['changeTime'];
+            $one['changeItem'] = $value['changeItem'];
+            $one['beforeChange'] = $value['beforeChange'];
+            $one['afterChange'] = $value['afterChange'];
+            $one['lastSyncTime'] = $value['lastSyncTime'];
+            $one['companyID'] = $value['companyID'];
+            $info['list'][] = $one;
+        }
+        $info['totalRecords'] = $data['data']['page']['totalRecords'];
+        return $ErrMsg['info'] = $info;
+    }
+
+
+    /**
+     * 获取到对外投资的信息
+     * @param $data
+     * @return array
+     */
+    public function invests($id,$page=array(0,15)) {
+        $url = JAVASERVICE.'/companyservice/company/invests/'.$id.'?pageNum='.$page[0].'&pageSize='.$page[1];
+        $json =  $this->curl_request($url);
+        $data = json_decode($json,true);
+        $ErrMsg = $this->switchErrMsg($data);
+        if($ErrMsg['code'] != 0 ) {
+            return $ErrMsg;
+        }
+        $datalist = $data['data']['datas'];
+        $info['list'] = array();
+        foreach ($datalist as $key=>$value) {
+            $one['proportion'] = $value['proportion'];
+            $one['regCapital']  = $value['regCapital'];
+            $one['investTime'] = $value['investTime'];
+            $one['lastSyncTime'] = $value['lastSyncTime'];
+            $one['legalName'] = $value['legalName'];
+            $one['companyID'] = $value['companyID'];
+            $one['regTime'] = $value['regTime'];
+            $one['name'] = $value['name'];
+            $one['investAmount'] = $value['investAmount'];
+            $info['list'][] = $one;
+        }
+        $info['totalRecords'] = $data['data']['page']['totalRecords'];
+        return $ErrMsg['info'] = $info;
+    }
+
+    /**
+     * 获取到公司的年报
+     * @param $data
+     * @return array
+     */
+    public function reportList($id,$page=array(0,15)) {
+        $url = JAVASERVICE.'/companyservice/company/reportList/'.$id.'?pageNum='.$page[0].'&pageSize='.$page[1];
+        $json =  $this->curl_request($url);
+        $data = json_decode($json,true);
+        $ErrMsg = $this->switchErrMsg($data);
+        if($ErrMsg['code'] != 0 ) {
+            return $ErrMsg;
+        }
+        $datalist = $data['data']['datas'];
+        $info['list'] = array();
+        foreach ($datalist as $key=>$value) {
+            $one['reportYear'] = $value['reportYear'];
+            $one['reportId']  = $value['reportId'];
+            $info['list'][] = $one;
+        }
+        $info['totalRecords'] = $data['data']['page']['totalRecords'];
+        return $ErrMsg['info'] = $info;
+    }
+
+
+    /**
+     * 获取到年报的详情
+     * @param $data
+     * @return array
+     */
+    public function report($reportID,$page=array(0,15)) {
+        $url = JAVASERVICE.'/companyservice/company/report/'.$reportID.'?pageNum='.$page[0].'&pageSize='.$page[1];
+        $json =  $this->curl_request($url);
+        $data = json_decode($json,true);
+        $ErrMsg = $this->switchErrMsg($data);
+        if($ErrMsg['code'] != 0 ) {
+            return $ErrMsg;
+        }
+        $datalist = $data['data']['datas'];
+        $info['list'] = array();
+        foreach ($datalist as $key=>$value) {
+            $one['reportYear'] = $value['reportYear'];
+            $one['reportId']  = $value['reportId'];
+            $info['list'][] = $one;
+        }
+        $info['totalRecords'] = $data['data']['page']['totalRecords'];
+        return $ErrMsg['info'] = $info;
+    }
+
+
+    /**
+     * 获取到商标的信息
+     * @param $data
+     * @return array
+     */
+    public function property($companyID,$page=array(0,15)) {
+        $url = JAVASERVICE.'/companyservice/company/trademark/'.$companyID.'?pageNum='.$page[0].'&pageSize='.$page[1];
+        $json =  $this->curl_request($url);
+        $data = json_decode($json,true);
+        $ErrMsg = $this->switchErrMsg($data);
+        if($ErrMsg['code'] != 0 ) {
+            return $ErrMsg;
+        }
+        $datalist = $data['data']['datas'];
+        $info['list'] = array();
+        foreach ($datalist as $key=>$value) {
+            $one['regNo'] = $value['regNo'];
+            $one['tmName']  = $value['tmName'];
+            $one['tmStatus']  = $value['tmStatus'];
+            $one['tmType']  = $value['tmType'];
+            $one['appDate']  = $value['appDate'];
+            $info['list'][] = $one;
+        }
+        $info['totalRecords'] = $data['data']['page']['totalRecords'];
+        return $ErrMsg['info'] = $info;
+    }
+
+
+    /**
+     * 获取到当前的专利
+     * @param $data
+     * @return array
+     */
+    public function patent($companyID,$page=array(0,15)) {
+        $url = JAVASERVICE.'/companyservice/company/patent/'.$companyID.'?pageNum='.$page[0].'&pageSize='.$page[1];
+        $json =  $this->curl_request($url);
+        $data = json_decode($json,true);
+        $ErrMsg = $this->switchErrMsg($data);
+        if($ErrMsg['code'] != 0 ) {
+            return $ErrMsg;
+        }
+        $datalist = $data['data']['datas'];
+        $info['list'] = array();
+        foreach ($datalist as $key=>$value) {
+            $one['address'] = $value['address'];
+            $one['agentName']  = $value['agentName'];
+            $one['appNO']  = $value['appNO'];
+            $one['appDate']  = $value['appDate'];
+            $one['title']  = $value['title'];
+            $one['pubDate']  = $value['pubDate'];
+            $one['agencyName']  = $value['agencyName'];
+            $one['inventroName']  = $value['inventroName'];
+            $one['ipc']  = $value['ipc'];
+            $one['pubNO']  = $value['pubNO'];
+            $one['abs']  = $value['abs'];
+            $one['alljson'] = urlencode(serialize($value));
+            $info['list'][] = $one;
+        }
+        $info['totalRecords'] = $data['data']['page']['totalRecords'];
+        return $ErrMsg['info'] = $info;
+    }
+
+    /**
+     * 获取到行政处罚
+     * @param $data
+     * @return array
+     */
+    public function penalty($companyID,$page=array(0,15)) {
+        $url = JAVASERVICE.'/companyservice/company/penalty/'.$companyID.'?pageNum='.$page[0].'&pageSize='.$page[1];
+        $json =  $this->curl_request($url);
+        $data = json_decode($json,true);
+        $ErrMsg = $this->switchErrMsg($data);
+        if($ErrMsg['code'] != 0 ) {
+            return $ErrMsg;
+        }
+        $datalist = $data['data']['datas'];
+        $info['list'] = array();
+        foreach ($datalist as $key=>$value) {
+            $one['dptName'] = $value['dptName'];
+            $one['publishDate']  = $value['publishDate'];
+            $one['description']  = $value['description'];
+            $one['punishContent']  = $value['punishContent'];
+            $one['illegalType']  = $value['illegalType'];
+            $one['punishNO']  = $value['punishNO'];
+            $info['list'][] = $one;
+        }
+        $info['totalRecords'] = $data['data']['page']['totalRecords'];
+        return $ErrMsg['info'] = $info;
+    }
+
+    /**
+     * 获取到经营异常
+     * @param $data
+     * @return array
+     */
+    public function abnormal($companyID,$page=array(0,15)) {
+        $url = JAVASERVICE.'/companyservice/company/abnormal/'.$companyID.'?pageNum='.$page[0].'&pageSize='.$page[1];
+        $json =  $this->curl_request($url);
+        $data = json_decode($json,true);
+        $ErrMsg = $this->switchErrMsg($data);
+        if($ErrMsg['code'] != 0 ) {
+            return $ErrMsg;
+        }
+        $datalist = $data['data']['datas'];
+        $info['list'] = array();
+        foreach ($datalist as $key=>$value) {
+            $one['inTime'] = $value['inTime'];
+            $one['inReason']  = $value['inReason'];
+            $one['decisiveOrg']  = $value['decisiveOrg'];
+            $one['removeTime']  = $value['removeTime'];
+            $one['removeReason']  = $value['removeReason'];
+            $one['removeOrg']  = $value['removeOrg'];
+            $info['list'][] = $one;
+        }
+        $info['totalRecords'] = $data['data']['page']['totalRecords'];
+        return $ErrMsg['info'] = $info;
+    }
+
+
+
+
+
+
+
+
+
+    private function switchErrMsg($data) {
+        $code = $data['status'];
+        $this->return['code'] = 1;
+        switch ($code) {
+            case 200:
+                $this->return['code'] = 0;
+                $this->return['msg'] = "请求成功";
+                break;
+            case 303:
+                $this->return['msg'] = "请求失败";
+                break;
+            case 400:
+                $this->return['msg'] = "指代环请求(参数错误)";
+                break;
+            case 404:
+                $this->return['msg'] = "资源不存在";
+                break;
+            case 500:
+                $this->return['msg'] = "通用错误响应";
+                break;
+            case 503:
+                $this->return['msg'] = "服务端无法处理请求";
+                break;
+            case 601:
+                $this->return['msg'] = "第三方请求错误";
+                break;
+            default:
+                $this->return['msg'] = "未知错误";
+        }
+        return $this->return;
+    }
+
+
+
+
+    //参数1：访问的URL，参数2：post数据(不填则为GET)，参数3：提交的$cookies,参数4：是否返回$cookies
+    private function curl_request($url,$type="get"){
+        $ch = curl_init ();
+        curl_setopt( $ch, CURLOPT_URL, $url );
+        curl_setopt( $ch, CURLOPT_HTTPHEADER, array(
+                'Content-Type: text/html; charset=utf-8'   //json版本需要填写  Content-Type: application/json;
+            )
+        );
+        curl_setopt($ch, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V4);
+        curl_setopt( $ch, CURLOPT_RETURNTRANSFER, 1 );
+        curl_setopt( $ch, CURLOPT_TIMEOUT,60);
+        curl_setopt( $ch, CURLOPT_SSL_VERIFYHOST, 0);
+        curl_setopt( $ch, CURLOPT_SSL_VERIFYPEER, 0);
+
+        switch ($type){
+            case "POST":
+                //curl_setopt($ch, CURLOPT_POST,true);
+                //curl_setopt($ch, CURLOPT_POSTFIELDS,$querystring);break;
+            case "PUT" :
+                //curl_setopt ($ch, CURLOPT_CUSTOMREQUEST, "PUT");
+                //curl_setopt($ch, CURLOPT_POSTFIELDS,$querystring);break;
+            case "DELETE":curl_setopt ($ch, CURLOPT_CUSTOMREQUEST, "DELETE");
+                break;
+        }
+
+        $ret = curl_exec ( $ch );
+        if (false == $ret) {
+            $result = curl_error(  $ch);
+        } else {
+            $rsp = curl_getinfo( $ch, CURLINFO_HTTP_CODE);
+            if (200 != $rsp) {
+                $result = "请求状态 ". $rsp . " " . curl_error($ch);
+            } else {
+                $result = $ret;
+            }
+        }
+        curl_close ( $ch );
+        return $result;
+    }
+
+
+
+    public function deleteJavaServicePhone($phone) {
+        $url = JAVASERVICE."/searchservice/es/user/other/".$phone;
+        $info = $this->curl_request($url,'DELETE');
+        return $info;
+    }
+
+
+
+
+
+
+
+
+    /**
+     * 获取到年报的详情
+     */
+    public function reportInfo($id) {
+        $url = JAVASERVICE.'/companyservice/company/report/'.$id;
+        $json =  $this->curl_request($url);
+        $data = json_decode($json,true);
+        $ErrMsg = $this->switchErrMsg($data);
+        if($ErrMsg['code'] != 0 ) {
+            return $ErrMsg;
+        }
+        return $ErrMsg['info'] = $data['data'];
+    }
+
+
+    /**
+     * 获取到专利的详情
+     */
+    public function a() {
+
+    }
+
+
+}

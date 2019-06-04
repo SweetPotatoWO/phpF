@@ -1,0 +1,273 @@
+<?php
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+namespace Service\News\Logic;
+
+
+
+use Service\News\Model\RefuseNewModel;
+use Service\News\Model\UserNewsModel;
+use Service\News\Model\UserProsecuteModel;
+
+/**
+ * Description of AccountLogic
+ *
+ * @author Bourne
+ */
+class NewsLogic {
+
+    private $model = null;
+
+    public function __construct() {
+        $this->model = new UserNewsModel();
+    }
+
+    /**获取到全部的用户系统消息
+     * @param $userID
+     * @return mixed
+     */
+    public function getAllNewsList($userID,$limit="") {
+        $model =  $this->model->where(array("userID"=>$userID,"del"=>0))->field('content,addDatetime,status,userID,title,code,sender');
+            if(!empty($limit)) {
+                $model->limit($limit);
+            }
+            return $model->order('addDatetime desc')->select();
+    }
+
+    /**
+     * 修改为阅读状态
+     */
+    public function readStatus($id) {
+        return $this->model->where(array('userID'=>$id))->save(array("status"=>1));
+    }
+
+
+    /**
+     * 删除
+     */
+    public function delAll($userID,$data){
+
+        $where['userID'] = $userID;
+        $where['userNewsID'] = array('in',$data);
+        return $this->model->where($where)->save(array("del"=>1));
+    }
+
+
+    /**
+     * 为用户新增一个消息
+     */
+    public function addNews($title,$userID,$text,$sender,$code="") {
+        $data['title'] = $title;
+        $data['userID'] = $userID;
+        $data['content'] = $text;
+        $data['code'] = $code;
+        $data['addDatetime'] = time();
+        $data['sender'] = $sender;
+        return $this->model->add($data);
+    }
+
+    /**
+     * 获取到未读取的数量
+     */
+    public function getCountNoRead($userID) {
+        $list = $this->model->where(array("userID"=>$userID))->order("addDatetime desc")->find();
+        $count = $this->model->where(array("userID"=>$userID,"status"=>0))->order("addDatetime desc")->count();
+        return array('count'=>$count,"content"=>$list['content']);
+    }
+
+
+    /**
+     * 添加一条认证信息
+     * @param $userID
+     * @param $title
+     * @param $content
+     * @param $code
+     */
+    public function addAuthNews($title,$userID,$content,$code) {
+        return $this->addNews($title,$userID,$content,0,$code);
+    }
+
+
+    /**
+     * 更新通讯录信息
+     * @param $userID
+     * @param $content
+     * @param $code
+     * @return mixed
+     */
+    public function addUpdateMailNews($userID,$content,$code) {
+        return $this->addNews("更新通讯录",$userID,$content,0,$code);
+    }
+
+
+    /**
+     * 配置
+     * @param $code
+     * @return mixed
+     */
+    protected function newsConfig($code) {
+        $config = array(
+            'evaluate'=>array('title'=>'好友评价','content'=>'匿名好友评价你“%s”，试试评价我的好友吧。','code'=>'evaluate'),
+            'letterSend'=>array('title'=>'私信已发送','content'=>'已收到您的私信，请耐心等待。','code'=>'letterSend'),
+            'letterGet'=>array('title'=>'收到私信','content'=>'给您发送了私信，请查看详情。','code'=>'letterGet'),
+            'information'=>array('title'=>'完善信息提醒','content'=>'想要认识你，邀请你完善更多信息。','code'=>'information'),
+            'feedBack'=>array('title'=>'问题已反馈','content'=>'已收到您的反馈信息，我们将在3个工作日内给您回复。%s','code'=>'feedBack'),
+            "prosecute"=>array("title"=>"举报提醒","content"=>'已经收到您的举报信息，我们将在24个小时内核实并处理。','code'=>'prosecute'),
+        );
+        return $config[$code];
+    }
+
+
+    /**
+     * 发送内容
+     * @param $useID
+     * @param $code
+     * @param array $mesData
+     * @return mixed
+     */
+    public function sendSystemME($useID,$sender,$code,$mesData=array("")) {
+        $configData = $this->newsConfig($code);
+        if($code == "letterSend" ) {
+            $content = $this->subStrContent($code,$mesData);
+        } else if($code == "letterGet" ) {
+            $content = $this->subStrContent($code,$mesData);
+        } else if($code == "information") {
+            $content = $this->subStrContent($code,$mesData);
+        } else {
+            $content = vsprintf($configData['content'],$mesData);
+        }
+        $title = $configData['title'];
+        $code = $configData['code'];
+        return $this->addNews($title,$useID,$content,$sender,$code);
+    }
+
+    /**
+     * 组合字符串
+     * @param $type
+     * @param $data
+     */
+    private function subStrContent($type,$data) {
+        $configData = $this->newsConfig($type);
+        $str = "";
+        if(!empty($data[0])) $str.=$data[0]."的";
+        if(!empty($data[1])) $str.='"'.$data[1].'"';
+        $str.=$configData['content'];
+        if(empty($data)) $str = '"神秘人"已收到您的私信,请耐心等待';
+        return $str;
+    }
+
+
+
+
+    /**
+     * 添加一条举报信息
+     * @param $userID
+     * @return mixed
+     */
+    public function proseNews($userID){
+       return $this->addNews('举报处理结果',$userID,'启脉已核实您的举报信息，已做相关处理，感谢您的支持。',0,'prosecute');
+    }
+
+
+
+
+    /**
+     * 获取到一条拒绝消息
+     * @param $userID
+     * @param $otherID
+     */
+    public function getRefuse($userID,$otherID) {
+        $model = new RefuseNewModel();
+        return $model->getOne($userID,$otherID);
+    }
+
+
+    /**
+     * 添加一条拒绝消息
+     * @param $userID
+     * @param $otherID
+     */
+    public function addRefuse($userID,$otherID) {
+        $model = new RefuseNewModel();
+        return $model->addOne($userID,$otherID);
+    }
+
+
+    /**
+     *删除拒绝记录
+     * @param $userID
+     * @param $otherID
+     */
+    public function delRefuse($userID,$otherID) {
+        $model = new RefuseNewModel();
+        return $model->delOne($userID,$otherID);
+    }
+
+    /**
+     * 判断是否拒绝
+     * @param $userID
+     * @param $otherID
+     */
+    public function isRefuse($userID,$otherID) {
+        $model = new RefuseNewModel();
+        return $model->isRefuse($userID,$otherID);
+    }
+
+
+    /**
+     * 添加一条举报信息
+     * @param $data
+     * @return mixed
+     */
+    public function addProsecuteOne($data) {
+        $model = new UserProsecuteModel();
+        return $model->addOne($data);
+    }
+
+
+    /**
+     * 自动给举报的内容添加条系统消息
+     */
+    public function autoHanldeProsecute() {
+        $model = new UserProsecuteModel();
+        $list = $model->getNoSendProsecute();
+        if(empty($list)) {
+            return false;
+        }
+        foreach ($list as $k=>$v) {
+            $new['content'] = '关于你对"'.$v['name'].'"的举报，我司已经处理，感谢你的支持！';
+            $new['userID'] = $v['userID'];
+            $new['addDatetime'] = time();
+            $new['code'] = "handleProsecute";
+            $new['title'] = "举报处理反馈";
+            $new['sender'] = 0;
+            $prosecuteID[] = $v['prosecuteID'];
+            $allnew[] = $new;
+        }
+        $this->addMoreNew($allnew);
+        $this->updateNewsStatus($prosecuteID);
+    }
+
+
+    public function addMoreNew($data) {
+        $model = new UserNewsModel();
+        return $model->addAll($data);
+    }
+
+    public function updateNewsStatus($arr) {
+        $model = new UserProsecuteModel();
+        return $model->where(array('prosecuteID'=>array('in',$arr)))->save(array('sendNews'=>1));
+    }
+
+
+
+
+
+
+
+}

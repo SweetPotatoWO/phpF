@@ -1,0 +1,114 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: Administrator
+ * Date: 2018/9/14 0014
+ * Time: 18:05
+ */
+namespace Service\User\Model;
+
+use Common\Model\SlaveModel;
+
+class UserMaillistModel extends SlaveModel {
+
+    public function addBatch($data) {
+        if(!$data) {
+            return false;
+        } else {
+            return $this->addAll($data);
+        }
+    }
+
+    /**批量更新
+     * @param $data
+     */
+    public function saveAll($userName,$data) {
+
+            return $this->where(array('userName'=>$userName))->save($data);
+
+    }
+
+    /**获取到同学的电话
+     * @param $userID
+     * @return mixed
+     */
+    public function getPhoneList($userID) {
+        $field = array("userName","phone","group");
+        return $this->field("phone")->field($field)->where(array('userID'=>$userID ))->select();
+    }
+
+    /**
+     * 删除某人的通讯录列表
+     * @param $userID
+     * @return mixed
+     */
+    public function deleteMaillist($userID)
+    {
+        return $this->where(array('userID'=>$userID ))->delete();
+    }
+
+
+    /**
+     * 获取到电话号码根据名字
+     */
+    public function getPhoneByName($userID,$arr) {
+        $where['userName'] = array('in',$arr);
+        $field = array("userName","phone","group");
+        return $this->where($where)->where(array('userID'=>$userID))->field($field)->select();
+    }
+
+    /**
+     * 获取到一条确切的通讯录信息
+     */
+    public function getMaillstOne($userID,$phone) {
+        return $this->where(array('userID'=>$userID,'phone'=>array('like','%'.$phone."%")))->find();
+    }
+
+    /**
+     * 获取到一条确切的通讯录信息
+     */
+    public function updateStautsMaillstOne($userID,$phone) {
+        return $this->where(array('userID'=>$userID,'phone'=>$phone))->save(array('status'=>1));
+    }
+
+    /**
+     * 获取到一条确切的通讯录信息
+     * 未邀请修改已邀请
+     */
+    public function updateAllStautsMaillst($userID) {
+        return $this->where(array('userID'=>$userID,'status'=>0))->save(array('status'=>1));
+    }
+
+    /**
+     * 获取到其中的一条
+     */
+    public function getOne($phone,$userID) {
+        $field = array(
+            'userName','phone','shortPhone','originalStr','group','remark','userID'
+        );
+        return $this->where(array('phone'=>$phone,"userID"=>$userID))->field($field)->find();
+    }
+
+
+
+    /**
+     * 修改一条记录的状态
+     */
+    public function updateShieldStatus($phone,$userID,$status) {
+        $data['shieldStatus'] = $status;
+        return $this->where(array('phone'=>$phone,'userID'=>$userID))->save($data);
+    }
+
+
+    public function getAllMail($userID) {
+        $sql = "select um.phone,um.userName,u.headUrl,um.shieldStatus from d_user_maillist as um LEFT JOIN d_user as u ON um.phone=u.phone";
+        $sql .= " where um.userID=".$userID;
+        $list = $this->query($sql);
+        foreach ($list as $k=>$v) {
+            $list[$k]['hidPhone'] = hidPhone($v['phone']);
+            $list[$k]['headUrl'] = (empty($v['headUrl']))? "":UPLOAD.$v['headUrl'];
+        }
+        return $list;
+    }
+
+}

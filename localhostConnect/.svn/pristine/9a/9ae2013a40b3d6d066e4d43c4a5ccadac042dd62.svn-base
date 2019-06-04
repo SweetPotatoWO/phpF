@@ -1,0 +1,62 @@
+<?php
+
+
+
+namespace Service\User\Model;
+
+use Common\Model\SlaveModel;
+
+/**
+ * Description of UserVisitorModel
+ *
+ * @author admin
+ */
+class ShieldMaillistModel extends SlaveModel {
+
+
+    public function addShieldAll($data) {
+        return $this->addAll($data);
+    }
+
+
+    /**
+     * 添加多条记录
+     */
+    public function addShieldRecord($data) {
+
+        return $this->addAll($data);
+    }
+
+    /**
+     * 移除一条屏蔽记录
+     * @param $phone
+     * @param $userID
+     * @return mixed
+     */
+    public function removeShieldRecord($phoneArr,$userID) {
+        return  $this->where(array('shieldPhone'=>array('in',$phoneArr),'userID'=>$userID))->delete();
+
+    }
+
+
+    /**
+     * 获取到我的屏蔽
+     */
+    public function getMyShieldMail($userID) {
+        $sql = "select sm.phone, sm.shieldUserName as userName,u.headUrl from d_shield_maillist as sm LEFT JOIN d_user as u on sm.phone=u.phone";
+        $sql .= " where sm.userID = ".$userID;
+        $info =  $this->query($sql);
+        foreach ($info as $k=>$v) {
+            $info[$k]['hipPhone'] = hidPhone($v['phone']);
+            $info[$k]['headUrl'] = (empty($v['headUrl']))? "":UPLOAD.$v['headUrl'];
+        }
+        return $info;
+    }
+
+    /**
+     * 获取到屏蔽的数目
+     */
+    public function getShieldNum($userID) {
+        return $this->where(array('userID'=>$userID))->count();
+    }
+}

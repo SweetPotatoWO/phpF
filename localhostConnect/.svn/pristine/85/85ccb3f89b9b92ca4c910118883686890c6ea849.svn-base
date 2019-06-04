@@ -1,0 +1,134 @@
+<?php
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+namespace Frontend\Controller;
+
+use Service\Connect\Logic\ConnectRelationLogic;
+use Service\Connect\Logic\DataCleanLogic;
+use Service\User\Logic\UserFriendLogic;
+use Think\Controller;
+use Common\Common\Redis;
+use Service\System\Logic\SysParameterLogic;
+use Service\Search\Logic\SearchLogic;
+
+/**
+ * Description of TaskController
+ *
+ * @author Administrator
+ */
+class TaskController extends Controller {
+
+    public function _initialize() {
+        $this->getSystemPar();
+    }
+
+    /**
+     * 获取系统参数。
+     */
+    private function getSystemPar() {
+        $par = new SysParameterLogic();
+        $config = $par->getConfig();
+        C($config);
+    }
+
+    /**
+     * 更新过期的好友申请状态 每小时执行1次
+     * @param type $mask
+     * @return boolean
+     */
+    public function upFriendApply($mask) {
+        $ip = get_client_ip();
+        if ($mask == "mboxd5b7bb20ad654748c04892be29b67212" || $ip == "127.0.0.1") {
+            $outtime = time() - (86400 * 7);
+            $logic = new UserFriendLogic();
+            $logic->dealApplyOuttime($outtime);
+            $connectLogic = new ConnectRelationLogic();
+            $connectLogic->dealApplyOuttime($outtime);
+            return true;
+        }
+        logger_task('TaskController/upFriendApply', '请求异常', '');
+        return false;
+    }
+
+    /**
+     * 同步活跃度 每1分钟执行1次
+     * @param type $mask
+     * @return boolean
+     */
+    public function synActive($mask) {
+        $ip = get_client_ip();
+        if ($mask == "mboxd5b7bb20ad654748c04892be29b67212" || $ip == "127.0.0.1") {
+            $logic = new DataCleanLogic();
+            $logic->synActive();
+            return true;
+        }
+        logger_task('TaskController/synActive', '请求异常', '');
+        return false;
+    }
+
+    /**
+     * 清洗图 每天凌晨2点执行
+     * @param type $mask
+     * @return boolean
+     */
+    public function cleanGraph($mask) {
+        $ip = get_client_ip();
+        if ($mask == "mboxd5b7bb20ad654748c04892be29b67212" || $ip == "127.0.0.1") {
+            return true;
+        }
+        logger_task('', '', '');
+        return false;
+    }
+
+    /**
+     * 处理过期热搜词 每天凌晨1点执行
+     */
+    public function dealHotWord($mask) {
+        $ip = get_client_ip();
+        if ($mask == "mboxd5b7bb20ad654748c04892be29b67212" || $ip == "127.0.0.1") {
+            $logic = new SearchLogic();
+            $hotdata = $logic->getUsingWord(); //查出所有生效中的数据
+            if (empty($hotdata)) {
+                return '暂无数据';
+            }
+            $updateKey = array(); //需要更新的主键
+            foreach ($hotdata as $val) {
+                if (!empty($val['endTime']) && time() > $val['endTime']) {
+                    $updateKey[] = $val['wid'];
+                }
+            }
+            if (empty($updateKey)) {
+                return '没有可更新的数据';
+            }
+            if ($logic->dealHotWord($updateKey)) {
+                //删除缓存
+                $redis = Redis::GetInstance();
+                $redis->del('HOT_SEARCH_WORD');
+                return true;
+            }
+            logger_task('TaskController/dealHotWord', '处理失败', '');
+            return false;
+        }
+        logger_task('TaskController/dealHotWord', '请求异常', '');
+        return false;
+    }
+
+
+    /**
+     * 自动的处理举报内容
+     */
+    public function autoProsecute($mask) {
+        $ip = get_client_ip();
+        if ($mask == "mboxd5b7bb20ad654748c04892be29b67212" || $ip == "127.0.0.1") {
+
+        }
+        logger_task('TaskController/dealHotWord', '请求异常', '');
+        return false;
+    }
+
+}

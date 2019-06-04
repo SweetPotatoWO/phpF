@@ -1,0 +1,65 @@
+<?php
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+namespace Service\User\Model;
+
+use Common\Model\SlaveModel;
+
+/**
+ * Description of UserVisitorModel
+ *
+ * @author admin
+ */
+class UserVisitorModel extends SlaveModel {
+
+    /**
+     * 获取访问人数
+     */
+    public function getTotalVisitor($userID) {
+        $starttime = strtotime(date('Y-m-d'));
+        $sql = "select count(id) as total from d_user_visitor where userID=$userID
+                union all 
+                select count(id) as total from d_user_visitor where userID=$userID AND addDatetime>=$starttime";
+        return $this->SlaveDB()->query($sql);
+    }
+
+    /**
+     * 获取访客列表
+     */
+    public function getVisitorList($userID, $limit) {
+        $sqlcount = "select count(1) as total from  d_user_visitor A 
+                inner join d_user B on A.vID = B.userID where A.userID=" . $userID;
+        $total = $this->SlaveDB()->query($sqlcount);
+        $result["total"] = $total[0]["total"];
+        $sql = "select B.nickname as name,C.job,C.userHeadUrl,B.vip,B.jobAuth,B.userKey,B.userID,D.companyName,FROM_UNIXTIME(A.visitDatetime,'%Y-%m-%d') as addDatetime from  d_user_visitor A 
+                inner join d_user B on A.vID = B.userID
+                left join d_user_company C on C.userID=B.userID 
+                left join d_company D on D.companyID=C.companyID where A.userID=" . $userID . " order by A.addDatetime desc limit " . $limit;
+        $result["rows"] = $this->SlaveDB()->query($sql);
+        return $result;
+    }
+
+    /**
+     *获取到谁访问了我的数量
+     */
+    public function  getBorowse($userID) {
+        return $this->where(array('userID'=>$userID))->count();
+    }
+
+    /**
+     * 添加浏览记录
+     */
+    public function addVisitor($userID,$id) {
+        $info = $this->where(array('userID'=>$userID,'vID'=>$id))->find();
+        if(!empty($info)) {
+            return $this->where(array('userID'=>$userID,'vID'=>$id))->save(array('visitDatetime'=>time()));
+        }
+        return $this->add(array('userID'=>$userID,'vID'=>$id,'addDatetime'=>time(),'visitDatetime'=>time()));
+    }
+
+}

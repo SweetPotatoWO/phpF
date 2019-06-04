@@ -1,0 +1,1044 @@
+<?php
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+namespace Service\User\Logic;
+
+use Service\Connect\Logic\ConnectRelationLogic;
+use Service\Connect\Logic\OperationLogic;
+use Service\Integral\Model\UserCardModel;
+use Service\JavaService\Logic\SiteLogic;
+use Service\Tag\Logic\TagLogic;
+use Service\User\Model\UserModel;
+use Common\Common\Redis;
+use Common\Common\Authorized;
+use Service\Account\Logic\AccountLogic;
+use Service\Integral\Logic\IntegralLogic;
+use Service\News\Logic\SendSMSLogic;
+use Service\User\Model\UserInviteModel;
+use Service\Backend\Logic\ConsoleUserLogic;
+use Service\Common\FinishEventLogic;
+use Service\Operate\Logic\UserHoldticketLogic;
+use Service\User\Logic\UserActionLogLogic;
+use Service\Account\Logic\AccountBankLogic;
+
+/**
+ * Description of AccountLogic
+ *
+ * @author Bourne
+ */
+class UserLogic {
+
+    private $model = null;
+    private $logic = null;
+
+    public function __construct() {
+        $this->model = new UserModel();
+        $this->logic = new UserLogLogic();
+    }
+
+    /**
+     * 获取用户类型
+     */
+    public function getUserType() {
+        return $this->model->userType;
+    }
+
+    /**
+     * 用户登录。
+     * @param array $entity
+     * @return string
+     */
+    public function Login($entity) {
+        $cache = Redis::GetInstance(); //缓存   
+        $lock = "Login_Lock_" . $entity["phone"];
+        if ($entity["terminal"] * 1 > 5 || $entity["terminal"] * 1 < 1) {
+            return "参数错误！";
+        }
+        $times = $cache->get($lock);
+        if ($times && $times >= 5) {
+            return "登录次数过多，还在锁定中";
+        }
+
+        $entity["password"] = md5(md5($entity["password"]) . C('MKEY'));
+        $result = $this->model->userLogin($entity["phone"], $entity["password"]);
+        $actLogic = new UserActionLogLogic();
+        if (is_array($result) && $result["userID"] * 1 > 1) {
+            if ($times > 0) {
+                $cache->del($lock);
+            }
+            $actLogic->addLog($result["userID"], $result["phone"], $entity["operateIP"], "用户登录", "登录成功", $entity["terminal"]);
+            return $result["userID"];
+        } else {
+            $actLogic->addLog($result["userID"], $result["phone"], $entity["operateIP"], "用户登录", "登录失败", $entity["terminal"]);
+            if ($times && $times < 5) {
+                $cache->set($lock, $times + 1, 3600);
+                if ((4 - $times) == 0) {
+                    return "你已经输入错误5次，等一小时后在试或者使用验证码登录";
+                }
+                return "密码输入错误,您还可以尝试" . (4 - $times) . "次！";
+            } else {
+                $cache->set($lock, 1, 3600);
+                return "温馨提示，密码输入错误！";
+            }
+        }
+        return "抱歉请检查您的登录名和密码是否正确！";
+    }
+
+    /**
+     * 扫码登录。
+     * @param type $userID
+     * @param type $phone
+     */
+    public function qrLogin($userID, $phone, $terminal = 1, $equipment = "", $operateIP = "") {
+        if ($userID * 1 < 1 || empty($phone) || !verify_phone($phone))
+            return false;
+        $event = new FinishEventLogic();
+        $event->loginEvent($userID, $terminal);
+        Authorized::setAuthorized($userID, $phone, $terminal, 30);
+        $this->logic->AddLoginLog($userID, $phone, $terminal, $equipment, $operateIP);
+        $actLogic = new UserActionLogLogic();
+        $actLogic->addLog($userID, $phone, $operateIP, "用户登录", "登录成功", $terminal);
+        return true;
+    }
+
+    /**
+     *  短信登录
+     * @param type $phone
+     * @param type $smsCode
+     */
+    public function smsLogin($entity) {
+        $sms = new SendSMSLogic();
+        $stutas = $sms->ConfirmVerify($entity["phone"], $entity["smsCode"]);
+        if (!$stutas) {
+            return "动态登录验证码错误！";
+        }
+        $result = $this->getByPhone($entity["phone"]);
+
+        $actLogic = new UserActionLogLogic();
+        if (is_array($result) && $result["userID"] * 1 >= 1) {
+            $actLogic->addLog($result["userID"], $result["phone"], $entity["operateIP"], "用户登录", "登录成功", $entity["terminal"]);
+            return $result["userID"];
+        } else {
+            //首次验证码登录则给用户注册账号
+            $resulta = $this->model->addUser($entity);
+            $connect = new OperationLogic();     //更新图数据库的内容
+            $Neo4jData['userID'] = $resulta;
+            $Neo4jData['phone'] = $entity['phone'];
+
+            $returnurl = SITE . "Callback/saveCompanyUser";   //异步回调用户的信息
+            $callLogic = new \Service\Common\CallBackLogic();
+            $callLogic->sendCallbackInfo($returnurl, $Neo4jData);
+
+            $site = new SiteLogic();
+            $site->deleteJavaServicePhone($entity['phone']);   //删除掉java端的数据
+
+            $card = new UserCardModel();
+            $card->delClearCard($entity['phone']);   //删除掉纯净名片表
+
+            $interglLogic = new IntegralLogic();
+            $interglLogic->userIntegralInc($resulta, 'welfare', 'register');  //送积分
+
+            $connect->savePersonNeo4j($Neo4jData);    //更新到图数据库
+            $connectLogic = new ConnectRelationLogic();
+            $connectLogic->notifyImport4CardsReg($entity['phone']);
+            return $resulta;
+        }
+        return "抱歉请检查您的登录名或验证码是否正确！";
+    }
+
+    /**
+     * 显示登录送券提示。
+     * @param type $userID
+     */
+    public function showLoginEventTip($userID) {
+        $redis = Redis::GetInstance();
+        $tip = $redis->get('ShowSendTicketTip_' . $userID);
+        if ($tip != false) {
+            $redis->del('ShowSendTicketTip_' . $userID);
+        }
+        return $tip;
+    }
+
+    /**
+     * 注册  
+     * @param type $entity
+     * @return string|boolean
+     */
+    public function Register($entity) {
+        if (is_array($entity)) {
+            $entity["phone"] = trim($entity["phone"]);
+            if ($this->model->userCheck($entity["phone"], 3)) {
+                return "手机号码已经存在!";
+            }
+            $result = $this->model->addUser($entity);
+            if ($result * 1 > 0) {
+                $account = new AccountLogic();
+                $integral = new IntegralLogic();
+                $account->addAccount($result, $entity["phone"]);
+                $integral->addIntegral($result, $entity["phone"]);
+                if (strlen($entity["inviteCode"]) > 3) {
+                    $this->addInviter($result, $entity); //邀请人
+                }
+                $integral->updateIntegral($result, "Register", get_client_ip()); //注册积分
+                if ($entity ["terminal"] == 4) {
+                    Authorized::setAuthorized($result, $entity["phone"], $entity["terminal"], 30);
+                }
+                $event = new FinishEventLogic();
+                $event->regEvent($result, $entity["phone"]);
+                return $result;
+            }
+        }
+        return "注册失败！";
+    }
+
+    /**
+     * 插入邀请记录
+     * @param type $userID
+     * @param type $entity
+     */
+    private function addInviter($userID, $entity) {
+        try {
+            $invite = new UserInviteModel();
+            $inv = '';
+            if (verify_phone($entity["inviteCode"]) && ($entity["phone"] != $entity["inviteCode"])) {//手机号邀请
+                $inv = $this->getByPhone($entity["inviteCode"]);
+            } elseif (!verify_phone($entity["inviteCode"])) {//邀请码邀请
+                $inv = $invite->getUserCode($entity["inviteCode"]);
+            }
+            if (empty($inv) || !is_array($inv))
+                return;
+            $inviter['userID'] = $userID;
+            $inviter['userName'] = $entity["userName"];
+            $inviter['phone'] = $entity["phone"];
+            $inviter['inviteUserID'] = $inv["userID"];
+            $inviter['inviteUserName'] = $inv["userName"];
+            $inviter['inviteUserPhone'] = $inv["phone"];
+            $invite->addInvite($inviter);
+        } catch (\Exception $ex) {
+            logger_sys("注册插入邀请数据异常" . $entity["phone"], $ex->getMessage());
+        }
+    }
+
+    /*
+     * 根据UserId来插入用户信息
+     * @param type $inviteUserInfo  邀请用户信息
+     * @param type $userInfo   被邀请用户信息
+     */
+
+    public function addInviterHM($inviteUserInfo, $userInfo) {
+        if (empty($inviteUserInfo) || empty($userInfo)) {
+            return false;
+        }
+        $model = new UserInviteModel();
+        $inviter['userID'] = $userInfo["userID"];
+        $inviter['userName'] = $userInfo["userName"];
+        $inviter['phone'] = $userInfo["phone"];
+        $inviter['inviteUserID'] = $inviteUserInfo["userID"];
+        $inviter['inviteUserName'] = $inviteUserInfo["userName"];
+        $inviter['inviteUserPhone'] = $inviteUserInfo["phone"];
+        return $model->addInvite($inviter);
+    }
+
+    /**
+     * 验证用户的重复
+     * @param type $key
+     * @param type $type
+     */
+    public function userCheck($key, $type) {
+        $result = $this->model->userCheck($key, $type);
+        return $result;
+    }
+
+    /**
+     * 获取用户包含华兴需要的信息
+     * @param type $userID
+     * @return type
+     */
+    public function getUserHX($userID) {
+        $where['userID'] = $userID; //用户id	
+        $where['realStatus'] = 1; //用户id	
+        $field = 'userID,phone,realStatus,realName,accNO,viplevel,bankStatus,userType,regDatetime';
+        $result = $this->model->getUser($field, $where);
+        return $result;
+    }
+
+    /**
+     * 获取实名认证具体信息--d_user + d_realname
+     * @param type $userID
+     */
+    public function getNameInfo($userID) {
+        $where["userID"] = $userID;
+        $field = "realStatus,regDatetime,userName,phone,realName,userSex,openID";
+        $result = $this->model->getUser($field, $where);
+        return $result;
+    }
+
+    /**
+     * 修改或者添加紧急联系人
+     */
+    public function saveDear($userID, $data) {
+        return $this->model->SaveDear($userID, $data);
+    }
+
+    /**
+     * 获取用户信息
+     */
+    public function getUser($userID) {
+        $where["userID"] = $userID;
+        $field = "userID,nickname,phone,headUrl,regDatetime,userStatus";
+        $result = $this->model->getUser($field, $where);
+        return $result;
+    }
+
+    /**
+     * 获取用户信息（包含非正常状态） 
+     */
+    public function getUserfo($userID) {
+        $where["userID"] = $userID;
+        $field = "userID,userKey,phone,regDatetime,userStatus,userType,clientSource";
+        $result = $this->model->getUserfo($field, $where);
+        return $result;
+    }
+
+    /**
+     * 根据查询条件获取用户信息
+     * @param type $field
+     * @param type $where
+     * @return type 
+     */
+    public function getUserWhere($field, $where) {
+        if (strlen($field) > 5 && count($where) > 0) {
+            $result = $this->model->getUser($field, $where);
+            return $result;
+        }
+        return false;
+    }
+
+    /**
+     * 用手机号码获取用户
+     * @param type $phone
+     * @return type
+     */
+    public function getByPhone($phone) {
+        $where["phone"] = $phone;
+        $field = "userID,userKey,phone,regDatetime,password,realAuth";
+        $result = $this->model->getUser($field, $where);
+        return $result;
+    }
+
+    /**
+     * 根据姓名查询用户
+     * @param type $realName
+     */
+    public function getRealName($realName) {
+        $where["realName"] = $realName;
+        $field = "userID,userKey,userName,phone,realName";
+        $result = $this->model->getUser($field, $where);
+        return $result;
+    }
+
+    /**
+     * 获取手机号码，以及微信openID，发送信息相关使用
+     * @param type $userID
+     * @return type
+     */
+    public function getPhone($userID) {
+        $where['userID'] = $userID; //用户id	
+        $field = 'userID,userName,phone,realStatus,realName,openID';
+        $result = $this->model->getUser($field, $where);
+        return $result;
+    }
+
+    /**
+     * 获取融资用户
+     * @return type
+     */
+    public function getRaiseUser() {
+        $where["userType"] = array(array("EGT", "20"), array("ELT", "30"));
+        $where['realStatus'] = 1; //实名
+        $field = 'userID,userName,phone,realStatus,realName';
+        $result = $this->model->getUserMore($field, $where);
+        return $result;
+    }
+
+    /**
+     * 修改用户
+     * @param type $userID
+     * @param type $data
+     */
+    public function editUser($userID, $data) {
+        if ($userID > 0) {
+            $where['userID'] = $userID; //用户id
+            unset($data["userID"]);
+            $result = $this->model->editUser($data, $where);
+            return $result;
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * 用于验证用户输入的密码是否正确
+     * @param type $userID
+     * @param type $originalPwd
+     */
+    public function verifyLoginPassword($userID, $originalPwd) {
+        $model = new UserModel();
+        $where["userID"] = $userID;
+        $where["password"] = md5(md5($originalPwd) . C('MKEY'));
+        $result = $model->verifyLoginPassword($where);
+        return $result;
+    }
+
+    /**
+     * 修改登录密码
+     * @param type $phone
+     * @param type $password
+     */
+    public function editLoginPassword($phone, $password) {
+        //验证密码复杂读
+        $ret = valid_pass($password);
+        if ($ret !== true) {
+            return $ret;
+        }
+        $where['phone'] = $phone; //用户id
+        $data['password'] = md5(md5($password) . C('MKEY'));
+        $result = $this->model->editUser($data, $where);
+        if (!$result) {
+            return "修改失败！";
+        }
+        return true;
+    }
+
+    /**
+     * 修改手机号
+     */
+    public function changePhone($userID, $phone, $terminal) {
+        if (!verify_phone($phone)) {
+            return '手机号码格式不正确！';
+        }
+        $where['userID'] = $userID; //用户id
+        $data['phone'] = $phone;
+        $data['operateTerminal'] = $terminal;
+        $result = $this->model->editUser($data, $where);
+        if (!$result) {
+            return "修改失败！";
+        }
+        return true;
+    }
+
+    /**
+     * 重置登录密码
+     * @param type $userID
+     * @param type $password
+     */
+    public function restLoginPassword($userID, $password, $phone = '') {
+        //验证密码复杂读
+        $ret = valid_pass($password);
+        if ($ret !== true) {
+            return $ret;
+        }
+        $where['userID'] = $userID; //用户id
+        $data['password'] = md5(md5($password) . C('MKEY'));
+        $result = $this->model->editUser($data, $where);
+        if ($result * 1 > 0 && !empty($phone)) {
+            $cache = Redis::GetInstance();
+            $lock = "Login_Lock_" . $phone;
+            $times = $cache->get($lock);
+            if ($times * 1 > 0) {
+                $cache->del($lock);
+            }
+        }
+        return $result;
+    }
+
+    /**
+     * 忘记密码
+     * @param type $userName
+     * @param type $phone
+     * @param type $passWord
+     * @param type $terminal
+     */
+    public function forgotPassword($phone, $password, $terminal) {
+        //验证密码复杂读
+        $ret = valid_pass($password);
+        if ($ret !== true) {
+            return $ret;
+        }
+        $data['password'] = md5(md5($password) . C('MKEY'));
+        $data['operateTerminal'] = $terminal;
+        $where['phone'] = $phone;
+        $result = $this->model->forgotPassword($data, $where);
+        if (!$result) {
+            return '修改失败！';
+        }
+        return true;
+    }
+
+    /**
+     * 获取用户信息
+     * @param type $userID
+     */
+    public function getSinUserInfo($userID) {
+        $where['userID'] = $userID; //用户id	
+        $field = 'userID,headUrl,nickname,openID,phone,userType';
+        $result = $this->model->getUser($field, $where);
+        return $result;
+    }
+
+    /**
+     * 获取用户信息
+     * @param type $userID
+     * @return type
+     */
+    public function getUserInfo($userID) {
+        $info = $this->model->getUserInfo($userID);
+        return $info;
+    }
+
+    /**
+     * 获取到紧急联系人
+     * @param type $userID
+     */
+    public function getUserDear($userID) {
+        return $info = $this->model->getUserDear($userID);
+    }
+
+    /**
+     * 设定安全等级，最高100%
+     * 30低   50-70 中  100高 
+     * @param type $userID
+     */
+    public function getSafeLevel($userInfo) {
+        $grade = 25;
+        $message = "";
+        if ($userInfo["realStatus"] * 1 == 1) {//是否开启资金账户
+            $grade = $grade + 25;
+        } else {
+            $message = "实名未认证";
+        }
+
+        if ($userInfo["phoneStatus"] * 1 == 1) {//是否进行电话认证状态
+            $grade = $grade + 25;
+        } else {
+            $message = "手机未认证";
+        }
+
+        if ($userInfo["emailStatus"] * 1 == 1) {//是否邮箱认证
+            $grade = $grade + 25;
+        } else {
+            $message = "邮箱未认证";
+        }
+
+        $result["grade"] = $grade;
+        $result["message"] = $message;
+        $result["userStatus"] = $userInfo;
+        return $result;
+    }
+
+    /**
+     * 获取总注册人数。
+     */
+    public function getTotalUser() {
+        return $this->model->getTotalUser();
+    }
+
+    /**
+     * 获取VIP对应的范围
+     * @param type $where
+     * @param type $whereArr
+     */
+    public function getUserVipInfo($userID) {
+        $where["userID"] = $userID;
+        $result = $this->model->getUserVipInfo($where);
+        return $result;
+    }
+
+    public function getUserList($where, $whereArr, $limit) {
+        $result = $this->model->getUserList($where, $whereArr, $limit);
+        return $result;
+    }
+
+    /**
+     * 用户名片列表
+     */
+    public function getUserCardList($where, $whereArr, $limit) {
+        $result = $this->model->getUserCardList($where, $whereArr, $limit);
+        $groupType = $this->getAllGroup();
+        foreach ($result['rows'] as $k => $val) {
+            $result['rows'][$k]['groupID'] = $groupType[$val['groupID']];
+        }
+        return $result;
+    }
+
+    /**
+     * 用户名片详情
+     */
+    public function getUserCardDetail($where) {
+        if (empty($where)) {
+            return false;
+        }
+        $result = $this->model->getUserCardDetail($where);
+        $result['phoneContent'] = unserialize($result['phoneContent']);
+        $result['mailContent'] = unserialize($result['mailContent']);
+        $result['companyContent'] = unserialize($result['companyContent']);
+        $result['websiteContent'] = unserialize($result['websiteContent']);
+        $result['areaContent'] = unserialize($result['areaContent']);
+        return $result;
+    }
+
+    /**
+     * 用户名片统计
+     */
+    public function getUserCardCount($where, $twhere, $whereArr, $limit) {
+        $result = $this->model->getUserCardCount($where, $twhere, $whereArr, $limit);
+        return $result;
+    }
+
+    /**
+     * 用户通讯录统计
+     */
+    public function getUserMailCount($where, $twhere, $whereArr, $limit) {
+        $result = $this->model->getUserMailCount($where, $twhere, $whereArr, $limit);
+        return $result;
+    }
+
+    /**
+     * 用户通讯录列表
+     */
+    public function getUserMailList($where, $whereArr, $limit) {
+        $result = $this->model->getUserMailList($where, $whereArr, $limit);
+        return $result;
+    }
+
+    /*
+     * 获取用户访客记录
+     */
+
+    public function getUserView($where, $twhere, $whereArr, $limit) {
+        $result = $this->model->getUserView($where, $twhere, $whereArr, $limit);
+        return $result;
+    }
+
+    /*
+     * 获取用户好友统计
+     */
+
+    public function getUserFriendCount($where, $twhere, $whereArr, $limit) {
+        $result = $this->model->getUserFriendCount($where, $twhere, $whereArr, $limit);
+        return $result;
+    }
+
+    /**
+     * 好友申请列表
+     */
+    public function getFriendApplyList($where, $whereArr, $limit) {
+        $result = $this->model->getFriendApplyList($where, $whereArr, $limit);
+        return $result;
+    }
+
+    /**
+     * 获取所有部门类别
+     */
+    public function getAllGroup() {
+        $result = $this->model->getAllGroup();
+        $res = array();
+        foreach ($result as $val) {
+            $res[$val['groupID']] = $val['groupName'];
+        }
+        return $res;
+    }
+
+    /**
+     * 获取企业用户
+     */
+    public function getCompanyList($where, $whereArr, $limit) {
+        $result = $this->model->getCompanyList($where, $whereArr, $limit);
+        return $result;
+    }
+
+    /**
+     * 检测是否已实名。
+     * @param type $userID
+     */
+    public function checkIsRealname($userID) {
+        if (empty($userID) || $userID * 1 < 1) {
+            return false;
+        }
+        $where['userID'] = $userID;
+        $result = $this->model->getUser('realStatus', $where);
+        if ($result && $result['realStatus'] * 1 == 1) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * 检测邮箱是否已绑定。
+     * @param type $email
+     * @return boolean
+     */
+    public function checkEmail($email) {
+        if (empty($email) || strlen($email) < 3) {
+            return true;
+        }
+        $where['email'] = aes($email);
+        $result = $this->model->getUser('emailStatus', $where);
+        if ($result && $result['emailStatus'] * 1 == 1) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * 查询是否绑定
+     * @param type $openID
+     * @return string 如果绑定的话，$result 是用户的userID
+     */
+    public function bindExist($openID, $userID) {
+        if (strlen($openID) > 2) {
+            $result = $this->model->bindExist($openID, $userID);
+            return $result["userID"];
+        }
+        return FALSE;
+    }
+
+    /**
+     * 修改紧急联系人
+     * @param type $data
+     * @param type $userID
+     */
+    public function editDear($data, $userID) {
+        if (empty($userID) || $userID * 1 <= 0)
+            return false;
+        $where["userID"] = $userID;
+        $res = $model = $this->model->editDear($data, $where);
+        return $res;
+    }
+
+    /**
+     * 获取紧急联系人
+     * @param type $userID
+     */
+    public function getDear($userID) {
+        if (empty($userID) || $userID * 1 <= 0)
+            return false;
+        $where["userID"] = $userID;
+        $res = $model = $this->model->getDear($where);
+        return $res;
+    }
+
+    /**
+     * 查询是否绑定了头像和姓名 
+     * @param type $nikeName
+     * @param type $wximg
+     * @param type $userID
+     */
+    public function bindExistInfo($nikeName, $wximg, $userID) {
+        if (empty($userID) || $userID * 1 <= 0)
+            return false;
+        $data = array("status" => 0);
+        $where["userID"] = $userID;
+        $field = "userNickname,headUrl";
+        $result = $this->model->getUser($field, $where);
+        if ($result["userNickname"] != $nikeName || $result["headUrl"] != $wximg) {
+            $data["status"] = 1;
+            $data["headUrl"] = $result["headUrl"];
+        }
+        return $data;
+    }
+
+    /**
+     * 微信的绑定
+     * @param type $userID
+     * @param type $openID
+     * @return type
+     */
+    public function editbindExist($userID, $data) {
+        if (empty($userID) || $userID * 1 <= 0)
+            return false;
+        $where['userID'] = $userID;
+        $result = $this->model->editUser($data, $where);
+        return $result;
+    }
+
+    /**
+     * 获取用户生日
+     * @param type $userID
+     */
+    public function getBirthday($userID) {
+        $where["userID"] = $userID;
+        $where["birthday"] = date("md");
+        $model = new UserModel();
+        $res = $model->getBirthday($where);
+        return $res;
+    }
+
+    /**
+     * 根据用户ID获取用户KEY
+     * @param type $userID
+     * @return type
+     */
+    public function getUserKeyByUserID($userID) {
+        $where["userID"] = $userID;
+        return $this->model->getUser('userKey', $where);
+    }
+
+    /**
+     * 用户销户
+     * @param type $accNO
+     */
+    public function dstyAccount($accNO) {
+        if (empty($accNO)) {
+            return false;
+        }
+        $field = 'userID,realStatus,realName,bankStatus,phone,accNO';
+        $where["accNO"] = $accNO;
+        $where["realStatus"] = 1;
+        $logic = new RealNameLogic();
+        $bankLogic = new AccountBankLogic();
+        $userInfo = $this->model->getUser($field, $where);
+        if (!empty($userInfo)) {
+            if ($userInfo["realStatus"] * 1 == 1) {
+                $data["realStatus"] = 0;
+                $data["bankStatus"] = 0;
+                $this->model->editUser($data, $where);
+                $userID = $userInfo["userID"];
+                $logic->saveRealInfo($userID);
+                $bankLogic->editBankCard($userID);
+                logger_sys("用户销户成功", "用户姓名:" . $userInfo["realName"] . "存管账户:" . $accNO . "销户成功");
+                return true;
+            }
+        }
+        logger_sys("用户销户失败", "没有查询到用户信息,或者用户实名状态为 0, 用户的存管账户为:" . $accNO);
+        return false;
+    }
+
+    /**
+     * 注册是否选中
+     */
+    public function isRegCheck() {
+        $isCheck = C("REG_ISCHECK");
+        $check = $isCheck * 1 == 1 ? 1 : 0; //1 默认选中  0默认不选中
+        return $check;
+    }
+
+    /**
+     * 获取到信息的完善度
+     * @param $userID 用户的ID
+     */
+    public function getInformationScore($userID) {
+        $info = $this->model->getAllScoreInfo($userID);
+
+        $score = 0;
+        if (!empty($info['userinfo']['name']))
+            $score+=10;
+        if (!empty($info['userinfo']['companyName']))
+            $score+=10;
+        if (!empty($info['userinfo']['job']))
+            $score+=10;
+        if (!empty($info['userinfo']['userHeadUrl']))
+            $score+=10;
+        if (!empty($info['userinfo']['workCity']))
+            $score+=10;
+        if (!empty($info['userinfo']['workMajorName']))
+            $score+=10;
+        if (!empty($info['ed']))
+            $score+=10;
+        if (!empty($info['work']))
+            $score+=10;
+        $tagLogic = new TagLogic();
+        $useTag = $tagLogic->getUserTag($userID);
+        $wantTag = $tagLogic->getUserWantTag($userID);
+        if (!empty($useTag))
+            $score +=10;
+        if (!empty($wantTag))
+            $score +=10;
+        return array(
+            'score' => $score,
+            //是否完善
+            'isFill' => (!empty($info['userinfo']['name']) && !empty($info['userinfo']['companyName']) && !empty($info['userinfo']['job']) ) ? 1 : 0,
+            //是否完善了公司
+            'isCompany' => (!empty($info['userinfo']['companyName'])) ? 1 : 0,
+            'isCity' => (!empty($info['userinfo']['workCity'])) ? 1 : 0,
+            'isEd' => (!empty($info['ed'])) ? 1 : 0,
+            'isIdenty' => (!empty($info['userinfo']['identy'])) ? 1 : 0,
+            "isUserTag" => ($useTag) ? 1 : 0,
+            "isWantTag" => ($wantTag) ? 1 : 0,
+        );
+    }
+
+    /**
+     * 获取到全部的信息
+     * @param $userID
+     */
+    public function getInforMation($userID) {
+        return $this->model->getAllScoreInfo($userID);
+    }
+
+    /**
+     * 获取用户详细信息
+     */
+    public function getUserInfoDetail($userID) {
+        $result = $this->model->getUserInfoDetail($userID);
+        $diploma = $this->model->diploma;
+        foreach ($result['education'] as $k => $vl) {
+            $result['education'][$k]['diploma'] = $diploma[$vl['diploma']];
+        }
+        return $result;
+    }
+
+    /**
+     * 获取平台消息
+     */
+    public function getNewsList($where, $whereArr, $limit) {
+        $result = $this->model->getNewsList($where, $whereArr, $limit);
+        return $result;
+    }
+
+    /**
+     * 获取用户评论列表
+     */
+    public function getEvaluate($where, $whereArr, $limit) {
+        $result = $this->model->getEvaluate($where, $whereArr, $limit);
+        return $result;
+    }
+
+    /**
+     * 获取用户评论
+     */
+    public function getEvaluateData($where, $whereArr, $limit) {
+        $result = $this->model->getEvaluateData($where, $whereArr, $limit);
+        return $result;
+    }
+
+    /**
+     * 根据ID 获取到phone
+     */
+    public function getPhoneByUserID($userID) {
+        $model = new UserModel();
+        return $model->getPhoneByUserID($userID);
+    }
+
+    /**
+     * 提醒用户完善信息的锁
+     */
+    public function remindLock($userID, $otherID) {
+        $redis = Redis::GetInstance();
+        $key = "user_remind_mes_lock_" . $userID . "_" . $otherID;
+        $info = $redis->get($key);
+        if ($info) {
+            return true;
+        } else {
+            $redis->set($key, json_encode(array('userID' => $userID, 'remind' => 'yes')), 84400);
+            return true;
+        }
+    }
+
+    /**
+     * 获取到提醒的用户完善信息的锁
+     */
+    public function getRemindLock($userID, $otherID) {
+        $redis = Redis::GetInstance();
+        $key = "user_remind_mes_lock_" . $userID . "_" . $otherID;
+        $info = $redis->get($key);
+        if ($info) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * 保存到其他邀请记录表
+     */
+    public function insertOtherInvite($data) {
+        $model = new UserInviteModel();
+        return $model->insertOtherInvite($data);
+    }
+
+    /**
+     * 是否已经邀请了
+     */
+    public function isInvite($userID, $phone) {
+        $model = new UserInviteModel();
+        return $model->isInvite($userID, $phone);
+    }
+
+    /**
+     * 获取用户信息
+     */
+    public function getUserByOpenID($openID) {
+        $where['openID'] = $openID; //用户openID	
+        $field = 'userID,nickname,phone,headUrl,openID';
+        $result = $this->model->getUser($field, $where);
+        return $result;
+    }
+
+    /**
+     * 名片认证
+     * 修改信息
+     */
+    public function saveRealName($userID, $name) {
+        $model = new UserModel();
+        return $model->where(array('userID' => $userID))->save(array('realName' => $name, 'realAuth' => 1));
+    }
+
+    /**
+     * 获取举报列表
+     */
+    public function getProseList($where, $whereArr, $limit) {
+        $result = $this->model->getProseList($where, $whereArr, $limit);
+        return $result;
+    }
+
+    /**
+     * 举报类型
+     */
+    public function getProseType() {
+        return $this->model->proseType;
+    }
+
+    /*
+     * 举报状态
+     */
+
+    public function getProseStatus() {
+        return $this->model->proseStatus;
+    }
+
+    /**
+     * 举报详情
+     */
+    public function getProseInfo($key) {
+        if (empty($key)) {
+            return false;
+        }
+        return $this->model->getProseInfo($key);
+    }
+
+    /**
+     * 保存举报
+     */
+    public function saveProse($par) {
+        if (empty($par)) {
+            return false;
+        }
+        $where = array();
+        if ($par["prosecuteID"] * 1 > 0 && count($par) > 0) {
+            $where["prosecuteID"] = $par["prosecuteID"];
+        }
+        if($this->model->saveProse($par, $where)){
+            $new = new \Service\News\Logic\NewsLogic();
+            $new->proseNews($par['userID']);
+            return true;
+        }
+        return false;
+    }
+
+}

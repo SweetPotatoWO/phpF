@@ -1,0 +1,28 @@
+<?php
+
+// +----------------------------------------------------------------------
+// | ThinkPHP [ WE CAN DO IT JUST THINK ]
+// +----------------------------------------------------------------------
+// | Copyright (c) 2006-2014 http://thinkphp.cn All rights reserved.
+// +----------------------------------------------------------------------
+// | Licensed ( http://www.apache.org/licenses/LICENSE-2.0 )
+// +----------------------------------------------------------------------
+// | Author: liu21st <liu21st@gmail.com>
+// +----------------------------------------------------------------------
+defined('DARREN') or define('DARREN', true);
+define('APP_MODE', 'cli');
+define('APP_PATH', dirname(__FILE__) . '/../App/');
+defined('RUNTIME_PATH') or define('RUNTIME_PATH', APP_PATH . 'CliRuntime/');
+
+defined('TASKLOG_PATH') or define('TASKLOG_PATH', dirname(__FILE__) . '/logs/Task/');
+
+defined('UPLOAD') or define('UPLOAD', 'http://res.qianbox.net'); //图片服务器
+defined('SITE') or define('SITE', 'http://dev.qianbox.net/');  //站点地址
+defined('API') or define('API', 'http://www.nmbox.com:8080/');  //业务回调地址
+defined('WECHAT') or define('WECHAT', 'http://dev.qianbox.net/Wechat/'); //微信地址
+
+
+defined('APP_DEBUG') or define('APP_DEBUG', true);      //开启调试模式
+define('THINKPHP', dirname(__FILE__) . '/');
+require THINKPHP . '../vendor/autoload.php';
+require THINKPHP . '../ThinkPHP/ThinkPHP.php';

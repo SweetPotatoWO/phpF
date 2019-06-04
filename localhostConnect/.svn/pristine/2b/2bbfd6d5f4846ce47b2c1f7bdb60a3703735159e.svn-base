@@ -1,0 +1,180 @@
+<?php
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+namespace Service\Company\Logic;
+
+class CompanyLogic {
+
+    private $model;
+
+    public function __construct() {
+        $this->model = new \Service\Company\Model\CompanyModel();
+    }
+
+    /**
+     * 获取企业信息
+     */
+    public function getCompanyList($where, $whereArr, $limit) {
+        $result = $this->model->getCompanyList($where, $whereArr, $limit);
+        return $result;
+    }
+
+    /**
+     * 获取企业平台成员
+     */
+    public function getCompanyMember($where, $whereArr, $limit) {
+        $result = $this->model->getCompanyMember($where, $whereArr, $limit);
+        if (!empty($result['rows'])) {
+           foreach($result['rows'] as $k => $v){
+               if(!empty($v['cpyIndustry'])){
+                   $cpyIndustry = json_decode($v['cpyIndustry']);
+                   $result['rows'][$k]['cpyIndustry'] = $cpyIndustry->Industry.' （ '.$cpyIndustry->SubIndustry.' ）';
+               }
+           }
+        }
+        return $result;
+    }
+
+    /**
+     * 获取公司基本信息
+     */
+    public function getCompanyBaseInfo($companyID) {
+        if (empty($companyID)) {
+            return false;
+        }
+        $filed = 'companyName';
+        $where['companyID'] = $companyID;
+        return $this->model->getCompanyBaseInfo($filed, $where);
+    }
+
+    /**
+     * 获取公司成员列表
+     */
+    public function memberList($where, $whereArr, $limit) {
+        $result = $this->model->memberList($where, $whereArr, $limit);
+        return $result;
+    }
+
+    /**
+     * 公司高级信息列表
+     */
+    public function getAdvancedInfo($where) {
+        if (empty($where)) {
+            return false;
+        }
+        $result = $this->model->getAdvancedInfo($where);
+        if (!empty($result)) {
+            $result['manager'] = json_decode($result['manager'], true);
+            $result['stockHolder'] = json_decode($result['stockHolder'], true);
+        }
+        return $result;
+    }
+
+    /**
+     * 公司变更信息列表
+     */
+    public function getChangeInfo($where, $limit) {
+        if (empty($where)) {
+            return false;
+        }
+        return $this->model->getChangeInfo($where, $limit);
+    }
+
+    /**
+     * 公司对外投资信息列表
+     */
+    public function getInvestInfo($where, $limit) {
+        if (empty($where)) {
+            return false;
+        }
+        return $this->model->getInvestInfo($where, $limit);
+    }
+
+    /**
+     * 获取专利信息
+     */
+    public function getPatentInfo($where, $limit) {
+        if (empty($where)) {
+            return false;
+        }
+        $result = $this->model->getPatentInfo($where, $limit);
+        if (!empty($result)) {
+            foreach ($result['rows'] as $k => $val) {
+                $result['rows'][$k]['inventroName'] = str_replace(array('[', ']', '"'), '', $val['inventroName']);
+                $result['rows'][$k]['ipc'] = str_replace(array('[', ']', '"'), '', $val['ipc']);
+                $result['rows'][$k]['agentName'] = str_replace(array('[', ']', '"'), '', $val['agentName']);
+            }
+        }
+        return $result;
+    }
+
+    /**
+     * 商标信息
+     */
+    public function getTrademarkInfo($where, $limit) {
+        if (empty($where)) {
+            return false;
+        }
+        return $this->model->getTrademarkInfo($where, $limit);
+    }
+
+    /**
+     * 年报信息
+     */
+    public function getReportInfo($where, $limit) {
+        if (empty($where)) {
+            return false;
+        }
+        $result = $this->model->getReportInfo($where, $limit);
+        if (!empty($result)) {
+            foreach ($result['rows'] as $k => $val) {
+                $result['rows'][$k]['shareHolder'] = str_replace(array('[', ']', '"'), '', $val['shareHolder']);
+                $result['rows'][$k]['domainInfo'] = str_replace(array('[', ']', '"'), '', $val['domainInfo']);
+                $result['rows'][$k]['obdInvestment'] = str_replace(array('[', ']', '"'), '', $val['obdInvestment']);
+                $result['rows'][$k]['equityChange'] = str_replace(array('[', ']', '"'), '', $val['equityChange']);
+                $result['rows'][$k]['reportChange'] = str_replace(array('[', ']', '"'), '', $val['reportChange']);
+                $result['rows'][$k]['guaranteeInfo'] = str_replace(array('[', ']', '"'), '', $val['guaranteeInfo']);
+                $result['rows'][$k]['orgBaseInfo'] = $this->formatData($val['orgBaseInfo']);
+                $result['rows'][$k]['orgAssetInfo'] = $this->formatData($val['orgAssetInfo']);
+            }
+        }
+        return $result;
+    }
+    /**
+     * 格式化数据
+     */
+    private  function formatData($data){
+        $str = '';
+        $data = json_decode($data,true);
+        foreach($data as $k => $val){
+            $str .= $k .'：'.$val."，\n ";
+        }
+        return $str;
+    }
+
+    /**
+     * 异常经营信息
+     */
+    public function getAbnormalInfo($where, $limit) {
+        if (empty($where)) {
+            return false;
+        }
+        return $this->model->getAbnormalInfo($where, $limit);
+    }
+
+    /**
+     * 行政处罚
+     */
+    public function getPenaltyInfo($where, $limit) {
+        if (empty($where)) {
+            return false;
+        }
+        return $this->model->getPenaltyInfo($where, $limit);
+    }
+
+}

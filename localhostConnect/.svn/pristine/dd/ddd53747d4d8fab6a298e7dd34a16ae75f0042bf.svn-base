@@ -1,0 +1,174 @@
+<include file="Common:header" />
+<div class="creditInfo">
+	<div class="navigation text-center bg-white">
+        <ul class="nav nav-tabs bord-n clearfix" role="tablist">
+            <li role="presentation">
+                <a href="#punish" aria-controls="punish" role="tab" data-toggle="tab" class="active">行政处罚</a>
+            </li>
+            <li role="presentation" data="list">
+                <a href="#abnormal" aria-controls="abnormal" role="tab" data-toggle="tab">经营异常</a>
+            </li>
+        </ul>
+    </div>
+    
+    <div class="tab-content">
+    	<div id="punish" role="tabpanel" class="tab-pane active">
+    		<!--<div class="list bg-white">-->
+    			<!--&lt;!&ndash;单条数据循环start&ndash;&gt;-->
+    			<!--<div class="bord-b">-->
+    				<!--<h6 class="mb-15">决定文书号</h6>-->
+    				<!--<table class="table fs-12 mb-0">-->
+    					<!--<tr>-->
+    						<!--<td class="color-deep">决定机关：</td>-->
+    						<!--<td>XXX工商局</td>-->
+    					<!--</tr>-->
+    					<!--<tr>-->
+    						<!--<td class="color-deep">违法行为类型：</td>-->
+    						<!--<td>不正当行为</td>-->
+    					<!--</tr>-->
+    					<!--<tr>-->
+    						<!--<td class="color-deep">行政处罚内容：</td>-->
+    						<!--<td>未按照规定公布企业信息</td>-->
+    					<!--</tr>-->
+    				<!--</table>-->
+    			<!--</div>-->
+    			<!--&lt;!&ndash;单条数据循环end&ndash;&gt;-->
+    		<!--</div>-->
+    		<!--&lt;!&ndash;暂无数据&ndash;&gt;-->
+    		<!--<div class="nodata text-center fs-13 color-deep pl-10">暂无数据~</div>-->
+    		<!--&lt;!&ndash;点击加载&ndash;&gt;-->
+    		<!--<div id="wxNo" class="wxLast text-center fs-13 color-deep">已经没有更多数据</div>-->
+            <!--<div id="wxLoad" class="wxLast text-center fs-13 color-deep">正在努力加载...</div>-->
+            <!--<div id="wxMore" class="wxLast text-center fs-13 color-deep">点击加载更多</div>-->
+    	</div>
+    	<div id="abnormal" role="tabpanel" class="tab-pane">
+    		<div class="list bg-white">
+    			<!--单条数据循环start-->
+    			<div class="bord-b">
+    				<table class="table fs-12 mb-0">
+    					<tr>
+    						<td width="35%" class="color-deep">异常日期：</td>
+    						<td>2018-12-12</td>
+    					</tr>
+    					<tr>
+    						<td class="color-deep">决定机关：</td>
+    						<td>XXX工商局</td>
+    					</tr>
+    					<tr>
+    						<td class="color-deep">异常原因：</td>
+    						<td>未按照规定公布企业信息</td>
+    					</tr>
+    				</table>
+    			</div>
+    			<!--单条数据循环end-->
+    		</div>    			
+    		<!--暂无数据-->
+    		<div class="nodata text-center fs-13 color-deep pl-10">暂无数据~</div>
+    		<!--点击加载-->
+    		<div id="wxNo" class="wxLast text-center fs-13 color-deep">已经没有更多数据</div>
+            <div id="wxLoad" class="wxLast text-center fs-13 color-deep">正在努力加载...</div>
+            <div id="wxMore" class="wxLast text-center fs-13 color-deep">点击加载更多</div>
+    	</div>
+    </div>
+</div>
+</body>
+</html>
+<script type="text/javascript">
+	$(function () {
+	    getPenalty(1);
+	});
+
+    /**
+     * 获取到商标的列表
+     * @param page
+     */
+    function getPenalty(page) {
+        var data = {'page':page,'companyID':"dd"};
+        $.ajax({
+            url:"/wechat/company/getPenalty",
+            type:"post",
+            data:data,
+            dataType:'json',
+            success:function(data){
+                if(data.code == 0) {   //成功
+                    getCombinationPenalty(data.data);
+                } else {   //失败
+                    alert("服务器出错");
+                }
+            },
+            error:function(data){
+                alert("请求错误");
+            },
+        });
+    }
+
+
+    /**
+     * 获取到商标的列表
+     * @param page
+     */
+    function getPenalty(page) {
+        var data = {'page':page,'companyID':"dd"};
+        $.ajax({
+            url:"/wechat/company/getPenalty",
+            type:"post",
+            data:data,
+            dataType:'json',
+            success:function(data){
+                if(data.code == 0) {   //成功
+                    getCombinationPenalty(data.data);
+                } else {   //失败
+                    alert("服务器出错");
+                }
+            },
+            error:function(data){
+                alert("请求错误");
+            },
+        });
+    }
+
+
+
+
+
+    /**
+	 * 组合行政处罚的信息
+     */
+    function getCombinationPenalty(data) {
+		var html = "";
+		if (data == "") {
+			var b = $("#punish").children();
+			if (b[0]) {
+				html = "<div id=\"wxNo\" class=\"wxLast text-center fs-13 color-deep\">已经没有更多数据</div>";
+				$("#punish").append(html);
+			} else {
+				html = "<div class=\"nodata text-center fs-13 color-deep pl-10\">暂无数据~</div>";
+				$("#punish").html(html);
+			}
+		} else {
+			html += '<div class="list bg-white">';
+			for (var a in data) {
+				html += '<div class="bord-b">\n' +
+                    '    \t\t\t\t<h6 class="mb-15">决定文书号</h6>\n' +
+                    '    \t\t\t\t<table class="table fs-12 mb-0">\n' +
+                    '    \t\t\t\t\t<tr>\n' +
+                    '    \t\t\t\t\t\t<td class="color-deep">决定机关：</td>\n' +
+                    '    \t\t\t\t\t\t<td>XXX工商局</td>\n' +
+                    '    \t\t\t\t\t</tr>\n' +
+                    '    \t\t\t\t\t<tr>\n' +
+                    '    \t\t\t\t\t\t<td class="color-deep">违法行为类型：</td>\n' +
+                    '    \t\t\t\t\t\t<td>不正当行为</td>\n' +
+                    '    \t\t\t\t\t</tr>\n' +
+                    '    \t\t\t\t\t<tr>\n' +
+                    '    \t\t\t\t\t\t<td class="color-deep">行政处罚内容：</td>\n' +
+                    '    \t\t\t\t\t\t<td>未按照规定公布企业信息</td>\n' +
+                    '    \t\t\t\t\t</tr>\n' +
+                    '    \t\t\t\t</table>\n' +
+                    '    \t\t\t</div>';
+			}
+			html += '<div class="list bg-white">';
+			$("#punish").append(html);
+		}
+	}
+
+</script>

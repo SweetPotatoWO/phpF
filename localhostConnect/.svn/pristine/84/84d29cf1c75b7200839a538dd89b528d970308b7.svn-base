@@ -1,0 +1,230 @@
+<?php
+
+namespace MobileApi\Api;
+
+use Common\Common\CodeGenerator;
+use MobileApi\Common\MobileApiBase;
+use Service\Integral\Logic\IntegralLogic;
+use Service\News\Logic\NewsLogic;
+use Service\News\Logic\SendSMSLogic;
+use Service\News\Model\UserNewsModel;
+use Service\User\Logic\UserFriendLogic;
+use Service\User\Logic\UserLogic;
+use Service\UserCenter\Logic\UserCenterLogic;
+use Service\UserCenter\Model\UserCompanyModel;
+
+/**
+ * Description of index
+ *
+ * @author Administrator
+ */
+class ApiNews extends MobileApiBase
+{
+
+    private $return  = array("code"=>1,"msg"=>"","info"=>array());
+
+    public function getRules(){
+        return array(
+            'systemNews' => array(
+                'pageindex' => array('name' => 'pageindex', 'type' => 'int', 'default' => 1, 'desc' => '页码'),
+                'pagesize' => array('name' => 'pagesize', 'type' => 'int', 'default' => 15, 'desc' => '每页显示数量')
+            ),
+            'changeStatus'=>array(
+            ),
+            "delNews"=>array(
+                "userNewsIDStrs"=>array('name' => 'userNewsIDStrs', 'type' => 'string', 'require' => true, 'desc' => '记录的ID', 'default' =>0),
+            ),
+            "sendLetter"=>array(
+                "userKey"=>array('name' => 'userKey', 'type' => 'string', 'require' => true, 'desc' => '发送对象的userkey', 'default' =>0),
+                "content"=>array('name' => 'userKey', 'type' => 'string', 'require' => false, 'desc' => '发送的内容(可不传递)', 'default' =>0),
+                "img"=>array('name' => 'userKey', 'type' => 'string', 'require' => false, 'desc' => '发送的图片(可不传递)', 'default' =>0)
+            ),
+            "delLetter"=>array(
+                "userKey"=>array('name' => 'userKey', 'type' => 'string', 'require' => true, 'desc' => '发送对象的userkey', 'default' =>0),
+            ),
+        );
+    }
+
+
+    /**
+     * 系统的消息
+     * @desc 系统的消息
+     * @return string info.title    标题
+     * @return string info.content  内容
+     * @return string info.addDatetime 时间
+     * @return string info.code 类型 evaluate 评论 letterSend 系统提示自己发了私信 letterGet系统提示自己接了私信 information信息完善 feedBack反馈
+     * @return string info.name 名字
+     * @return string info.companyID 公司的ID
+     * @return string info.companyName 公司的名字
+     * @return string info.job 职位
+     * @return string info.group 部门
+     * @return string info.userHeadUrl 头像
+     * @return string msg 提示信息
+     * @return int code 成功0 失败1
+     */
+    public function systemNews(){
+        $this->userCheck();
+        $logic = new NewsLogic();
+        $limit = $this->getLimit($this->pageindex, $this->pagesize);
+        $info = $logic->getAllNewsList($this->userID,$limit);
+        $gen = new CodeGenerator();
+        $userlogic = new UserLogic();
+        foreach ($info as $key => $value) {
+            $info[$key]['addDatetime'] = timeFormat($info[$key]['addDatetime']);
+            $info[$key]['user'] = array();
+            if($value['code'] == "letterSend" || $value['code'] == "letterGet") {
+                $userInfo = $userlogic->getUserInfo($value['sender']);
+                $tmp['name'] = ($userInfo['name'])?$userInfo['name']:"";
+                $tmp['companyID'] = ($userInfo['companyID'])?$userInfo['companyID']:"";
+                $tmp['companyName'] = ($userInfo['companyName'])?$userInfo['companyName']:"";
+                $tmp['job'] = ($userInfo['job'])?$userInfo['job']:"";
+                $tmp['group'] = ($userInfo['group'])?$userInfo['group']:"";
+                $tmp['userHeadUrl'] = ($userInfo['userHeadUrl'])?UPLOAD.$userInfo['userHeadUrl']:"";
+                $tmp['userkey'] = $gen->createCode($value['sender']);
+                $info[$key]['user'][] = $tmp;
+            }
+        }
+        if(empty($info)) {
+            $this->return['info'] = $info;
+            $this->return['code'] = 1;
+        } else {
+            $this->return['info'] = $info;
+            $this->return['code'] = 0;
+        }
+        return $this->return;
+    }
+
+
+    /**
+     *点击修改为已读的状态
+     * @desc 讲信息全部修改为已经读取
+     * @return string msg 提示信息
+     * @return int code 成功0 失败1
+     */
+    public function changeStatus() {
+        $this->userCheck();
+        $logic = new NewsLogic();
+        $res = $logic->readStatus($this->userID);
+        if($res) {
+            $this->return['code'] = 0;
+            $this->return['msg'] = "修改成功";
+        } else {
+            $this->return['msg'] = "修改失败";
+        }
+        return $this->return;
+    }
+
+    /**
+     * 删除消息
+     * @desc 可以多个删除 将userNewsID用，连接起来发送过来 例如 1,2,3这样
+     * @return string msg 提示信息
+     * @return int code 成功0 失败1
+     */
+    public function delNews() {
+        $this->userCheck();
+        $IdArr = explode(',',$this->userNewsIDStrs);
+        $logic = new NewsLogic();
+        $res = $logic->delAll($this->userID,$IdArr);
+        if($res) {
+            $this->return['code'] = 0;
+            $this->return['msg'] = "修改成功";
+        } else {
+            $this->return['msg'] = "修改失败";
+        }
+        return $this->return;
+    }
+
+
+    /**
+     * 发送检测私信是否足够(改接口特殊处理 code 为2 弹框)
+     * @desc 发送私信的时候调用该接口
+     * @return string msg 提示信息
+     * @return int code 成功0 失败1
+     */
+    public function sendLetter() {
+        $this->userCheck();
+        $Flogic = new UserFriendLogic();
+        $codeGen = new CodeGenerator();
+        $objID = $codeGen->decode($this->userKey);   //获取到发送的对象ID
+        $info = $Flogic->isFriend($this->userID,$objID);
+        if($info) {   //是好友仍然返回对 让他发送私信
+            $this->return['code'] = 0;
+            $this->return['msg'] = "是好友无需发送私信";
+            return $this->return;
+        }
+
+        $integralLogic = new  IntegralLogic();
+        $account = $integralLogic->getUserIntegral($this->userID);
+
+        if($account['letterBalance'] <=0 ) {   //不够的时候
+            $res = $integralLogic->userIntegralDec($this->userID,'convertibility','letter');  //先扣除
+            if(!$res) {   //不足的时候
+                $this->return['code'] = 2;
+                $this->return['msg'] = "积分不足以兌换";
+                return $this->return;
+            }
+            $res = $integralLogic->userBalanceInc($this->userID,'letter');  //再兌换
+            if(!$res) {
+                $this->return['code'] = 2;
+                $this->return['msg'] = "积分不足以兌换";
+                return $this->return;
+            }
+        }
+        $this->return['code'] = 0;
+        $this->return['msg'] = "";
+        return $this->return;
+    }
+
+
+    /**
+     * 当第三方私信发送成功后 扣除私信数
+     * @desc 扣除私信
+     * @return string msg 提示信息
+     * @return int code 成功0 失败1
+     */
+    public function delLetter() {
+        $this->userCheck();
+
+
+        $codeGen = new CodeGenerator();
+        $objID = $codeGen->decode($this->userKey);   //获取到发送的对象ID
+
+        $Flogic = new UserFriendLogic();
+        $info = $Flogic->isFriend($this->userID,$objID);
+        if($info) {   //是好友仍然返回对 让他发送私信
+            $this->return['code'] = 0;
+            $this->return['msg'] = "是好友无需发送私信";
+            return $this->return;
+        }
+
+        $integralLogic = new  IntegralLogic();
+        $res = $integralLogic->userBalanceDec($this->userID,'letter');  //
+
+        if(!$res) {
+            $this->return['code'] = 0;
+            $this->return['msg'] = "使用额度不足";
+            return $this->return;
+        }
+        $userLogic = new UserCompanyModel();
+        $userInfo = $userLogic->getOne($this->userID);  //获取到自己当前的信息
+        $objInfo = $userLogic->getOne($objID);   //获取到当前对象的一个ID
+        $newlogic = new NewsLogic();
+        $newlogic->sendSystemME($this->userID,$objID,'letterSend',array($objInfo['companyName'],$objInfo['name']));   //我方发送系统的信息
+        $newlogic->sendSystemME($objID,$this->userID,'letterGet',array($userInfo['companyName'],$userInfo['name']));   //对方收到系统消息
+        $sms = new SendSMSLogic();
+        $sms->sendLetter($objInfo['phone'],$this->userID,$userInfo['companyName'],$userInfo['name']);    //发送短信
+        if($res) {
+            $this->return['code'] = 0;
+            $this->return['msg'] = "";
+        } else {
+            $this->return['msg'] = "发送失败";
+        }
+        return $this->return;
+    }
+
+
+
+
+
+
+}

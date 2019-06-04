@@ -1,0 +1,18 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: Administrator
+ * Date: 2018/9/14 0014
+ * Time: 18:40
+ */
+
+namespace Service\System\Model;
+
+use Common\Model\SlaveModel;
+
+class SysSchoolmajobModel extends SlaveModel {
+
+    public function vague($value) {
+        return $this->where('name like "%'.$value.'%"') ->field("majobID as img,majobID as ID,name as value")->select();
+    }
+}

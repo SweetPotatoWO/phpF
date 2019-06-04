@@ -1,0 +1,84 @@
+<div id="sub-User-list">
+    <script type="text/javascript" src="{$Think.BPATH}js/datejs/WdatePicker.js"></script> 
+    <input type="hidden" name="hidrefurl" id="hidrefurl" value="{:U(ACTION_NAME, $_GET)}">
+    <h4 class="title">平台消息 <span class="titleqit">默认查询一周内记录</span></h4>
+    <form class="form-inline" id="query_User"> 
+        <div class="form-group ">
+            <label class="control-label">基本信息:</label>
+            <input type="text" class="form-control ipt mr-10" value="{$Think.post.txtphone}" name="txtphone" id="txtphone" placeholder="手机号"> 
+            <input type="text" class="form-control ipt mr-10" value="{$Think.post.txtrealName}" name="txtrealName" id="txtrealName" placeholder="姓名">       
+        </div>  
+        <div class="form-group ">
+            <label class="control-label">主题:</label>
+            <input type="text" class="form-control ipt mr-10" value="{$Think.post.txtTitle}" name="txtTitle" id="txtTitle" placeholder="消息主题"> 
+        </div> 
+        <div class="form-group mr-10">
+            <label class="control-label">是否已读:</label>
+            <select class="form-control mr-10" name="isRead" id="isRead" style="width: 100px">
+                <option value="">所有</option>
+                <option value="2">已读</option>
+                <option value="1">未读</option>
+            </select>  
+        </div>
+        <div class="form-group mr-10">
+            <label class="control-label">是否删除:</label>
+            <select class="form-control mr-10" name="isDel" id="isDel" style="width: 100px">
+                <option value="">所有</option>
+                <option value="2">是</option>
+                <option value="1">否</option>
+            </select>  
+        </div>
+        <div class="form-group mr-10">
+            <label class="control-label">发送时间:</label>
+            <input type="text" class="form-control mr-5" onclick="WdatePicker({isShowClear: true, readOnly: true, maxDate: '%y-%M-%d'})" value="{$Think.post.txtDateStart}" id="txtDateStart" name="txtDateStart" placeholder="开始日期">     
+            <label class="control-label">～</label>
+            <input type="text" class="form-control mr-5" onclick="WdatePicker({isShowClear: true, readOnly: true, maxDate: '%y-%M-%d'})" value="{$Think.post.txtDateEnd}" id="txtDateEnd" name="txtDateEnd" placeholder="结束日期">   
+        </div> 
+
+        <div class="form-group">
+            <a href="{:U(ACTION_NAME, $_GET)}"  onclick="$Util.openQuery(this, event, 'query_User')"  class="btn btn-info"><i class="icon-search"></i>查询</a> 
+        </div>
+    </form>
+    <table class="table table-striped table-bordered">
+        <thead>
+            <tr> 
+                <th>用户名</th>
+                <th>手机</th>
+                <th>主题</th>
+                <th>内容</th>
+                <th>发送时间</th>
+                <th>是否已读</th>
+                <th>是否删除</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody>
+        <volist name="result" id="vo">
+            <tr>  
+                <td >{$vo.nickname}</td>
+                <td>{$vo.phone}</td>
+                <td>{$vo.title}</td>
+                <td>{$vo.content}</td>
+                <td>{$vo.addDatetime|formatLongDate}</td>
+                <td><eq name="vo.status" value="1"><span class="spanok"></span><else/><span class="spanno"></span></eq></td>
+            <td><eq name="vo.del" value="1"><span class="spanok"></span><else/><span class="spanno"></span></eq></td>
+            <td></td>
+            </tr>
+        </volist>
+        </tbody>
+    </table>
+    <nav class=" pagination-centered">
+        <ul class="pagination">
+            {$page}
+        </ul>
+    </nav>
+    <script type="text/javascript" >
+        $(function ($) {
+            $("#isDel").val("{$Think.post.isDel}");
+            $("#isRead").val("{$Think.post.isRead}");
+        });
+    </script>
+</div>
+
+
+

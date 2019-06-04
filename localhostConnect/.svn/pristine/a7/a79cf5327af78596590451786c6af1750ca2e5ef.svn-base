@@ -1,0 +1,136 @@
+<?php
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+namespace Service\System\Logic;
+
+class LabelLogic {
+
+
+
+
+
+    private $model = null;
+
+    public function __construct() {
+        $this->model = new \Service\System\Model\LabelModel();
+    }
+
+
+    public function  labelList() {
+
+        return $this->model->labelList();
+    }
+
+    /**
+     * 处理列表中含有的标签
+     * @param $labelInfo  用户栏目的信息
+     * @param $info  用户信息
+     */
+    public function handleLabelList($labelInfo,$info) {
+        $return = [];
+        foreach ($labelInfo as $key=>$value) {
+            if($info['jobAuth'] == 1 && $value['labelCode'] == 'job') {
+                $tmp['labelLogo'] = UPLOAD.$value['labelLogo'];
+                $tmp['labelDesc'] = $value['labelDesc'];
+                $tmp['labelCode'] = $value['labelCode'];
+                $return[] = $tmp;
+            }
+        }
+        return $return;
+    }
+
+    /**
+     * 标签列表
+     */
+    public function getLableList($where, $whereArr, $limit) {
+        $result = $this->model->getLableList($where, $whereArr, $limit);
+        return $result;
+    }
+
+    /**
+     * 获取标签信息
+     */
+    public function getLabelInfo($id) {
+        if ($id * 1 < 1) {
+            return false;
+        }
+        return $this->model->getLabelInfo($id);
+    }
+
+    /**
+     * 保存标签
+     */
+    public function saveLabel($par) {
+        if (empty($par)) {
+            return false;
+        }
+        $data = $where = array();
+        if ($par["labelID"] * 1 > 0 && count($par) > 0) {
+            $where["labelID"] = $par["labelID"];
+        }
+        $data['labelCode'] = $par['labelCode'];
+        $data['labelDesc'] = $par['labelDesc'];
+        $data['labelLogo'] = $par['bannerUrl'];
+        $data['status'] = $par['status'] * 1 > 0 ? 1 : 0;
+        return $this->model->saveLabel($data, $where);
+    }
+
+    /**
+     * 删除标签
+     */
+    public function delLable($id) {
+        $data['status'] = 0;
+        $where['labelID'] = $id;
+        return $this->model->saveLabel($data, $where);
+    }
+
+    /**
+     * 评价字典列表
+     */
+    public function getEvaluaList($where, $whereArr, $limit) {
+        $result = $this->model->getEvaluaList($where, $whereArr, $limit);
+        return $result;
+    }
+
+    /**
+     * 获取字典信息
+     */
+    public function getEvaluaInfo($id) {
+        if ($id * 1 < 1) {
+            return false;
+        }
+        return $this->model->getEvaluaInfo($id);
+    }
+
+    /**
+     * 保存评论字典
+     */
+    public function saveEvaluaType($par) {
+        if (empty($par)) {
+            return false;
+        }
+        $data = $where = array();
+        if ($par["eID"] * 1 > 0 && count($par) > 0) {
+            $where["eID"] = $par["eID"];
+        }
+        $data['content'] = $par['textcontent'];
+        $data['eValue'] = $par['eValue'];
+        $data['status'] = $par['status'] * 1 > 0 ? 1 : 0;
+        return $this->model->saveEvaluaType($data, $where);
+    }
+
+    /**
+     * 删除评论字典
+     */
+    public function delEvaluaType($id) {
+        $data['status'] = 0;
+        $where['eID'] = $id;
+        return $this->model->saveEvaluaType($data, $where);
+    }
+
+}

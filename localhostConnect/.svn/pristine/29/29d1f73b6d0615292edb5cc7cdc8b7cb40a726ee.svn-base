@@ -1,0 +1,209 @@
+<?php
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+namespace Common\Plugins;
+
+/**
+ * Description of UploadClient
+ *
+ * @author DREAM
+ */
+class UploadClient {
+
+    /**
+     * 图片服务器地址。
+     * @var type 
+     */
+    protected $host = UPLOAD;
+    private $fun = '/UpLoad/upSingle';
+    private $url = "";
+    private $rootPath = "upload/";
+
+    public function __construct() {
+        $this->url = $this->host . $this->fun;
+    }
+
+    /**
+     * 单个图片上传
+     * @param type $rootPath
+     * @param type $files
+     * @param type $subPath
+     */
+    public function upLoadSingle($rootPath, $files, $subPath = "", $del = "") {
+        if (empty($files)) {
+            return '没有上传的文件！';
+        }
+        $path = $this->rootPath . $rootPath;
+        if (strlen($subPath) > 2) {
+            $path.= "/" . date("Ym") . "/" . $subPath;
+        } else {
+            $path.= "/" . date("Ym");
+        }
+        $files['ext'] = pathinfo($files['name'], PATHINFO_EXTENSION);
+        $name = $this->getName($files['name']);
+        $path = $path . "/" . $name . '.' . $files['ext'];
+        $file = $files["tmp_name"];
+        $data = array("file" => "@" . $file, "name" => $files["name"], "type" => $files["type"], "path" => $path, "delpath" => $del);
+        $result = $this->postImg($data, $this->url);
+        logger_api('上传图片到资源服务器', $result, 'miniProgram');
+        $result = json_decode($result, true);
+        if ($result["ret_code"] == "0000") {
+            $img["path"] = "/" . $path;
+            $img["name"] = str_replace("." . $files["ext"], "", $files["name"]);
+            return $img;
+        } else {
+            return strlen($result["ret_msg"]) > 0 ? $result["ret_msg"] : "上传错误";
+        }
+    }
+
+    /**
+     * 生成微信的邀请二维码
+     * @param type $path
+     * @param type $imgURL    
+     */
+    public function upLoadWX($path, $imgURL) {
+        $data = array("imgURL" => $imgURL, "name" => "wximg", "type" => "png", "path" => $path);
+        $url = $this->host . "/UpLoad/upSinWX";
+        $result = $this->postImg($data, $url);
+        $result = json_decode($result, true);
+        if ($result["ret_code"] == "0000") {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * 识别二维码
+     * @param type $path
+     * @return boolean
+     */
+    public function scanWxQrcode($path) {
+        $data = array("name" => "wxQrcode", "type" => "png", "path" => $path);
+        $url = $this->host . "/UpLoad/scanWxQrcode";
+        $result = $this->postImg($data, $url);
+        $result = json_decode($result, true);
+        if ($result["ret_code"] == "0000") {
+            return $result["ret_msg"];
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * 电子合同上传
+     * @param type $content
+     * @param type $path
+     * @param type $name
+     * @return boolean
+     */
+    public function pdfOut($content, $path, $name) {
+        $path = $this->rootPath . $path;
+        $data = array("content" => $content, "name" => $name, "path" => $path);
+        $url = $this->host . "/UpLoad/pdfOut";
+        $result = $this->postImg($data, $url);
+        $result = json_decode($result, true);
+        if ($result["ret_code"] == "0000") {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * 百度编辑器上传
+     * @param type $object
+     * @param type $file$client->upUeditor($this->oriName, $this->fileType, $this->fullName, $file["tmp_name"]);
+     */
+    public function upUeditor($oriName, $fileType, $fullName, $file) {
+        $data = array("file" => "@" . $file, "name" => $oriName, "type" => $fileType, "path" => $fullName);
+        $result = $this->postImg($data, $this->url);
+        $result = json_decode($result, true);
+        if ($result["ret_code"] == "0000") {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+
+
+    public function postImg($data, $url) {
+
+        $data["sign"] = sha1(md5($data["path"]) . $data["name"]);
+
+        $header[0] = "Accept: text/xml, application/xml, application/xhtml+xml, ";
+        $header[0] .= "text/html;
+            q = 0.9, text/plain;
+            q = 0.8, image/png, */* ;q=0.5";
+        $header[] = "Cache-Control: max-age=0";
+        $header[] = "Connection: keep-alive";
+        $header[] = "Keep-Alive: 300";
+        $header[] = "Accept-Charset: ISO-8859-1,utf-8;q=0.7,*;q=0.7";
+        $header[] = "Accept-Language: en-us,en;q=0.5";
+        $header[] = "Pragma: "; // browsers keep this blank.
+
+
+        $curl = curl_init();
+        if (class_exists('\CURLFile')) {
+            curl_setopt($curl, CURLOPT_SAFE_UPLOAD, true);
+            $data['file'] =  new \CURLFile(trim($data['file'],"@"));//php >=5.5
+        } else {
+            if (defined('CURLOPT_SAFE_UPLOAD')) {
+                curl_setopt($curl, CURLOPT_SAFE_UPLOAD, false);
+            }
+        }
+        curl_setopt($curl, CURLOPT_URL, $url);
+        curl_setopt($curl, CURLOPT_POST, true );
+        curl_setopt($curl, CURLOPT_POSTFIELDS, $data);
+        curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, false); // 跳过证书检查
+        curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, true);  // 从证书中检查SSL加密算法是否存在
+        curl_setopt($curl, CURLOPT_USERAGENT, $_SERVER['HTTP_USER_AGENT']); // 模拟用户使用的浏览器
+        curl_setopt($curl, CURLOPT_FOLLOWLOCATION, 1); // 使用自动跳转
+        curl_setopt($curl, CURLOPT_AUTOREFERER, 1); // 自动设置Referer
+        curl_setopt($curl, CURLOPT_HTTPHEADER, $header); // 设置头部。
+        curl_setopt($curl, CURLOPT_TIMEOUT, 30); // 设置超时限制防止死循环
+        curl_setopt($curl, CURLOPT_HEADER, 0); // 显示返回的Header区域内容
+        curl_setopt($curl, CURLOPT_RETURNTRANSFER, true); // 获取的信息以文件流的形式返回
+        $result = curl_exec($curl);
+        if (curl_errno($curl)) {
+            return 'Errno' . curl_error($curl); //捕抓异常
+        }
+        curl_close($curl);
+        return $result;
+    }
+
+
+
+
+    /**
+     * 根据指定的规则获取文件或目录名称  
+     * @param  string $filename 原文件名
+     * @return string           文件或目录名称
+     */
+    private function getName($filename) {
+        $rule = array('uniqid', '');
+        $name = '';
+        if (is_array($rule)) { //数组规则
+            $func = $rule[0];
+            $param = (array) $rule[1];
+            foreach ($param as &$value) {
+                $value = str_replace('__FILE__', $filename, $value);
+            }
+            $name = call_user_func_array($func, $param);
+        } elseif (is_string($rule)) { //字符串规则
+            if (function_exists($rule)) {
+                $name = call_user_func($rule);
+            } else {
+                $name = $rule;
+            }
+        }
+        return date("Ymd") . $name;
+    }
+
+}

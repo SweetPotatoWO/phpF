@@ -1,0 +1,37 @@
+/*
+ Navicat Premium Data Transfer
+
+ Source Server         : 钱盒子测试
+ Source Server Type    : MySQL
+ Source Server Version : 50631
+ Source Host           : 120.25.85.171:3306
+ Source Schema         : 20161205
+
+ Target Server Type    : MySQL
+ Target Server Version : 50631
+ File Encoding         : 65001
+
+ Date: 23/08/2018 11:40:27
+*/
+
+SET NAMES utf8mb4;
+SET FOREIGN_KEY_CHECKS = 0;
+
+-- ----------------------------
+-- Table structure for d_user_signin
+-- ----------------------------
+DROP TABLE IF EXISTS `d_user_signin`;
+CREATE TABLE `d_user_signin`  (
+  `signinID` int(11) UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '签到ID',
+  `userID` int(11) UNSIGNED NOT NULL COMMENT '用户ID',
+  `signinDate` int(11) UNSIGNED NOT NULL COMMENT '签到日期',
+  `createdDate` int(11) UNSIGNED NOT NULL COMMENT '创建时间',
+  `updatedDate` int(11) UNSIGNED NOT NULL COMMENT '最后更新时间',
+  `createdUserID` int(11) UNSIGNED NOT NULL COMMENT '创建者ID',
+  `updatedUserID` int(11) UNSIGNED NOT NULL COMMENT '更新者ID',
+  `awardIntegral` tinyint(3) UNSIGNED NOT NULL COMMENT '奖励积分数',
+  `awardStatus` tinyint(2) UNSIGNED NOT NULL DEFAULT 1 COMMENT '状态  1--未抽奖  2--已抽奖',
+  PRIMARY KEY (`signinID`) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 53108 CHARACTER SET = utf8 COLLATE = utf8_general_ci COMMENT = '用户签到表' ROW_FORMAT = Compact;
+
+SET FOREIGN_KEY_CHECKS = 1;

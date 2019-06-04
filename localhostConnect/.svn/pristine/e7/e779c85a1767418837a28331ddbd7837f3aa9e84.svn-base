@@ -1,0 +1,176 @@
+<div class="modal-body">
+    <input  type="hidden" name="hidAction" id="hidAction" value="view" >
+    <form class="form-horizontal" id="form-Menu">       
+        <input type="hidden" name='menuID' id='menuID' value="{$data.menuID}"/>
+        <div class="form-group has-info">
+            <label class="control-label col-sm-2" for="inputInfo">上级功能：</label>
+            <div class="col-sm-7">
+                <select name="parentID" id="parentID" >
+                    <option value="0" default-level="1">&nbsp;&nbsp;--请选择--</option>
+                    <volist name="menuType" id="vo">
+                        <option value="{$vo.menuID}" <eq name="vo.menuID" value="$data['parentID']">selected</eq> default-level="2">{$vo.menuName}</option>
+                        <volist name="vo.children" id="item">
+                            <option value="{$item.menuID}" <eq name="item.menuID" value="$data['parentID']">selected</eq> default-level="3">&nbsp;&nbsp;├&nbsp;&nbsp;{$item.menuName}</option>
+                        </volist>
+                    </volist>
+                </select>
+            </div>
+        </div>
+        <div class="form-group has-info">
+            <label class="control-label col-sm-2" for="inputInfo">功能名称：</label>
+            <div class=" col-sm-7">
+                <input type="text" id="menuName" name="menuName" value="{$data.menuName}" class="form-control"  >          
+            </div>
+        </div>
+        <div class="form-group has-info">
+            <label class="control-label col-sm-2" for="inputInfo">功能代码：</label>
+            <div class=" col-sm-7">
+                <input type="text" id="menuCode" name="menuCode" value="{$data.menuCode}" class="form-control" placeholder="格式：控制器名/方法名"  disabled>          
+            </div>
+        </div>
+        <div class="form-group has-info">
+            <label class="control-label col-sm-2" for="inputInfo">URL链接：</label>
+            <div class=" col-sm-7">
+                <input type="text" id="menuUrl" name="menuUrl" value="{$data.menuUrl}" class="form-control" >         
+            </div>
+        </div>
+        <div class="form-group has-info">
+            <label class="control-label col-sm-2" for="inputInfo">排序：</label>
+            <div class="col-sm-7">
+                <input type="text" id="menuSort" name="menuSort" value="{$data.menuSort}" class="form-control">          
+            </div>
+        </div>
+        <div class="form-group has-info">
+            <label class="control-label col-sm-2" for="inputInfo">是否菜单：</label>
+            <div class="col-sm-7">
+                <label class="checkbox checkbox-inline" style="padding-left: 0px;">
+                    <input type="checkbox" name="IfRight" id="IfRight"  <gt name="data.menuID" value="0"><eq name="data.IfRight"  value="1">checked</eq><else/>checked</gt>>
+                    <span class="lbl"> </span>      
+                </label>
+                <label class="checkbox checkbox-inline" style="padding-left: 10px;">
+                    是否启用： <input type="checkbox" name="IfDisplay" id="IfDisplay"  <gt name="data.menuID" value="0"><eq name="data.IfDisplay"  value="1">checked</eq><else/>checked</gt>>
+                    <span class="lbl"> </span>      
+                </label>  
+                <label class="radio radio-inline" style="padding-left: 10px;">
+                    功能类型：<input type="radio" name="levelType" id="levelType1" value="1" <gt name="data.menuID" value="0"><eq name="data.levelType"  value="1">checked</eq><else/>checked</gt>>
+                    <span class="lbl"></span>其他 
+                </label> 
+                <label class="radio radio-inline" style="padding-left: 10px;">
+                    <input type="radio" name="levelType" id="levelType3" value="3" <gt name="data.menuID" value="0"><eq name="data.levelType"  value="3">checked</eq></gt>>
+                    <span class="lbl"></span>方法 
+                </label> 
+            </div>
+        </div>
+        <div class="form-group has-info">
+            <label class="control-label col-sm-2" for="inputInfo">描述：</label>
+            <div class="col-sm-7">
+                <textarea name="remark" id="remark" rows="2" cols="60" class="form-control">{$data.remark} </textarea>
+            </div>
+        </div>
+    </form>
+</div>
+<div class="modal-footer">
+    <button type="button" id="butCancel" class="btn btn-default" data-dismiss="modal">关闭</button>
+    <button type="button" id="butSavemenu" class="btn btn-primary" >保存</button>
+</div>  
+<script type="text/javascript" >
+    $(function ($) {
+        menuvalid();
+        $("#butSavemenu").click(function () {
+            var isOK = $("#form-Menu").valid();
+            if (isOK) {
+                saveMenu();
+            }
+        });
+
+        $("#IfRight").bind("click", function () {
+            changeIsMenu();
+        });
+        changeIsMenu();
+        $(":radio").click(function () {
+            changeLevelType();
+        });
+        changeLevelType();
+    });
+
+    function changeIsMenu() {
+        if ($("#IfRight").prop('checked')) {
+            $("#menuUrl").removeAttr("disabled");
+            $this = $("#parentID");
+            var defLevel = $("option:selected", $this).attr('default-level');
+            if (defLevel != 1) {
+                $("#menuUrl").rules("add", {required: true,
+                    messages: {
+                        required: "请输入URL地址!"
+                    }
+                });
+            }
+        } else {
+            $("#menuUrl").attr("disabled", "disabled");
+            $("#menuUrl").rules("remove");
+        }
+    }
+
+    function changeLevelType() {
+        var levelValue = $("input[name='levelType']:checked").val();
+        if (levelValue == 1) {
+            $("#menuCode").attr("disabled", "disabled");
+            $("#menuCode").rules("remove");
+        } else {
+            $("#menuCode").removeAttr("disabled");
+            $("#menuCode").rules("add", {required: true,
+                messages: {
+                    required: "请输入功能代码!"
+                }
+            });
+        }
+    }
+    ;
+
+    function saveMenu() {
+        var data = $Util.getData($("#form-Menu"));
+        data.IfRight = $("#IfRight").prop('checked') ? 1 : 0;
+        data.IfDisplay = $("#IfDisplay").prop('checked') ? 1 : 0;
+        $.ajax({
+            type: "post",
+            url: "/Backend/Backend/saveMenu",
+            data: {'par': data},
+            dataType: "json",
+            beforeSend: function (XMLHttpRequest) {
+                $(".sub-content").showLoading();
+            },
+            success: function (data, textStatus) {
+                $(".sub-content").hideLoading();
+                if (data.status == 1) {
+                    $("#menuID").val(data.data);
+                    $("#hidAction").val("edit");
+                    $win.confirm(data.msg + ",是否关闭窗口？").on(function () {
+                        $('#butCancel').trigger("click");
+                    });
+                } else {
+                    $win.warn(data.msg);
+                }
+            },
+            complete: function (XMLHttpRequest, textStatus) {
+                $(".sub-content").hideLoading();
+            },
+            error: function () {
+                $(".sub-content").hideLoading();
+            }
+        });
+    }
+    function menuvalid() {
+        $("#form-Menu").validate({
+            rules: {
+                menuName: {required: true},
+                menuSort: {required: true},
+                parentID: {required: true}
+            },
+            messages: {
+                menuName: {required: "菜单名称不能为空!"},
+                menuSort: {required: "排序为0~999的正整数!"},
+                parentID: {required: "父菜单不能为空"}
+            }
+        });
+    }
+</script>

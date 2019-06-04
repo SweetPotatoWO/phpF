@@ -1,0 +1,32 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: Administrator
+ * Date: 2018/8/14 0014
+ * Time: 9:50
+ */
+
+namespace Service\UserCenter\Model;
+use Common\Model\SlaveModel;
+
+class UserInfoModel extends SlaveModel {
+
+
+    /**获取到用户的工作经历
+     * @param $userID
+     */
+    public function getMoreInfo($userID) {
+        $field = array("ui.userSex","ui.workMajorName","ui.workCity","ui.provinceName","ui.cityName","ui.countyName");
+        return $this->alias("ui")->where(array("userID"=>$userID))->field($field)->find();
+    }
+
+
+    public function getUserlabelInfo($userID) {
+        $field = array("jobAuth","vip");
+        return M("user")->where(array("userID"=>$userID))->field($field)->find();
+    }
+
+
+
+
+}

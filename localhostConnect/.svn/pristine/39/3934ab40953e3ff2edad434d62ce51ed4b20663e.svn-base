@@ -1,0 +1,351 @@
+<?php
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+namespace SmallApi\Controller;
+
+use SmallApi\Controller\BaseMobileController;
+use Common\Common\AesSecurity;
+use Common\Common\Redis;
+use Service\JavaService\Logic\SiteLogic;
+use Think\Controller;
+
+/**
+ * Description of UserController
+ *
+ * @author Administrator
+ */
+class SearchController extends BaseMobileController {
+
+    private $return = array('status' => 0, 'msg' => '', 'data' => '');
+
+//    private $companyID;
+//    public function _initialize()
+//    {
+//
+//        $token = $_COOKIE['token'];
+//
+//        $aes = new AesSecurity();
+//        $token = $aes->decryptData($token);
+//        $info = $this->getTokenInfo($token);
+//
+//        if(!$info['userID']) {   //是否有登录
+//            echo "页面出现错误";
+//            exit;
+//        }
+//        $companyID = I('companyID');
+//        if(!empty($companyID)) {
+//            $this->companyID = $companyID;
+//        }
+//        $this->assign('companyID',$this->companyID);
+//    }
+
+    /**
+     * 小程序登录
+     */
+    public function login() {
+        $par = I('get.code');
+        $this->return = $this->getUserAuthInfo($par);
+    }
+
+    /**
+     * 热门搜索
+     */
+    public function hotSearchValue() {
+        $par = I('get.');
+        $pageNum = $par['pageNum'] * 1 > 0 ? $par['pageNum'] : 1;
+        $pageSize = $par['pageSize'] * 1 > 0 ? $par['pageSize'] : 20;
+        $service = new SiteLogic();
+        $info = $service->hotSearchWorld($pageNum - 1, $pageSize);
+        if (empty($info['list'])) {
+            $this->return['data'] = array(
+                array("key" => "code", "value" => "产品经理", 'type' => 1),
+                array("key" => "code", "value" => "华为", 'type' => 2),
+                array("key" => "code", "value" => "百度", 'type' => 2),
+                array("key" => "code", "value" => "腾讯", 'type' => 2),
+                array("key" => "code", "value" => "人工智能", 'type' => 2),
+                array("key" => "code", "value" => "夏铁军", 'type' => 1),
+                array("key" => "code", "value" => "销售", 'type' => 1),
+                array("key" => "code", "value" => "产品", 'type' => 1),
+                array("key" => "code", "value" => "生物基因", 'type' => 2),
+            );
+        } else {
+            $this->return['data'] = $info['list'];
+        }
+        $this->return['status'] = 1;
+    }
+
+    /**
+     * 搜索
+     */
+    public function search() {
+        $par = I('post.');
+        $pageIndex = $par['pageIndex'] * 1 > 0 ? $par['pageIndex'] : 1;
+        $pageSize = $par['pageSize'] * 1 > 0 ? $par['pageSize'] : 15;
+        $value = $par['value'];
+        $type = $par['type'];
+        $userID = 10977;
+        $javaService = new SiteLogic();
+        switch ($type) {
+            case 1:
+                $info = $javaService->SearchCompany($userID, $value, array($pageIndex - 1, $pageSize));
+                break;
+            case 2:
+                $info = $javaService->SearchLegal($userID, $value, array($pageIndex - 1, $pageSize));
+                break;
+            case 3:
+                $info = $javaService->SearchPeople($userID, $value, array($pageIndex - 1, $pageSize));
+                break;
+        }
+        if (empty($info['list'])) {
+            $this->return['msg'] = "数据为空";
+        } else {
+            $this->return['status'] = 1;
+            $this->return['data'] = $info['list'];
+        }
+    }
+
+    /*
+     * 用户主页
+     */
+
+    public function userIndex() {
+        $par = I('post.');
+        $userID = $par['userID'] = 10977; //被访问者id
+        $vserID = $par['vserID'] = 10977; //当前用户id
+        $ceterlogic = new \Service\UserCenter\Logic\UserCenterLogic();
+        $userCompanyInfo = $ceterlogic->getUserCompanyInfo($userID);  //公司用户的基本信息
+        $info['userCompany'] = $userCompanyInfo;
+        $workexperience = $ceterlogic->getUserEx($userID);   //获取到用户的工作经验
+        $info['workexperience'] = (empty($workexperience)) ? array() : $workexperience;
+        $userEd = $ceterlogic->getUserEducational($userID);   //获取到用户的教育经历
+        $info['userEd'] = (empty($userEd)) ? array() : $userEd;
+        $more = $ceterlogic->getMoreInfo($userID); //获取到用户的更多的信息
+        $ass = array("userSex" => "", "workMajorName" => "", "workCity" => "", "provinceName" => "", "cityName" => "", "countyName" => "");
+        $info["more"] = (empty($more)) ? $ass : $more;
+        $ceterlogic->addVisitor($userID, $vserID);  //添加访问记录
+        $this->return['status'] = 1;
+        $this->return['data'] = $info;
+    }
+
+    /**
+     * 提醒用户完善信息(特殊处理返回code2为弹框)
+     */
+    public function remind() {
+//        $this->userCheck();
+        $par = I('post.');
+        $userKey = $par['userKey'];
+        $userID = $par['userID'];
+        $user = new \Service\User\Logic\UserLogic();
+        $code = new \Common\Common\CodeGenerator();
+        $remindID = $code->decode($userKey);   //提醒人的USERID
+        $res = $user->getRemindLock($userID, $remindID);
+        if ($res) {
+            $this->return['msg'] = "已经提示过了";
+            return false;
+        }
+
+        $userCenter = new \Service\UserCenter\Logic\UserCenterLogic();
+        $userInfo = $userCenter->getOneByUserID($userID);  //获取到己方的信息
+
+
+        $newlogic = new \Service\News\Logic\NewsLogic();
+        $newlogic->sendSystemME($remindID, $userID, 'information', array($userInfo['companyName'], $userInfo['name']));   //我方发送系统的信息
+
+
+        $phone = $user->getPhoneByUserID($remindID);   //获取到对方的手机号码
+        $sms = new \Service\News\Logic\SendSMSLogic();
+        $sms->Information($phone, $userID, $userInfo['companyName'], $userInfo['name']);
+
+
+        $user->remindLock($userID, $remindID);
+        $this->return['status'] = 1;
+        $this->return['msg'] = "已发送消息，提醒对方来完善信息";
+    }
+
+    /**
+     * 根据token获取到参数
+     * @param $token
+     * @return bool
+     */
+    private function getTokenInfo($token) {
+        if (!empty($token)) {
+            $redis = Redis::GetInstance();
+            $searchKey = $this->getLoginCaheKey($token);
+            $keys = $redis->getKeys($searchKey);
+
+            if ($keys) {
+                if (count($keys) > 1) {
+                    logger_sys("Token重复", serialize($keys));
+                }
+                $userInfo = $redis->get($keys[0]);
+                if ($userInfo) {
+                    return $userInfo;
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * 获取登录缓存key
+     * @param type $token
+     * @param type $userID
+     * @return type
+     */
+    private function getLoginCaheKey($token, $userID = '') {
+        return sprintf('APP_Login_%s_%s', $token, $userID);
+    }
+
+    private function jsonSuccess($data) {
+        echo json_encode(array('code' => 0, 'msg' => '', 'data' => $data));
+        exit;
+    }
+
+    private function jsonFail($mes) {
+        echo json_encode(array('code' => 0, 'msg' => $mes, 'data' => ""));
+        exit;
+    }
+
+    /**
+     * 公司的基本信息
+     */
+    public function companyIndex() {
+        $companyID = I('post.companyID');
+        $site = new SiteLogic();
+        $data = $site->getChattelMortgage($companyID);
+        if (empty($data)) {
+            $this->return['msg'] = "没有数据";
+            return $this->return;
+        }
+        //公司基本信息
+        $info['companyName'] = strip_tags($data['companyName']); //公司名字
+        $info['regCapital'] = (empty($data['regCapital'])) ? "注册资金100万" : "注册资金" . $data['regCapital']; //注册资本
+        $info['regDatetime'] = (empty($data['regDatetime'])) ? "成立1年" : '成立' . floor((time() - strtotime($data['regDatetime'])) / 31536000) . '年'; //注册时间
+        $info['bssScope'] = (empty($data['bssScope'])) ? "暂无介绍" : $data['bssScope']; //注册时间
+        $info['img'] = "";
+        //高层股东信息
+        $sarr = $site->getShareholder($companyID);  //股东信息
+        $marr = $site->getManagers($companyID);   //高层信息
+        $manager = array();
+        if (!empty($sarr) || !empty($marr)) {
+            $allSarr = [];  //初始化
+            foreach ($sarr['list'] as $key => $value) {   //先处理股东
+                $one['name'] = $value['name'];   //股东的名字
+                $one['proportion'] = $value['proportion'];   //股份
+                $one['post'] = "";   //职位
+                $one['img'] = "";
+                if (!empty($marr['list'])) {
+                    foreach ($marr['list'] as $k => $v) {
+                        if ($one['name'] == $v['name']) {     //相等 就是同时是股东 又同时是高层
+                            $one['post'] = $v['post'];   //职位
+                        }
+                    }
+                }
+                $allSaName[] = $one['name'];  //全部股东的姓名
+                $allSarr[] = $one;   //查出全部股东的职位
+            }
+
+            foreach ($marr['list'] as $key => $value) {   //返回高管信息
+                if (!in_array($value['name'], $allSaName)) {   //股东存在高管中
+                    $mdata['name'] = $value['name'];
+                    $mdata['post'] = $value['post'];
+                    $mdata['proportion'] = 0;
+                    $mdata['img'] = "";
+                    $allSarr[] = $mdata;
+                }
+            }
+            if (!empty($allSarr)) {
+                $manager['num'] = count($allSarr);
+                $manager['list'] = $allSarr;
+            }
+        }
+        $this->return['status'] = 1;
+        $this->return['data']['companyInfo'] = $info;
+        $this->return['data']['managerInfo'] = $manager;
+        return $this->return;
+    }
+
+    /**
+     * 公司相关信息
+     */
+    public function getCompanyInfo() {
+        $par = I('post.');
+        isset($par['pageIndex']) && $pageIndex = $par['pageIndex'] * 1 > 0 ? $par['pageIndex'] : 1;
+        isset($par['pageSize']) && $pageSize = $par['pageSize'] * 1 > 0 ? $par['pageSize'] : 15;
+        $cid = $par['companyID'];
+        $type = $par['type'];
+        $site = new SiteLogic();
+        $data = array();
+        switch ($type) {
+            case 'management'://股东高管信息
+                $man = $site->getManagers($cid);
+                $sharehold = $site->getShareholder($cid);
+                !empty($man['list']) && $data['man'] = $man['list'];
+                !empty($sharehold['list']) && $data['sharehold'] = $sharehold['list'];
+                break;
+            case 'businessInfo'://工商信息
+                $data['baseInfo'] = $site->getChattelMortgage($cid);  //基本信息
+//                $data['changelist'] = $site->changeInfos($cid);
+//                $data['companyID'] = $cid;
+                break;
+            case 'changeInfos'://变更信息
+                $list = $site->changeInfos($cid, array($pageIndex - 1, $pageSize));
+                $data = $list['list'];
+                break;
+            case 'getPenalty'://行政处罚的列表
+                $list = $site->penalty($cid, array($pageIndex - 1, $pageSize));
+                $data = $list['list'];
+                break;
+            case 'getAbnormal'://经营异常
+                $list = $site->abnormal($cid, array($pageIndex - 1, $pageSize));
+                $data = $list['list'];
+                break;
+        }
+        if (empty($data)) {
+            $this->return['msg'] = '暂无数据';
+        } else {
+            $this->return['status'] = 1;
+            $this->return['data'] = $data;
+        }
+        return $this->return;
+    }
+
+    /**
+     * 名片删除
+     */
+    public function delCard() {
+        $par = I('post.');
+        $card = new CardLogic();
+        $userID = C('userID');
+        $res = $card->delCard($par['cid'], $userID);
+        if ($res) {
+            $this->return['status'] = 1;
+            $this->return['msg'] = "操作成功";
+            $card = new UserCardModel();
+            $baseInfo = $card->getOneBaseInfoById($par['cid']);
+            if (!empty($baseInfo['phoneOne'])) {
+                $phone = $baseInfo['phoneOne'];
+            } else {
+                $phone = $baseInfo['phoneTwo'];
+            }
+            if (!empty($phone)) {
+                $site = new SiteLogic();
+                $site->deleteJavaServicePhone();
+            }
+        } else {
+            $this->return['msg'] = "操作失败";
+        }
+        return $this->return;
+    }
+
+    public function __destruct() {
+        parent::__destruct();
+        $this->jsonReturn($this->return['status'], $this->return['msg'], $this->return['data']);
+    }
+
+}

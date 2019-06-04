@@ -1,0 +1,132 @@
+<?php
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+namespace Service\Search\Logic;
+
+use Common\Common\Redis;
+
+class SearchLogic {
+
+    private $model = null;
+
+    public function __construct() {
+        $this->model = new \Service\Search\Model\SearchModel();
+    }
+
+    /**
+     * 接口调用历史
+     */
+    public function getRequestList($where, $whereArr, $limit) {
+        $result = $this->model->getRequestList($where, $whereArr, $limit);
+        foreach ($result['rows'] as $k => $val) {
+            $result['rows'][$k]['timeDiff'] = strtotime($val['endDatetime']) - strtotime($val['requestDatetime']);
+        }
+        return $result;
+    }
+
+    /**
+     * 用户搜素分类统计
+     */
+    public function getUserSearchCount($where, $whereArr, $limit) {
+        $result = $this->model->getUserSearchCount($where, $whereArr, $limit);
+        return $result;
+    }
+
+    /**
+     * 用户搜素历史
+     */
+    public function userSearchList($where, $whereArr, $limit) {
+        $result = $this->model->userSearchList($where, $whereArr, $limit);
+        return $result;
+    }
+
+    /**
+     * 搜素历史
+     */
+    public function searchList($where, $whereArr, $limit) {
+        $result = $this->model->searchList($where, $whereArr, $limit);
+        return $result;
+    }
+
+    /**
+     * 热词列表
+     */
+    public function hotWordList($where, $whereArr, $limit) {
+        $result = $this->model->hotWordList($where, $whereArr, $limit);
+        foreach($result['rows'] as $k => $val){
+            if($val['status'] != 2){
+               $status = '已失效';
+            }elseif(time() >= $val['startTime'] && (empty($val['endTime']) || time() < $val['endTime'])){
+                $status = '进行中';//
+            }elseif(!empty($val['endTime']) && time()>=$val['endTime']){
+                $status = '已过期';
+            }else{
+                $status = '未开始';
+            }
+            $result['rows'][$k]['nowStatus'] = $status; 
+        }
+        return $result;
+    }
+
+    /**
+     * 获取使用中的热词
+     */
+    public function getUsingWord() {
+        $where['status'] = 2;
+        return $this->model->getUsingWord($where);
+    }
+
+    /**
+     * 获取热词详情
+     */
+    public function getWordInfo($wid) {
+        if (empty($wid)) {
+            return false;
+        }
+        return $this->model->getWordInfo($wid);
+    }
+
+    /**
+     * 保存热词
+     */
+    public function saveWord($par) {
+        if (empty($par)) {
+            return '参数不能为空！';
+        }
+        $where = array();
+        if ($par["wid"] * 1 > 0 && count($par) > 0) {
+            $where["wid"] = $par["wid"];
+        }
+        $numberLimit = C('HOT_NUM_LIMIT');
+        if ($par['status'] == 2 && $this->model->getUseTotal() >= $numberLimit) {
+            return '生效的热搜词最多' . $numberLimit . '个！';
+        }
+        $par['startTime'] = empty($par['startTime']) ? strtotime(date('Y-m-d')) : strtotime($par['startTime']);
+        isset($par['endTime']) && $par['endTime'] = strtotime($par['endTime']);
+        if ($this->model->saveWord($par, $where)) {
+            //删除缓存
+            $redis = Redis::GetInstance();
+            $redis->del('HOT_SEARCH_WORD');
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * 处理过期热词
+     */
+    public function dealHotWord($keyArr) {
+        if (empty($keyArr)) {
+            return false;
+        }
+        $where['wid'] = array('in', $keyArr);
+        $data['status'] = 3;
+        return $this->model->beOverdue($data, $where);
+    }
+
+}

@@ -1,0 +1,65 @@
+<div id="sub-User-list">
+    <script type="text/javascript" src="{$Think.BPATH}js/datejs/WdatePicker.js"></script> 
+    <input type="hidden" name="hidrefurl" id="hidrefurl" value="{:U(ACTION_NAME, $_GET)}">
+    <h4 class="title">{$companyInfo.companyName}<span class='titleqit'>企业年报信息</span></h4>
+    <table class="table table-striped table-bordered">
+        <thead>
+            <tr> 
+                <th>年报年份</th>
+                <th>创建时间</th>
+                <th>更新时间</th>
+                <th>企业基本信息</th>
+                <th>股东及出资信息</th>
+                <th>域名及网店信息</th>
+                <th>对外投资信息</th>
+                <th>企业资产状况信息</th>
+                <th>股权变更</th>
+                <th>年报变更</th>
+                <th>对外担保</th>
+            </tr>
+        </thead>
+        <tbody>
+        <volist name="result" id="vo">
+            <tr>  
+                <td>{$vo.reportYear}</td>
+                <td>{$vo.addDatetime}</td>
+                <td>{$vo.editDatetime}</td>
+                <td><a href="#"   data-toggle="popover" data-placement="bottom" data-content="{$vo.orgBaseInfo}" title="" data-original-title="提示">{$vo.orgBaseInfo|sub_str=0,6,'...'}</a></td>
+                <td><a href="#"   data-toggle="popover" data-placement="bottom" data-content="{$vo.shareHolder}" title="" data-original-title="提示">{$vo.shareHolder|sub_str=0,6,'...'}</a></td>
+                <td><a href="#"   data-toggle="popover" data-placement="bottom" data-content="{$vo.domainInfo}" title="" data-original-title="提示">{$vo.domainInfo|sub_str=0,6,'...'}</a></td>
+                <td><a href="#"   data-toggle="popover" data-placement="bottom" data-content="{$vo.obdInvestment}" title="" data-original-title="提示">{$vo.obdInvestment|sub_str=0,6,'...'}</a></td>
+                <td><a href="#"   data-toggle="popover" data-placement="bottom" data-content="{$vo.orgAssetInfo}" title="" data-original-title="提示">{$vo.orgAssetInfo|sub_str=0,6,'...'}</a></td>
+                <td><a href="#"   data-toggle="popover" data-placement="bottom" data-content="{$vo.equityChange}" title="" data-original-title="提示">{$vo.equityChange|sub_str=0,6,'...'}</a></td>
+                <td><a href="#"   data-toggle="popover" data-placement="bottom" data-content="{$vo.reportChange}" title="" data-original-title="提示">{$vo.reportChange|sub_str=0,6,'...'}</a></td>
+                <td><a href="#"   data-toggle="popover" data-placement="bottom" data-content="{$vo.guaranteeInfo}" title="" data-original-title="提示">{$vo.guaranteeInfo|sub_str=0,6,'...'}</a></td>
+            </tr>
+        </volist>
+        </tbody>
+    </table>
+    <nav class=" pagination-centered">
+        <ul class="pagination">
+            {$page}
+        </ul>
+    </nav>
+    <script type="text/javascript" >
+        $(function ($) {
+            $("[data-toggle='popover']").popover().on("mouseenter", function () {
+                var _this = this;
+                $(this).popover("show");
+                $(this).siblings(".popover").on("mouseleave", function () {
+                    $(_this).popover('hide');
+                });
+            }).on("mouseleave", function () {
+                var _this = this;
+                setTimeout(function () {
+                    if (!$(".popover:hover").length) {
+                        $(_this).popover("hide")
+                    }
+                }, 100);
+            });
+        });
+    </script>
+</div>
+
+
+

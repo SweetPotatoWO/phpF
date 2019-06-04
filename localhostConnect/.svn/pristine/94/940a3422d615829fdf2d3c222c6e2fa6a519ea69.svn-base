@@ -1,0 +1,122 @@
+<?php
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+namespace Service\System\Model;
+
+use Common\Model\SlaveModel;
+
+class LabelModel extends SlaveModel {
+
+    /**
+     * 标签列表
+     */
+    public function getLableList($where, $whereArr, $limit) {
+        $sqlcount = 'SELECT count(labelID) as total
+            FROM d_label WHERE(1=1) ' . $where;
+        $total = $this->query($sqlcount, $whereArr);
+        $result['total'] = $total[0]['total'];
+        array_push($whereArr, $limit);
+        $sql = 'SELECT labelID,labelDesc,labelCode,labelLogo,status,editUserName,addUserName,addDatetime,editDatetime
+            FROM d_label WHERE(1=1) ' . $where . ' ORDER BY status DESC,addDatetime DESC limit %s';
+        $result['rows'] = $this->query($sql, $whereArr);
+        return $result;
+    }
+
+    /**
+     * 获取标签信息
+     */
+    public function getLabelInfo($labelId) {
+        $where['labelID'] = $labelId;
+        $field = 'labelID,labelDesc,labelCode,labelLogo,status';
+        return $this->field($field)->where($where)->find();
+    }
+
+    /*
+     * 保存标签
+     */
+
+    public function saveLabel($data, $where) {
+        try {
+            if (is_array($where) && count($where) > 0) {
+                $data ['editUserName'] = C('userName');
+                $data ['editDatetime'] = time();
+                $result = $this->where($where)->data($data)->save();
+                return $result * 1 > 0 ? $where["labelID"] : false;
+            } else {
+                $data ['addUserName'] = C('userName');
+                $data ['addDatetime'] = time();
+                return $this->add($data);
+            }
+            return false;
+        } catch (Exception $ex) {
+            logger(__METHOD__, $ex->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * 删除职业
+     */
+    public function delLable($id) {
+        return $this->where(['labelID' => $id])->delete();
+    }
+
+    /**
+     * 标签列表
+     */
+    public function getEvaluaList($where, $whereArr, $limit) {
+        $sqlcount = 'SELECT count(eID) as total
+            FROM d_sys_evaluation WHERE(1=1) ' . $where;
+        $total = $this->query($sqlcount, $whereArr);
+        $result['total'] = $total[0]['total'];
+        array_push($whereArr, $limit);
+        $sql = 'SELECT * FROM d_sys_evaluation WHERE(1=1) ' . $where . ' ORDER BY status DESC,addDatetime DESC limit %s';
+        $result['rows'] = $this->query($sql, $whereArr);
+        return $result;
+    }
+
+    /**
+     * 获取评论类型信息
+     */
+    public function getEvaluaInfo($labelId) {
+        $where['eID'] = $labelId;
+        $field = 'eID,content,eValue,status';
+        return M('sysEvaluation')->field($field)->where($where)->find();
+    }
+
+    /*
+     * 保存字典
+     */
+
+    public function saveEvaluaType($data, $where) {
+        try {
+            if (is_array($where) && count($where) > 0) {
+                $data ['editUserName'] = C('userName');
+                $data ['editDatetime'] = time();
+                $result = M('sysEvaluation')->where($where)->data($data)->save();
+                return $result * 1 > 0 ? $where["eID"] : false;
+            } else {
+                $data ['addUserName'] = C('userName');
+                $data ['addDatetime'] = time();
+                return M('sysEvaluation')->add($data);
+            }
+            return false;
+        } catch (Exception $ex) {
+            logger(__METHOD__, $ex->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * 删除评论类型 
+     */
+    public function delEvaluaType($id) {
+        return M('sysEvaluation')->where(['eID' => $id])->delete();
+    }
+
+}

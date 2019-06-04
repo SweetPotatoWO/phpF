@@ -1,0 +1,26 @@
+<include file="Common:header" />
+<style>
+	body {background: #ffffff;}
+	.exp {padding: 2.142rem 1.07rem 0;}
+	.exp h4 {color: #000000;}
+	.exp h4:before {content: '';display: inline-block;width: .428rem;height: 1rem;background: #477BFF;border-radius: 2px;margin-right: .14rem;position: absolute;left: 0;top:4px;}
+</style>
+<div class="explain">
+	<div class="exp exp-1">
+		<h4 class="fs-16 pb-5 pl-10 relative">关于举报的处理说明</h4>
+		<ul class="color-deep mb-0">
+			<li>1、首先举报人本人信息（名字、公司、职位）要具体。举报对方冒充本公司员工需要举报人自己为认证用户，否则举报可能无效。</li>
+			<li>2、关于色情、违法政治问题以及个人销售广告，举报后双方的聊天记录自动提交到后台，作为管理员核实的依据。</li>
+			<li>3、所有举报在提交后3个工作日内处理，并在举报成功后反馈结果。</li>
+		</ul>
+	</div>
+	<div class="exp">
+		<h4 class="fs-16 pb-5 pl-10 relative">以下情况的举报不受理</h4>
+		<ul class="color-deep">
+			<li>1、在非启脉平台或者其他社交应用内发生的纠纷或者被骗而举报，举报无效。</li>
+			<li>2、因私人恩怨产生的口角争执，请自行拉黑，举报无效。</li>
+		</ul>
+	</div>
+</div>
+</body>
+</html>

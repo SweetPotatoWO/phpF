@@ -1,0 +1,27 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: tony
+ * Date: 2018/12/20
+ * Time: 14:08
+ */
+namespace SmallApi\Controller;
+
+use Service\Spread\Logic\HomeBannerLogic;
+
+class BannerController extends BaseMobileController {
+
+    public function getHomeBanner() {
+        $return = ['code' => 0, 'msg' => '', 'data' => []];
+        $logic = new HomeBannerLogic();
+        $bannerList = $logic->getImg(200);
+        $banner = [];
+        if (!empty($bannerList)) {
+            foreach ($bannerList as $val) {
+                $banner[] = UPLOAD . $val['bannerUrl'];
+            }
+        }
+        $return['data'] = $banner;
+        echo json_encode($return);
+    }
+}

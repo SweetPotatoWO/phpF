@@ -1,0 +1,233 @@
+<?php
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+namespace Frontend\Controller;
+
+use Common\Common\CodeGenerator;
+use GraphAware\Neo4j\OGM\Tests\Proxy\Model\User;
+use Service\Connect\Logic\DataImportLogic;
+use Service\Card\Logic\CardLogic;
+use Service\Card\Model\UserCardModel;
+use Service\JavaService\Logic\SiteLogic;
+use Service\News\Logic\SendSMSLogic;
+use Service\User\Logic\UserFriendLogic;
+use Service\User\Logic\UserInviteLogic;
+use Service\User\Logic\UserLogic;
+use Think\Controller;
+use Think\Exception;
+
+/**
+ * Description of CallbackController
+ *
+ * @author DREAM
+ */
+class CallbackController extends Controller
+{
+
+    private $data; //参数 
+    private $sign; //签名
+
+    public function __construct()
+    {
+        parent::__construct();
+        $this->getSystemPar();
+        $responseInfo = file_get_contents('php://input');
+        $inputParam = stripcslashes($responseInfo);
+        $this->data = json_decode($inputParam, TRUE);
+        $this->sign = sha1(md5($this->data["returnurl"]) . "mboxdarren");
+        if ($this->sign != $this->data["sign"]) {
+            logger("ERROR-------MQ业务回调签名错误：", $this->data["returnurl"]);
+            echo '签名错误';
+            exit();
+        }
+        logger("Start-------MQ业务回调参数：", $inputParam);
+    }
+
+    /**
+     * 获取系统参数。
+     */
+    private function getSystemPar()
+    {
+        $par = new \Service\System\Logic\SysParameterLogic();
+        $config = $par->getConfig();
+        C($config);
+    }
+
+    //测试勿上传
+    public function rabCash()
+    {
+//        sleep(20);
+        echo 'ok';
+        logger("测试消息队列：rabCash参数一", $this->data["returnurl"]);
+        logger("测试消息队列：rabCash参数二", $this->data["order"]);
+    }
+
+    /**
+     * 同步屏蔽状态
+     */
+    public function synShield()
+    {
+        $user_id = $this->data["user_id"];
+        $to_mobile = $this->data["to_mobile"];
+        $status = $this->data["status"];
+        if($user_id && $to_mobile){
+            $logic = new DataImportLogic();
+            try {
+                $logic->synShield($user_id,$to_mobile,$status);
+                logger("CallbackController/importContacts同步屏蔽状态成功", 'user_id:'.$user_id);
+            }catch (Exception $ex){
+                logger("CallbackController/synShield同步屏蔽状态失败", 'user_id:'.$user_id.',错误信息：'.$ex->getMessage());
+            }
+        }
+        echo 'success';
+    }
+
+    /**
+     * 导入联系人
+     */
+    public function importContacts()
+    {
+        $user_id = $this->data["user_id"];
+        if($user_id){
+            $logic = new DataImportLogic();
+            try {
+                $logic->import4Contacts($user_id);
+//                logger("CallbackController/importContacts导入联系人成功", 'user_id:'.$user_id);
+            }catch (Exception $ex){
+                logger("CallbackController/importContacts导入联系人失败", 'user_id:'.$user_id.',错误信息：'.$ex->getMessage());
+            }
+        }
+        echo 'success';
+    }
+
+    /**
+     * 导入名片与用户、名片与公司的关系
+     */
+    public function import4Cards()
+    {
+        $user_id = $this->data["user_id"];
+        $card_id = $this->data["card_id"];
+        $tar_user_id = $this->data["tar_user_id"];
+        if($user_id && ($card_id || $tar_user_id)){
+            $logic = new DataImportLogic();
+            try {
+                $logic->import4Cards($user_id,$card_id,$tar_user_id);
+//                logger("CallbackController/import4Cards导入名片关系成功", 'user_id:'.$user_id);
+            }catch (Exception $ex){
+                logger("CallbackController/import4Cards导入名片关系失败", 'user_id:'.$user_id.',card_id:'.$card_id.',tar_user_id:'.$tar_user_id.',错误信息：'.$ex->getMessage());
+            }
+        }
+        echo 'success';
+    }
+
+    /**
+     * 为名片注册用户导入数据
+     */
+    public function import4CardsReg()
+    {
+        $mobile = $this->data["mobile"];
+        if($mobile){
+            $logic = new DataImportLogic();
+            try {
+                $logic->import4CardsReg($mobile);
+//                logger("CallbackController/import4CardsReg导入名片关系成功", 'mobile:'.$mobile);
+            }catch (Exception $ex){
+                logger("CallbackController/import4CardsReg导入名片关系失败", 'mobile:'.$mobile.',错误信息：'.$ex->getMessage());
+            }
+        }
+        echo 'success';
+    }
+
+
+    /**
+     * 通知发送短信
+     */
+    public function noticeMes() {
+        $user_id = $this->data['user_id'];
+        $phoneStr = $this->data['phoneStr'];
+        $user = new UserLogic();
+        $info = $user->getUserInfo($user_id);
+        $smstArr = C('phone_Message');
+        $content = $smstArr['Invitation'];
+        $gen = new CodeGenerator();
+        $key = $gen->createCode($user_id);
+        $url = WECHAT."user/register/key/".$key;
+        $name = ($info['name'])? $info['name']:"神秘人";
+        $content = vsprintf($content,array($name,$url));
+        $sms = new SendSMSLogic();
+        $sms->sendAllLetterMes($phoneStr,$user_id);   //一键发送全部短信
+        $sms->addBatchSmsLog($user_id,$phoneStr,$content);  //记录下批量发送的记录
+    }
+
+
+    /**
+     * 异步填充名片用户的信息
+     */
+    public function saveCompanyUser() {
+        $userID = $this->data['userID'];
+        $phone = $this->data['phone'];
+        $card = new CardLogic();
+        $card->addCardUserMes($phone,$userID);
+    }
+
+    /**
+     * 导入第三方的通讯录
+     */
+    public function notifyMail() {
+        $userID = $this->data['userID'];
+        $phone = $this->data['phone'];
+        $content = $this->data['content'];
+        $friend = new UserFriendLogic();
+        $friend->notifyImportMail($content,$userID,$phone);
+    }
+
+
+    /**
+     * 更新第三方的通讯录
+     */
+    public function notifyUpdateMail() {
+        $userID = $this->data['userID'];
+        $phone = $this->data['phone'];
+        $content = $this->data['content'];
+        $code = $this->data['code'];
+        $logID = $this->data['logID'];
+        $friend = new UserFriendLogic();
+        $friend->notifyUpdateMail($content,$userID,$phone,$code,$logID);
+    }
+
+
+    /**
+     * 活动获取到用户数据
+     */
+    public function registerByActive() {
+        $phone = $this->data['phone'];
+        $name = $this->data['name'];
+        $job = $this->data['job'];
+        $userLogic = new UserLogic();
+        $userLogic->registerByActive($phone,$name,$job);
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+}

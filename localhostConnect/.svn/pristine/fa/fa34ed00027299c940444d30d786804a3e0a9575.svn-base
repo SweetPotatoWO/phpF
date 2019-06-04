@@ -1,0 +1,140 @@
+<?php
+
+
+
+namespace Service\User\Model;
+
+use Common\Model\SlaveModel;
+use Service\Connect\Logic\ConnectRelationLogic;
+use Service\Connect\Logic\OperationLogic;
+use Service\News\Logic\NewsLogic;
+use Service\News\Logic\SendSMSLogic;
+use Service\News\Logic\SmsSendLogic;
+use Service\User\Logic\UserLogic;
+
+/**
+ * Description of UserSourceModel
+ *
+ * @author Administrator
+ */
+class UserJobauthModel extends SlaveModel {
+
+    /**
+     * 增加认证
+     * @param $data
+     * @return mixed
+     */
+    public function addAuth($data) {
+        $data['addDatetime'] = time();
+        return $this->add($data);
+    }
+
+
+    /**
+     * 获取到认证列表
+     * @param $where
+     * @param $limit
+     * @return mixed
+     */
+    public function getAuthList($where,$limit) {
+         $model = $this->alias('uj')
+             ->join("d_user as u on uj.userID=u.userID")
+           ->field("uj.authID,u.phone,uj.companyName,u.nickname as name,uj.job,uj.group,uj.companyID,uj.mailBox,uj.certificate,uj.workCard,uj.authStatus");
+         if($where) $model = $model->where($where);
+         return  $model->limit($limit)->order('authID desc')->select();
+    }
+
+    /**
+     * 获取到认证的数量
+     * @param $where
+     * @return mixed
+     */
+    public function getAuthCount($where) {
+        return $this->where($where)->count();
+    }
+
+    /**
+     * 处理认证的信息
+     * @param $id
+     * @param $status
+     * @param $name
+     * @return bool
+     */
+    public function ajaxAuthHanld($id,$status,$data) {
+        $data['authStatus'] = $status;
+
+        $this->startTrans();
+        $res =  $this->where(array('authID'=>$id))->save($data);
+        if(!$res) {
+            $this->rollback();
+            return false;
+        }
+        $info = $this->getOne($id);
+        if($status == 1) {     //审核通过
+            $res = M("user")->where(array("userID"=>$info['userID'],"jobAuth"=>0))->save(array("jobAuth"=>1));
+            if(!$res) {
+                $this->rollback();
+                return false;
+            } else {
+                $connect = new ConnectRelationLogic();
+                $user = new UserLogic();
+                $phone = $user->getPhoneByUserID($info['userID']);   //获取到电话号码
+                $arr = array(
+                    'phone'=>$phone,
+                    'jobAuth'=>1,
+                );
+                $op = new OperationLogic();
+                $person = $op->getPersonModel($arr);
+                $connect->upsertPerson($person);
+            }
+            $sms = new SendSMSLogic();
+            $sms->agreeJobAuth($phone,$info['userID']);   //发送短信
+            $news = new NewsLogic();   //系统消息
+            $news->addAuthNews("通过认证审核",$info['userID'],"恭喜您职业认证成功",'JobAuthSuccess');
+        } else {
+            $news = new NewsLogic();   //系统消息
+            $news->addAuthNews("未通过认证审核",$info['userID'],$data['examReason'],'JobAuthFail');
+        }
+        $this->commit();
+        return true;
+    }
+
+    /**
+     * 根据ID获取到一条记录
+     * @param $cid
+     * @return mixed
+     */
+    public function getOne($cid) {
+        return $this->where(array("authID"=>$cid))->field("authID,mailBox,certificate,workCard,userID,authStatus,job,companyName,companyID,examRemark,examReason")->find();
+    }
+
+    /**
+     * 根据UserID获取到一条记录
+     * @param $userID
+     * @return mixed
+     */
+    public function getAuthInfoByUserID($userID) {
+        return $this->where(array('userID'=>$userID))->order('authID desc')->field("userID,authStatus,companyName,companyID,examRemark,examReason")->find();
+    }
+
+    /**
+     * 获取到一条记录
+     */
+    public function getOneRecord($where) {
+        if(empty($where)) {
+            return false;
+        }
+        return $this->where($where)->find();
+    }
+
+
+    /**
+     * 废除最新通过的一条的记录
+     * @param $userID
+     * @param $companyID
+     */
+    public function resetAuthRecord($userID) {
+        return $this->where(array('userID'=>$userID,'authStatus'=>array('in',array(1,0,2))))->save(array('authStatus'=>3));
+    }
+
+}

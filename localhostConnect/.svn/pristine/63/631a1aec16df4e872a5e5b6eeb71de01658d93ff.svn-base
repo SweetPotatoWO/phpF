@@ -1,0 +1,190 @@
+<?php
+
+namespace Service\Connect\Model;
+
+use GraphAware\Neo4j\OGM\Annotations as OGM;
+use GraphAware\Neo4j\OGM\Common\Collection;
+
+/**
+ *公司节点实体模型
+ * @OGM\Node(label="Company")
+ */
+class CompanyModel extends BaseGraphModel
+{
+    /**
+     * @var int
+     *
+     * @OGM\GraphId()
+     */
+    protected $id;
+
+    /**
+     * 公司编号
+     * @OGM\Property(type="int")
+     * @var int
+     */
+    protected $company_id;
+
+    /**
+     * 公司名称
+     * @OGM\Property(type="string")
+     * @var string
+     */
+    protected $company_name;
+
+    /**
+     * 城市
+     * @OGM\Property(type="string")
+     * @var string
+     */
+    protected $city;
+
+    /**
+     * 行业
+     * @OGM\Property(type="string")
+     * @var string
+     */
+    protected $industry;
+
+    /**
+     * 评分
+     * @OGM\Property(type="int")
+     * @var int
+     */
+    protected $grade;
+
+    /**
+     * @var ConnectWorkModel[]|Collection
+     *
+     * @OGM\Relationship(relationshipEntity="ConnectWorkModel",type="WORK_IN", direction="INCOMING", collection=true, mappedBy="company")
+     */
+    protected $staff;
+
+    public function __construct()
+    {
+        $this->staff = new Collection();
+    }
+
+    /**
+     * @return int
+     */
+    public function getId()
+    {
+        return $this->id;
+    }
+
+    /**
+     * @return int
+     */
+    public function getCompanyId()
+    {
+        return $this->company_id;
+    }
+
+    /**
+     * @param int $company_id
+     * @return CompanyModel
+     */
+    public function setCompanyId($company_id)
+    {
+        $this->company_id = (int)$company_id;
+        return $this;
+    }
+
+    /**
+     * @return string
+     */
+    public function getCompanyName()
+    {
+        return $this->company_name;
+    }
+
+    /**
+     * @param string $company_name
+     * @return CompanyModel
+     */
+    public function setCompanyName($company_name)
+    {
+        $this->company_name = $company_name;
+        return $this;
+    }
+
+    /**
+     * @return string
+     */
+    public function getCity()
+    {
+        return $this->city;
+    }
+
+    /**
+     * @param string $city
+     * @return CompanyModel
+     */
+    public function setCity($city)
+    {
+        $this->city = $city;
+        return $this;
+    }
+
+    /**
+     * @return string
+     */
+    public function getIndustry()
+    {
+        return $this->industry;
+    }
+
+    /**
+     * @param string $industry
+     * @return CompanyModel
+     */
+    public function setIndustry($industry)
+    {
+        $this->industry = $industry;
+        return $this;
+    }
+
+    /**
+     * @return int
+     */
+    public function getGrade()
+    {
+        return $this->grade;
+    }
+
+    /**
+     * @param int $grade
+     * @return CompanyModel
+     */
+    public function setGrade($grade)
+    {
+        $this->grade = $grade;
+        return $this;
+    }
+
+    /**
+     * @return ConnectWorkModel[]|Collection
+     */
+    public function getStaff()
+    {
+        return $this->staff;
+    }
+
+    public function addStaff(PersonModel $staff)
+    {
+        $connect = new ConnectWorkModel($staff,$this);
+        $this->getStaff()->add($connect);
+    }
+
+    /**
+     * 获取实体编辑参数串和参数
+     * @param string $alias
+     * @param array $ignore 不需要获取的字段（一般指查询字段）
+     * @return array
+     */
+    public function getEditParam($alias='m',$ignore=['company_id'])
+    {
+        return $this->getSetArray('company_id,company_name,city,industry,profession,grade',$alias,$ignore);
+    }
+}

@@ -1,0 +1,102 @@
+<div id="sub-User-list">
+    <script type="text/javascript" src="{$Think.BPATH}js/datejs/WdatePicker.js"></script> 
+    <input type="hidden" name="hidrefurl" id="hidrefurl" value="{:U(ACTION_NAME, $_GET)}">
+    <h4 class="title">用户认证设置 <span class="titleqit">默认查询一周内记录</span></h4>
+    <form class="form-inline" id="query_User"> 
+        <div class="form-group ">
+            <label class="control-label">列表信息:</label>
+
+        </div>    
+
+    </form>
+    <table class="table table-striped table-bordered">
+        <thead>
+            <tr> 
+                <th>ID</th>
+                <th>code</th>
+                <th>描述</th>
+                <th>logo</th>
+                <th>添加时间</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody>
+        <volist name="list" id="vo">
+            <tr>  
+                <td >{$vo.labelID}</td>
+                <td>{$vo.labelCode}</td>
+                <td>{$vo.labelDesc}</td>
+                <td><img src="{$img}{$vo.labelLogo}" style="width: 20px; height: 20px;"></td>
+                <td>{$vo.addDatetime|formatterminal}</td>
+                <td><a class="btn btn-xs btn-primary pr-10" href="/Backend/Business/editImg/key/{$vo.labelID}"  onclick="$win.dialog(this, event)" title="修改-参数"><span class="icon-edit"></span>编辑</a></td>
+            </tr>
+        </volist>
+        </tbody>
+    </table>
+<nav class=" pagination-centered">
+    <ul class="pagination">
+        {$page}
+    </ul>
+</nav>
+<script type="text/javascript" >
+    $(function($) {
+        $("#txtuserType").val("{$Think.post.txtuserType}");
+        $("#txtrealStatus").val("{$Think.post.txtrealStatus}");
+        $("#txtuserSex").val("{$Think.post.txtuserSex}");
+    });
+    function getUserInfo() {
+        if (!confirm("是否确认导出数据？")) {
+            return;
+        }
+        var url = "/Backend/User/exportUserInfo/";
+        getInfo(url, 1);
+    }
+    function getInfo(url, page) {
+        var emp = getPar();
+        //   $("#missile").attr("disabled", true);
+        $.ajax({
+            type: "post",
+            url: url,
+            data: {"par": emp, "page": page},
+            dataType: "json",
+            beforeSend: function() {
+                $(".sub-content").showLoading();
+            },
+            success: function(data) {
+                $(".sub-content").hideLoading();
+                if (data.status == 1) {
+                    $("#dowonload").text("Dowonload");
+                    $("#dowonload").attr("href", "/" + data.data);
+                    $win.message(data.msg);
+                } else {
+                    $win.warn(data.msg);
+                }
+            },
+            complete: function(XMLHttpRequest, textStatus) {
+                $(".sub-content").hideLoading();
+            },
+            error: function() {
+                $(".sub-content").hideLoading();
+            }
+        });
+    }
+    function getPar() {
+        var emp = new Object();
+        emp.txtphone = $("#txtphone").val();
+        emp.txtrealName = $("#txtrealName").val();
+        emp.txtrealStatus = $("#txtrealStatus").val();
+        emp.txtuserSex = $("#txtuserSex").val();
+        emp.txtuserType = $("#txtuserType").val();
+        emp.txtDateStart = $("#txtDateStart").val();
+        emp.txtDateEnd = $("#txtDateEnd").val();
+        emp.birthdayStart = $("#birthdayStart").val();
+        emp.birthdayEnd = $("#birthdayEnd").val();
+        emp.vipLerver = $("#vipLerver").val();
+        emp.serviceID = $("#serviceID").val();
+        return emp;
+    }
+</script>
+</div>
+
+
+

@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<title></title>
+	<meta name="description" content="" />
+    <meta name="keywords" content="" />
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+	<link rel="stylesheet" href="{$Think.FPATH}css/bootstrap.min.css">
+	<link rel="stylesheet" href="{$Think.FPATH}css/index.css">
+</head>
+<body>
+	<div class="about">
+		<div class="banner">			
+			<div class="container">
+				<div class="clearfix">
+					<nav class="navigation">
+						<ul>
+							<li><a rel="nofollow" title="首页" href="/">首页</a></li>
+							<li class="active"><a rel="nofollow" title="关于" href="/about">关于</a></li>
+						</ul>
+					</nav>
+				</div>
+				<p class="">关于产品<br />开启人生机遇<br />扩展自己的职场人脉圈<br />事业蒸蒸日上</p>
+			</div>
+		</div>	
+		
+		<div class="aboutUs">
+			<div class="container">
+				<h2>关于我们</h2>
+				<div class="partner partner1 clearfix">
+					<div class="fl text">
+						<h5>刘博睿</h5>
+						<p>曾先后取得中国科学技术大学学士学位、美国普林斯顿大学硕士博士学位。在美国留学期间，曾多次创业，积累了丰富的创业经验。现回国加入合伙人团队，致力于职场人脉领域算法研究、以及商业模式创新。</p>
+					</div>
+					<div class="fr img"></div>
+				</div>
+				<div class="partner partner2 clearfix">
+					<div class="fl text">
+						<h5>合伙人家族</h5>
+						<p>合伙人团队成立于2018年8月，目前技术团队二十余人，包括后台PHP，JAVA，移动端Android、IOS，前端等开发人员，以及几位美女UI设计。我们的团队将不断成长，发展壮大。</p>
+					</div>
+					<div class="fr img"></div>
+				</div>
+			</div>			
+		</div>
+	</div>
+	
+	<footer class="text-center">
+		<h4>深圳市合伙人网络科技有限公司</h4>
+		<p><a rel="nofollow" href="http://www.miitbeian.gov.cn/">粤ICP备00000000号</a></p>
+	</footer>
+</body>
+</html>

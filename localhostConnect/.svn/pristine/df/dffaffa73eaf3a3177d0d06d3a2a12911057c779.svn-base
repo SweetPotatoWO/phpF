@@ -1,0 +1,86 @@
+<div class="modal-body">
+    <script type="text/javascript" charset="utf-8" src="{$Think.BPATH}js/uploader/webuploader.min.js"></script>
+    <script type="text/javascript" charset="utf-8" src="{$Think.BPATH}js/uploader/uploader.js"></script>
+    <input  type="hidden" name="hidAction" id="hidAction" value="view" >
+    <form class="form-horizontal" id="form-Type">       
+        <input type="hidden" name='prosecuteID' id='prosecuteID' value="{$data.prosecuteID}"/>
+        <input type="hidden" name='userID' id='userID' value="{$data.userID}"/>
+        <div class="form-group has-info">
+            <label class="control-label col-sm-2" for="inputInfo">处理结果：</label>
+            <div class=" col-sm-7">
+                <select id='status'  name='status' class="form-control">
+                    <option value=''>--请选择--</option>
+                     <volist name="proseStatus" id="vo" key="k">
+                        <option  value ="{$k+1}" <eq name='data.status' value='$k'>selected="selected"</eq>>{$vo}</option>
+                    </volist>
+                </select>       
+            </div>
+        </div>
+        <div class="form-group has-info">
+            <label class="control-label col-sm-2" for="inputInfo">备注：</label>
+            <div class="col-sm-7">
+                <textarea class="area_editform-control" cols="50" rows="3" name="remark" id="remark">{$data.remark}</textarea>
+            </div>
+        </div>
+</div>
+</form>
+</div>
+<div class="modal-footer">
+    <button type="button" id="butCancel" class="btn btn-default" data-dismiss="modal">关闭</button>
+    <button type="button" id="butSaveType" class="btn btn-primary" >保存</button>
+</div>  
+<script type="text/javascript" >
+    $(function ($) {
+        formDataValid();
+        $("#butSaveType").click(function () {
+            var isOK = $("#form-Type").valid();
+            if (isOK) {
+                saveData();
+            }
+        });
+    });
+    function saveData() {
+        var data = $Util.getData($("#form-Type"));
+        $.ajax({
+            type: "post",
+            url: "/Backend/User/saveProse",
+            data: {'par': data},
+            dataType: "json",
+            beforeSend: function (XMLHttpRequest) {
+                $(".sub-content").showLoading();
+            },
+            success: function (data, textStatus) {
+                $(".sub-content").hideLoading();
+                if (data.status == 1) {
+                    $("#hidAction").val("edit");
+                    $win.message(data.msg).on(function () {
+                        $('#butCancel').trigger("click");
+                    });
+                } else {
+                    $win.warn(data.msg);
+                }
+            },
+            complete: function (XMLHttpRequest, textStatus) {
+                $(".sub-content").hideLoading();
+            },
+            error: function () {
+                $(".sub-content").hideLoading();
+            }
+        });
+    }
+   $.validator.addMethod("slect", function (value, element) {
+        return  value != '';
+    }, "选择处理结果");
+    function formDataValid() {
+        $("#form-Type").validate({
+            rules: {
+                remark: {required: true},
+                status: {required: true,slect:true}
+           },
+            messages: {
+                remark: {required: "备注不能为空!"},
+                status: {required: "请选择处理结果!",slect:'请选择处理结果'}
+            }
+        });
+    }
+</script>

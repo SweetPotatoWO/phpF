@@ -1,0 +1,37 @@
+/*
+Navicat MySQL Data Transfer
+
+Source Server         : 钱盒子测试
+Source Server Version : 50631
+Source Host           : 120.25.85.171:3306
+Source Database       : devmbox_hx
+
+Target Server Type    : MYSQL
+Target Server Version : 50631
+File Encoding         : 65001
+
+Date: 2018-08-08 14:23:19
+*/
+
+SET FOREIGN_KEY_CHECKS=0;
+
+-- ----------------------------
+-- Table structure for d_slave_user_count
+-- ----------------------------
+DROP TABLE IF EXISTS `d_slave_user_count`;
+CREATE TABLE `d_slave_user_count` (
+  `countID` int(11) NOT NULL AUTO_INCREMENT,
+  `userID` int(11) NOT NULL COMMENT '用户ID',
+  `phone` varchar(50) DEFAULT NULL COMMENT '用户手机号',
+  `realName` varchar(200) NOT NULL DEFAULT '' COMMENT '姓名',
+  `rechargeMoney` decimal(15,2) DEFAULT '0.00' COMMENT '充值金额',
+  `rechargeCount` int(11) DEFAULT '0' COMMENT '充值次数',
+  `cashMoney` decimal(15,2) DEFAULT '0.00' COMMENT '提现金额',
+  `cashCount` int(11) DEFAULT '0' COMMENT '提现次数',
+  `tenderMoney` decimal(15,2) DEFAULT '0.00' COMMENT '投资金额',
+  `tenderCount` int(11) DEFAULT '0' COMMENT '投资次数',
+  `addDatetime` int(11) NOT NULL COMMENT '创建时间',
+  `editDatetime` int(11) NOT NULL COMMENT '修改时间',
+  PRIMARY KEY (`countID`),
+  UNIQUE KEY `idx_userid` (`userID`) USING HASH
+) ENGINE=InnoDB AUTO_INCREMENT=29616 DEFAULT CHARSET=utf8 COMMENT='统计用户投资，提现，充值';

@@ -1,0 +1,182 @@
+<include file="Common:header" />
+<div class="report pb-10">
+	<!--基本信息-->
+	<div class="box bg-white pl-20 mt-10">
+		<h6 class="hd transform pt-15 pb-15 mb-0 bord-b relative">基本信息<span></span></h6>
+		<div class="bd fs-12 pad-15 pl-0">
+			<div class="content clearfix">
+				<h6 class="fs-12 fl color-deep">注册号</h6>
+				<div class="fr">{$orgBaseInfo.regNO}</div>
+			</div>
+			<div class="content clearfix">
+				<h6 class="fs-12 fl color-deep">企业名称</h6>
+				<div class="fr">{$orgBaseInfo.name}</div>
+			</div>
+			<div class="content clearfix">
+				<h6 class="fs-12 fl color-deep">经营状态</h6>
+				<div class="fr">{$orgBaseInfo.regStatus}</div>
+			</div>
+			<div class="content clearfix">
+				<h6 class="fs-12 fl color-deep">从业人数</h6>
+				<div class="fr">{$orgBaseInfo.employeeNum}</div>
+			</div>
+			<div class="content clearfix">
+				<h6 class="fs-12 fl color-deep">本年度是否发生股东股权转让</h6>
+				<div class="fr"><if condition="empty($orgBaseInfo['stockRightTransfer'])">否<else/>是</if></div>
+			</div>
+			<div class="content clearfix">
+				<h6 class="fs-12 fl color-deep">企业是否有投资信息或购买其他公司股权号</h6>
+				<div class="fr"><if condition="empty($orgBaseInfo['OtherStockRight'])">否<else/>是</if></div>
+			</div>
+		</div>
+	</div>
+	<!--联系方式-->
+	<div class="box bg-white pl-20 mt-10">
+		<h6 class="hd pt-15 pb-15 mb-0 bord-b relative">联系方式<span></span></h6>
+		<div class="bd fs-12 pad-15 pl-0 none">
+			<div class="content clearfix">
+				<h6 class="fs-12 fl color-deep">企业联系电话</h6>
+				<div class="fr">{$orgBaseInfo.telePhone}</div>
+			</div>
+			<div class="content clearfix">
+				<h6 class="fs-12 fl color-deep">企业地址</h6>
+				<div class="fr">{$orgBaseInfo.regAddress}</div>
+			</div>
+			<div class="content clearfix">
+				<h6 class="fs-12 fl color-deep">电子邮箱</h6>
+				<div class="fr">{$orgBaseInfo.email}</div>
+			</div>			
+		</div>
+	</div>
+	<!--股东及出资信息-->
+	<div class="box bg-white pl-20 mt-10">
+		<h6 class="hd pt-15 pb-15 mb-0 bord-b relative">股东及出资信息<span></span></h6>
+
+		<foreach name="shareHolder" item="sh">
+		<div class="bd fs-12 pad-15 pl-0 none">
+			<div class="content">
+				<h6 class="fs-12">{$sh.investorName}</h6>
+			</div>
+			<div class="content clearfix">
+				<h6 class="fs-12 fl color-deep">认缴出资额</h6>
+				<div class="fr">{$sh.subscribeAmount}万人民币</div>
+			</div>
+			<div class="content clearfix">
+				<h6 class="fs-12 fl color-deep">认缴时间</h6>
+				<div class="fr">{$sh.subscribeTime}</div>
+			</div>
+			<div class="content clearfix">
+				<h6 class="fs-12 fl color-deep">实缴出资额</h6>
+				<div class="fr">{$sh.paidAmount}万人民币</div>
+			</div>
+			<div class="content clearfix">
+				<h6 class="fs-12 fl color-deep">实缴时间</h6>
+				<div class="fr">{$sh.paidTime}</div>
+			</div>
+
+		</div>
+		</foreach>
+
+	</div>
+	<!--网站/网店信息-->
+	<div class="box bg-white pl-20 mt-10">
+		<h6 class="hd pt-15 pb-15 mb-0 bord-b relative">网站/网店信息<span></span></h6>
+		<div class="bd fs-12 pad-15 pl-0 none">
+			<foreach name="domainInfo" item="domain">
+			<div class="content">
+				<h6 class="fs-12">{$domain.name|default="未公示"}</h6>
+				<div class="color-deep">{$domain.url|default="未公示"}</div>
+			</div>
+			</foreach>
+		</div>
+	</div>
+	<!--对外投资信息-->
+	<div class="box bg-white pl-20 mt-10">
+		<h6 class="hd pt-15 pb-15 mb-0 bord-b relative">对外投资信息<span></span></h6>
+		<foreach name="obdInvestment" item="obd">
+		<div class="bd fs-12 pad-15 pl-0 none">
+			<div class="content">
+				<h6 class="fs-12">{$obd.companyName}</h6>
+			</div>
+			<div class="content clearfix">
+				<h6 class="fs-12 fl color-deep">注册号</h6>
+				<div class="fr">{$obd.socialCreditCode}</div>
+			</div>
+		</div>
+		</foreach>
+	</div>
+	<!--企业资产状况信息-->
+	<div class="box bg-white pl-20 mt-10">
+		<h6 class="hd pt-15 pb-15 mb-0 bord-b relative">企业资产状况信息<span></span></h6>
+
+		<div class="bd fs-12 pad-15 pl-0 none">
+			<div class="content clearfix">
+				<h6 class="fs-12 fl color-deep">资产总额</h6>
+				<div class="fr">{$orgAssetInfo.totalAssets}</div>
+			</div>
+			<div class="content clearfix">
+				<h6 class="fs-12 fl color-deep">所有者权益合计</h6>
+				<div class="fr">{$orgAssetInfo.totalEquity}</div>
+			</div>
+			<div class="content clearfix">
+				<h6 class="fs-12 fl color-deep">营业总收入</h6>
+				<div class="fr">{$orgAssetInfo.totalSales}</div>
+			</div>
+			<div class="content clearfix">
+				<h6 class="fs-12 fl color-deep">利润总额</h6>
+				<div class="fr">{$orgAssetInfo.totalProfit}</div>
+			</div>
+			<div class="content clearfix">
+				<h6 class="fs-12 fl color-deep">主营业务收入</h6>
+				<div class="fr">{$orgAssetInfo.primeBusProfit}</div>
+			</div>
+			<div class="content clearfix">
+				<h6 class="fs-12 fl color-deep">净利润</h6>
+				<div class="fr">{$orgAssetInfo.retainedProfit}</div>
+			</div>
+			<div class="content clearfix">
+				<h6 class="fs-12 fl color-deep">纳税总额</h6>
+				<div class="fr">{$orgAssetInfo.totalTax}</div>
+			</div>
+			<div class="content clearfix">
+				<h6 class="fs-12 fl color-deep">负债总额</h6>
+				<div class="fr">{$orgAssetInfo.totalLiability}</div>
+			</div>
+		</div>
+
+	</div>
+	<!--股权变更信息-->
+	<div class="box bg-white pl-20 mt-10">
+		<h6 class="hd pt-15 pb-15 mb-0 bord-b relative">股权变更信息<span></span></h6>
+		<foreach name="equityChange" item="eq">
+		<div class="bd fs-12 pad-15 pl-0 none">
+			<div class="content clearfix">
+				<h6 class="fs-12 fl color-deep">股东名称</h6>
+				<div class="fr">{$eq.investorName}</div>
+			</div>
+			<div class="content clearfix">
+				<h6 class="fs-12 fl color-deep">变更日期</h6>
+				<div class="fr">{$eq.changeTime}</div>
+			</div>
+			<div class="content clearfix">
+				<h6 class="fs-12 fl color-deep">变更前</h6>
+				<div class="fr">{$eq.ratioBefore}</div>
+			</div>
+			<div class="content clearfix">
+				<h6 class="fs-12 fl color-deep">变更后</h6>
+				<div class="fr">{$eq.ratioAfter}</div>
+			</div>
+			<!--暂无内容-->
+			<!--<div class="color-deep text-center">暂无内容</div>-->
+		</div>
+		</foreach>
+	</div>
+</div>
+<script>
+	$(".box").click(function(){
+		$(this).find(".hd").toggleClass("transform");
+		$(this).find(".bd").slideToggle();
+	})
+</script>
+</body>
+</html>

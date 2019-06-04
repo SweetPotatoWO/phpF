@@ -1,0 +1,117 @@
+<?php
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+namespace Service\News\Logic;
+
+
+
+use Service\News\Model\UserNewsModel;
+
+/**
+ * Description of AccountLogic
+ *
+ * @author Bourne
+ */
+class NewsLogic {
+
+    private $model = null;
+
+    public function __construct() {
+        $this->model = new UserNewsModel();
+    }
+
+    /**获取到全部的用户系统消息
+     * @param $userID
+     * @return mixed
+     */
+    public function getAllNewsList($userID,$limit="") {
+        $model =  $this->model->where(array("userID"=>$userID,"del"=>0))->field('content,from_unixtime(addDatetime,"%Y-%m-%d %H:%i:%S") as addDatetime,status,userID,del,title');
+            if(!empty($limit)) {
+                $model->limit($limit);
+            }
+            return $model->order('addDatetime desc')->select();
+    }
+
+    /**
+     * 修改为阅读状态
+     */
+    public function readStatus($id) {
+        return $this->model->where(array('userNewsID'=>$id))->save(array("status"=>1));
+    }
+
+
+    /**
+     * 删除
+     */
+    public function delAll($userID,$data){
+
+        $where['userID'] = $userID;
+        $where['userNewsID'] = array('in',$data);
+        return $this->model->where($where)->save(array("del"=>1));
+    }
+
+
+    /**
+     * 为用户新增一个消息
+     */
+    public function addNews($title,$userID,$text,$sender,$code="") {
+        $data['title'] = $title;
+        $data['userID'] = $userID;
+        $data['content'] = $text;
+        $data['code'] = $code;
+        $data['addDatetime'] = time();
+        $data['sender'] = $sender;
+        return $this->model->add($data);
+    }
+
+    /**
+     * 获取到未读取的数量
+     */
+    public function getCountNoRead($userID) {
+        $list = $this->model->where(array("userID"=>$userID,"status"=>0))->order("addDatetime desc")->find();
+        $count = $this->model->where(array("userID"=>$userID,"status"=>0))->order("addDatetime desc")->count();
+        return array('count'=>$count,"content"=>$list['content']);
+    }
+
+
+    /**
+     * 配置
+     * @param $code
+     * @return mixed
+     */
+    protected function newsConfig($code) {
+        $config = array(
+            'evaluate'=>array('title'=>'好友评价','content'=>'匿名好友评价你“%s”，试试评价我的好友吧。','code'=>'a'),
+            'letterSend'=>array('title'=>'私信已发送','content'=>'%s的%s已收到您的私信，请耐心等待。','code'=>'b'),
+            'letterGet'=>array('title'=>'收到私信','content'=>'%s的%s给您发送了私信，请查看详情。','code'=>'d'),
+            'information'=>array('title'=>'完善信息提醒','content'=>'%s的%s想要认识你，邀请你完善更多信息。','code'=>'e'),
+            'feedBack'=>array('title'=>'问题已反馈','content'=>'已收到您的反馈信息，我们将在3个工作日内给您回复。%s','code'=>'f'),
+        );
+        return $config[$code];
+    }
+
+
+    /**
+     * 发送内容
+     * @param $useID
+     * @param $code
+     * @param array $mesData
+     * @return mixed
+     */
+    public function sendSystemME($useID,$sender,$code,$mesData=array("")) {
+        $configData = $this->newsConfig($code);
+        $content = vsprintf($configData['content'],$mesData);
+        $title = $configData['title'];
+        $code = $configData['code'];
+        return $this->addNews($title,$useID,$content,$sender,$code);
+    }
+
+
+
+
+}

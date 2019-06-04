@@ -1,0 +1,140 @@
+<?php
+
+/**
+ * Created by PhpStorm.
+ * User: zhoull
+ * Date: 2018/8/14
+ * Time: 10:00
+ */
+namespace Common\Common;
+/*
+API Url：
+https://github.com/graphaware/neo4j-php-ogm
+*/
+
+use GraphAware\Neo4j\OGM\EntityManager;
+use Think\Exception;
+
+class GraphDbHelper
+{
+    static private  $instance   =  null;
+
+    public $db = null;
+    private function __construct()
+    {
+        $neo_host = C('Neo_host');
+        if(!$neo_host){
+            throw_exception('未指定Neo_host','GraphDbHelper/getInstance');
+        }
+        $this->db = EntityManager::create($neo_host);
+    }
+
+    static public function getInstance(){
+        if(!isset(self::$instance)){
+
+            self::$instance = new GraphDbHelper();
+        }
+        return self::$instance;
+    }
+
+    /**
+     * 获取全部列表
+     * @param $class
+     * @return array
+     */
+    public function findAll($class)
+    {
+        return $this->findBy($class,[]);
+    }
+
+    /**
+     * 根据条件获取列表
+     * @param $class
+     * @param array $criteria
+     * @param array|null $orderBy
+     * @param null $limits
+     * @return array
+     */
+    public function findBy($class,array $criteria, array $orderBy = null, $limits = null){
+        $limit=null;
+        $offset=null;
+        if($limits){
+            $limit_arr=explode(',',$limits);
+            if(count($limit_arr)>1){
+                $offset= $limit_arr[0];
+                $limit = $limit_arr[1];
+            }else{
+                $limit = $limit_arr[0];
+            }
+        }
+        return $this->db->getRepository($class)->findBy($criteria,$orderBy,$limit,$offset);
+    }
+
+    /**
+     * 查询
+     * @param $q
+     * @param string $limit 格式：limit 或 skip,limit
+     * @param array $mapping 别名-类名映射
+     * @param array $param 参数
+     * @return array|mixed
+     */
+    public function query($q,$limit='',$mapping=null,$param=null)
+    {
+        if($limit){
+            $limit_arr=explode(',',$limit);
+            if(count($limit_arr)>1){
+                $q .= ' SKIP '.$limit_arr[0];
+                $q .= ' LIMIT '.$limit_arr[1];
+            }else{
+                $q .= ' LIMIT '.$limit_arr[0];
+            }
+        }
+        $query = $this->db->createQuery($q);
+        if($mapping){
+            foreach ($mapping as $key=>$value) {
+                $query->addEntityMapping($key,$value);
+            }
+        }
+        if($param){
+            foreach ($param as $key=>$value) {
+                $query->setParameter($key,$value,gettype($value));
+            }
+        }
+        try {
+            $result = $query->execute();
+            return $result;
+        }catch (Exception $ex){
+            logger('GraphDbHelper/query',json_decode([
+                '错误'=>$ex->getMessage(),
+                '语句'=>$q
+            ],true));
+            return null;
+        }
+    }
+
+    /**
+     * 执行操作
+     * @param $q
+     * @param array $param 参数
+     * @return bool
+     */
+    public function execute($q,$param=null)
+    {
+        $query = $this->db->createQuery($q);
+        if($param){
+            foreach ($param as $key=>$value) {
+                $query->setParameter($key,$value,gettype($value));
+            }
+        }
+        try {
+            $query->execute();
+            return true;
+        }catch (Exception $ex){
+            logger('GraphDbHelper/execute',json_decode([
+                '错误'=>$ex->getMessage(),
+                '语句'=>$q
+            ],true));
+            return false;
+        }
+    }
+}

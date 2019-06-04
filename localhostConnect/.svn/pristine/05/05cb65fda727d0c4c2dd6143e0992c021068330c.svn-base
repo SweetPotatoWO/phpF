@@ -1,0 +1,156 @@
+<?php
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+namespace MobileApi\Api;
+
+use MobileApi\Common\MobileApiBase;
+use Service\News\Logic\SendSMSLogic;
+use Service\User\Logic\UserLogic;
+use Service\News\Logic\SendEmailLogic;
+use Common\Common\Redis;
+
+class ApiSms extends MobileApiBase {
+
+    public function getRules() {
+        return array(
+            'findCode' => array(
+                'phone' => array('name' => 'phone', 'type' => 'string', 'require' => true, 'desc' => '手机号码')
+            ),
+            'changePhoneCode' => array(
+                'phone' => array('name' => 'phone', 'type' => 'string', 'require' => true, 'desc' => '手机号码')
+            ),
+            'sendEmailCode' => array(
+                'email' => array('name' => 'email', 'type' => 'string', 'require' => true, 'desc' => '请输入邮箱地址')
+            ),
+            "loginPhoneCode" => array(
+                'phone' => array('name' => 'phone', 'require' => true, 'type' => 'phone', 'desc' => '用户手机号码'),
+            ),
+        );
+    }
+
+
+
+    /**
+     * 找回密码
+     * @desc 找回密码发送验证码
+     * @return int code 操作码，0表示成功， 1表示失败 
+     * @return string msg 提示信息
+     */
+    public function findCode() {
+        $phone = $this->phone;
+        $terminal = $this->terminal;
+        if (!verify_phone($phone)) {
+            $data["code"] = 1;
+            $data["msg"] = "手机号码不正确";
+            $data["info"] = array();
+            return $data;
+        }
+        $logic = new UserLogic();
+        $result = $logic->userCheck($phone, 3);
+        if (!$result) {
+            $data["code"] = 1;
+            $data["info"] = array();
+            $data["msg"] = "该用户不存在";
+            return $data;
+        }
+        $data = $this->sendCode("Find", $phone, $terminal,$this->deviceID);
+        return $data;
+    }
+
+    /**
+     * 修改手机号码
+     * @desc 修改手机号验证码
+     * @return int code 操作码，0表示成功， 1表示失败 
+     * @return string msg 提示信息
+     */
+    public function changePhoneCode() {
+        $phone = $this->phone;
+        $terminal = $this->terminal;
+        if (!verify_phone($phone)) {
+            $data["code"] = 1;
+            $data["msg"] = "手机号码不正确";
+            $data["info"] = array();
+            return $data;
+        }
+        $logic = new UserLogic();
+        $result = $logic->userCheck($phone, 3);
+        if ($result) {
+            $data["code"] = 1;
+            $data["info"] = array();
+            $data["msg"] = "该手机号已经注册";
+            return $data;
+        }
+        $data = $this->sendCode("Find", $phone, $terminal,$this->deviceID);
+        return $data;
+    }
+
+
+
+
+
+    /**
+     * 发送验证码
+     */
+    private function sendCode($type,  $mobile, $terminal,$deviceNo) {
+        $data = array('code' => 0, 'msg' => '', 'info' => array());
+        $logic = new SendSMSLogic();
+
+        $redis = Redis::GetInstance();
+        $redis = $redis->redisOtherMethods();
+        $redis->select(0);
+
+        $info = $redis->get("device_".$deviceNo);
+        if($info) {
+            $data["code"] = 1;
+            $data["msg"] = "获取到短信过于频繁";
+            return $data;
+        }
+        $num = $logic->getSmsNum($deviceNo);
+        if($num>=10) {
+            $redis->set("device_".$deviceNo,360000);  //限制100小时
+            $data["code"] = 1;
+            $data["msg"] = "获取到短信过于频繁";
+            return $data;
+        }
+        $redis->close();
+        $res = $logic->sendCode($mobile, $type, $terminal,$deviceNo); //PC端
+        if ($res === true) {
+            $data["msg"] = "发送验证码成功";
+        } else {
+            $data["code"] = 1;
+            $data["msg"] = $res;
+        }
+        return $data;
+    }
+
+    /**
+     * 登录短信
+     * @desc 验证码登录发送验证码
+     * @return int code 操作码，0表示成功， 1表示失败 
+     * @return string msg 提示信息
+     */
+    public function loginPhoneCode() {
+        $phone = $this->phone;
+        $terminal = $this->terminal;
+        if (!verify_phone($phone)) {
+            $data["code"] = 1;
+            $data["msg"] = "手机号码不正确";
+            $data["info"] = array();
+            return $data;
+        }
+        $data = $this->sendCode("LoginSign", $phone, $terminal,$this->deviceID);
+        return $data;
+    }
+
+
+
+
+
+
+
+}

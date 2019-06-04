@@ -1,0 +1,162 @@
+<?php
+
+namespace Service\Connect\Model;
+
+use GraphAware\Neo4j\OGM\Annotations as OGM;
+use GraphAware\Neo4j\OGM\Common\Collection;
+
+/**
+ *行业节点实体模型
+ * @OGM\Node(label="ind")
+ */
+class IndustryModel extends BaseGraphModel
+{
+    /**
+     * @var int
+     *
+     * @OGM\GraphId()
+     */
+    protected $id;
+
+    /**
+     * 行业编号
+     * @OGM\Property(type="int")
+     * @var int
+     */
+    protected $ind_id;
+
+    /**
+     * 行业名称
+     * @OGM\Property(type="string")
+     * @var string
+     */
+    protected $ind_name;
+
+    /**
+     * 父行业编号
+     * @OGM\Property(type="int")
+     * @var int
+     */
+    protected $parent_id;
+
+    /**
+     * @var ConnectEnjoyModel[]|Collection
+     *
+     * @OGM\Relationship(relationshipEntity="ConnectEnjoyModel",type="ENJOY_IN", direction="INCOMING", collection=true, mappedBy="person")
+     */
+    protected $persons_enjoy;
+
+    /**
+     * @var ConnectGoodatModel[]|Collection
+     *
+     * @OGM\Relationship(relationshipEntity="ConnectGoodatModel",type="GOOD_AT", direction="INCOMING", collection=true, mappedBy="person")
+     */
+    protected $persons_goodat;
+
+    public function __construct()
+    {
+        $this->persons_enjoy = new Collection();
+        $this->persons_goodat = new Collection();
+    }
+
+    /**
+     * @return int
+     */
+    public function getId()
+    {
+        return $this->id;
+    }
+
+    /**
+     * @return int
+     */
+    public function getIndId()
+    {
+        return $this->ind_id;
+    }
+
+    /**
+     * @param int $ind_id
+     * @return PersonModel
+     */
+    public function setIndId($ind_id)
+    {
+        $this->ind_id = (int)$ind_id;
+        return $this;
+    }
+
+    /**
+     * @return string
+     */
+    public function getIndName()
+    {
+        return $this->ind_name;
+    }
+
+    /**
+     * @param string $ind_name
+     * @return PersonModel
+     */
+    public function setIndName($ind_name)
+    {
+        $this->ind_name = $ind_name;
+        return $this;
+    }
+
+    /**
+     * @return int
+     */
+    public function getParentId()
+    {
+        return $this->parent_id;
+    }
+
+    /**
+     * @param int $parent_id
+     * @return PersonModel
+     */
+    public function setParentId($parent_id)
+    {
+        $this->parent_id = $parent_id;
+        return $this;
+    }
+
+    /**
+     * @return ConnectEnjoyModel[]|Collection
+     */
+    public function getPersonsEnjoy()
+    {
+        return $this->persons_enjoy;
+    }
+
+    public function addPersonsEnjoy(PersonModel $persons_enjoy)
+    {
+        $connect = new ConnectEnjoyModel($persons_enjoy,$this);
+        $this->getPersonsEnjoy()->add($connect);
+    }
+
+    /**
+     * @return ConnectGoodatModel[]|Collection
+     */
+    public function getPersonsGoodat()
+    {
+        return $this->persons_goodat;
+    }
+
+    public function addPersonsGoodat(PersonModel $persons_goodat)
+    {
+        $connect = new ConnectGoodatModel($persons_goodat,$this);
+        $this->getPersonsGoodat()->add($connect);
+    }
+
+    /**
+     * 获取实体编辑参数串和参数
+     * @param string $alias
+     * @param array $ignore 不需要获取的字段（一般指查询字段）
+     * @return array
+     */
+    public function getEditParam($alias='n',$ignore=['ind_id'])
+    {
+        return $this->getSetArray('ind_id,ind_name,parent_id',$alias,$ignore);
+    }
+}

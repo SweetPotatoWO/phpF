@@ -1,0 +1,81 @@
+<?php
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+namespace Backend\Controller;
+
+use Service\Operate\Logic\JpushLogic;
+use Common\Common\Jpush;
+
+class JpushController extends BaseEndController {
+
+    /**
+     * 获取用户信息用于推送消息
+     */
+    public function getJpushInfo() {
+        $par = I("post.");
+        $where.="";
+        $whereArr = array();
+        if (!is_null($par["txtphone"]) && !empty($par["txtphone"])) {
+            $where.=" AND B.phone='%s'";
+            array_push($whereArr, $par["txtphone"]);
+        }
+        if (!is_null($par["txtrealName"]) && !empty($par["txtrealName"])) {
+            $where.=" AND B.realName = '%s'";
+            array_push($whereArr, aes(trim($par["txtrealName"])));
+        }
+        $limit = $this->getPage();
+        $logic = new JpushLogic();
+        $result = $logic->getJpushInfo($where, $whereArr, $limit);
+        $this->assign("result", $result["rows"]);
+        $this->assign("page", $this->showPage($result["total"]));
+        $this->display("jpush");
+    }
+
+    /**
+     * 获取推送信息
+     */
+    public function getAllpush() {
+        $key = I("GET.key");
+        if (!empty($key)) {
+            $this->assign("userID", $key);
+        }
+        $this->display("editPush");
+    }
+
+    /**
+     * 推送信息给个人
+     */
+    public function sendPush() {
+        $par = (I("post.par"));
+        $data = array();
+        foreach ($par as $v) {
+            $data[$v["name"]] = $v["value"];
+            if ($v["name"] == "userID" && !empty($v["value"])) {
+                $userID = $v["value"];
+            } elseif ($v["name"] == "action" && !empty($v["value"])) {
+                $act = trim($v["value"]);
+            } elseif ($v["name"] == "param" && !empty($v["value"])) {
+                $param = trim($v["value"]);
+            } elseif ($v["name"] == "sendUrl" && !empty($v["value"])) {
+                $url = trim($v["value"]);
+            } elseif ($v["name"] == "txtContent" && !empty($v["value"])) {
+                $content = trim($v["value"]);
+            }
+        }
+        if (empty($content)) { //因为是推送给个人的当用户ID和推送内容为空就返回错误
+            $this->jsonReturn("请输入推送内容！");
+        }
+        if (empty($act)) {
+            $act = Jpush::app_index;
+        }
+        $logic = new JpushLogic();
+        $logic->sendPush($content, $act, $userID, $param, $url);
+        $this->jsonReturn(1, "推送成功！");
+    }
+
+}

@@ -1,0 +1,54 @@
+<?php
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+namespace Service\Spread\Model;
+
+use Common\Model\SlaveModel;
+
+class AppFeedbackModel extends SlaveModel {
+
+    /**
+     * 添加反馈信息  
+     * @param type $where
+     */
+    public function addFeback($where) {
+        return $this->add($where);
+    }
+
+    /**
+     * 获取反馈信息
+     */
+    public function getFeback($where, $whereArr, $limit) {
+        $result["total"] = $this->where($where, $whereArr)->count();
+        $result["rows"] = $this->where($where, $whereArr)->order("addDatetime desc")->limit($limit)->select();
+        return $result;
+    }
+
+    /**
+     * 获取反馈信息的次数根据设备ID
+     */
+    public function getDayFeback($where, $whereArr) {
+        $info = $this->where($where, $whereArr)->group('equipmentID')->count();
+        return $info;
+    }
+
+    /**
+     * 获取意见反馈的信息
+     */
+    public function getProp($where) {
+        return $this->where($where)->find();
+    }
+
+    /**
+     * 处理意见反馈
+     */
+    public function saveProp($where, $data) {
+        return $this->where($where)->save($data);
+    }
+
+}

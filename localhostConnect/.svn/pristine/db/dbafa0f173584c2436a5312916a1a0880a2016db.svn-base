@@ -1,0 +1,76 @@
+<?php
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+namespace Service\Backend\Logic;
+
+use Service\Backend\Model;
+
+/**
+ * Description of ConsoleAccessLogic
+ *
+ * @author Administrator
+ */
+class ConsoleAccessLogic extends BaseLogic {
+
+    /**
+     * 根据角色ID获取授权信息。
+     * @param type $roleID
+     * @return type
+     */
+    public function getAccessByRole($roleID) {
+        $menuModel = new Model\ConsoleMenuModel();
+        $menuList = $menuModel->getAllMenu();
+        $accessModel = new Model\ConsoleAccessModel();
+        $accessList = $accessModel->getAccessByRole($roleID);
+        $nodeAccessGroup = $this->nodeAccessMerge($menuList, $accessList);
+        return $nodeAccessGroup;
+    }
+
+    /**
+     * 根据角色ID删除所有授权信息。
+     * @param type $roleID
+     * @return boolean
+     */
+    public function delAccessByRole($roleID) {
+        $model = new Model\ConsoleAccessModel();
+        return $model->delAccessByRole($roleID);
+    }
+
+    /**
+     * 添加授权信息。
+     * @param type $data
+     * @return boolean
+     */
+    public function addAccess($data) {
+        $model = new Model\ConsoleAccessModel();
+        return $model->addAccess($data);
+    }
+
+    /**
+     * 合并授权信息及功能模块信息。
+     * @param type $node
+     * @param type $access
+     * @param type $pid
+     * @return type
+     */
+    private function nodeAccessMerge($node, $access = null, $pid = 0) {
+        $arr = array();
+        foreach ($node as $v) {
+            $v['access'] = false;
+            if (is_array($access) && in_array($v['menuID'], $access)) {
+                $v['access'] = true;
+            }
+            if ($v['parentID'] == $pid) {
+                $v['child'] = $this->nodeAccessMerge($node, $access, $v['menuID']);
+                $arr[] = $v;
+            }
+        }
+        return $arr;
+    }
+
+}

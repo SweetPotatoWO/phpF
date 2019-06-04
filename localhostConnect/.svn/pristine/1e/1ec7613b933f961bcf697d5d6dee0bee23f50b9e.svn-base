@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<title>启脉_开启你的人脉和机遇</title>
+	<meta name="keywords" content="启脉,启脉APP,启脉官网,qimai,职场社交,找人APP,隐私社交,qimai360" />
+	<meta name="description" content="启脉是一款免费的专注职场隐私的社交app，旨在帮助用户开启自己的人脉和发现新的机遇。目前提供职场社交、找人、找公司、名片云端管理等功能。增强职场人士的社交圈子同时，我们也会注重用户的隐私保护。" />
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+	<link rel="stylesheet" href="{$Think.FPATH}css/bootstrap.min.css">
+	<link rel="stylesheet" href="{$Think.FPATH}css/index.css">
+</head>
+<body>
+<div class="header">
+	<div class="container">
+		<div class="clearfix">
+			<a href="/" class="block fl">
+				<img src="/Public/frontend/images/home/logo.png" title="职场社交APP" alt="启脉官网" class="logo" />
+				<img src="/Public/frontend/images/home/tips.png" title="职场社交APP" alt="启脉app" class="tips" />
+			</a>
+			<nav class="navigation fr">
+				<ul>
+					<li class="active"><a rel="nofollow" title="首页" href="/">首页</a></li>
+					<li><a rel="nofollow" title="关于" href="/about">关于</a></li>
+				</ul>
+			</nav>
+		</div>	
+	</div>	
+</div>
+	<div class="index">
+		<div class="banner">			
+			<div class="container">
+				<div class="content clearfix">
+					<div class="fl">
+						<p>扫描二维码</p>
+						<p>下载启脉手机客户端</p>
+						<a href="http://res.qimai360.com/app/qimai_rc.apk" class="android btn btn-primary">Android下载</a>
+						<a href="https://www.pgyer.com/GLkE" class="ios btn btn-primary">iPhone下载</a>
+					</div>
+					<div class="fl">
+						<div class="app-code relative">
+							<span class="line"></span>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		
+		<div class="section section-1">
+			<div class="container clearfix">
+				<div class="fl img"></div>
+				<div class="fr text text-right">
+					<h3>上启脉，拓圈子</h3>
+					<div class="line"></div>
+					<p>开启人生机遇</p>
+					<p>扩展自己的职场人脉圈，事业蒸蒸日上</p>
+				</div>
+			</div>
+		</div>
+		
+		<div class="section section-2">
+			<div class="container clearfix">
+				<div class="fr img"></div>
+				<div class="fl text">
+					<h3>搜公司、搜人脉</h3>
+					<div class="line"></div>
+					<p>拓展更多合作<br />提前了解公司经营状况，让合作更愉快</p>
+				</div>
+			</div>
+		</div>
+		
+		<div class="section section-3">
+			<div class="container clearfix">
+				<div class="fr text text-right">
+					<h3>扫名片、人脉共享</h3>
+					<div class="line"></div>
+					<p>电子名片管理<br />建立自己的客户资源库，共享人脉资源</p>
+				</div>
+			</div>
+		</div>
+	</div>
+<include file="Common:footer" />	
+

@@ -1,0 +1,83 @@
+<div class="modal-body">
+    <input  type="hidden" name="hidAction" id="hidAction" value="view" >
+    <form class="form-horizontal" id="form-Type">       
+        <input type="hidden" name='eID' id='eID' value="{$data.eID}"/>
+        <div class="form-group has-info">
+            <label class="control-label col-sm-2" for="inputInfo">评论内容：</label>
+            <div class=" col-sm-7">
+                <input type="text" id="textcontent" name="textcontent" value="{$data.content}" class="form-control">          
+            </div>
+        </div>
+        <div class="form-group has-info">
+            <label class="control-label col-sm-2" for="inputInfo">权值：</label>
+            <div class=" col-sm-7">
+                <input type="text" id="eValue" name="eValue" value="{$data.eValue}" class="form-control" >         
+            </div>
+        </div>
+        <div class="form-group has-info">
+            <label class="control-label col-sm-2" for="inputInfo">是否使用：</label>
+            <div class="col-sm-7">
+                <label class="checkbox checkbox-inline" style="padding-left: 10px;">
+                    启用 <input type="checkbox" name="status" id="status" value='1' <eq name="data.status"  value="1">checked</eq>>
+                    <span class="lbl"> </span>      
+                </label>
+            </div>
+        </div>
+    </form>
+</div>
+<div class="modal-footer">
+    <button type="button" id="butCancel" class="btn btn-default" data-dismiss="modal">关闭</button>
+    <button type="button" id="butSaveType" class="btn btn-primary" >保存</button>
+</div>  
+<script type="text/javascript" >
+    $(function ($) {
+        formDataValid();
+        $("#butSaveType").click(function () {
+            var isOK = $("#form-Type").valid();
+            if (isOK) {
+                saveData();
+            }
+        });
+    });
+    function saveData() {
+        var data = $Util.getData($("#form-Type"));
+        $.ajax({
+            type: "post",
+            url: "/Backend/System/saveEvaluaType",
+            data: {'par': data},
+            dataType: "json",
+            beforeSend: function (XMLHttpRequest) {
+                $(".sub-content").showLoading();
+            },
+            success: function (data, textStatus) {
+                $(".sub-content").hideLoading();
+                if (data.status == 1) {
+                    $("#hidAction").val("edit");
+                    $win.confirm(data.msg + ",是否关闭窗口？").on(function () {
+                        $('#butCancel').trigger("click");
+                    });
+                } else {
+                    $win.warn(data.msg);
+                }
+            },
+            complete: function (XMLHttpRequest, textStatus) {
+                $(".sub-content").hideLoading();
+            },
+            error: function () {
+                $(".sub-content").hideLoading();
+            }
+        });
+    }
+    function formDataValid() {
+        $("#form-Type").validate({
+            rules: {
+                textcontent: {required: true, maxlength: 30},
+                eValue: {required: true}
+            },
+            messages: {
+                textcontent: {required: "评论内容不能为空!", maxlength: "最大长度30个字符"},
+                eValue: {required: "权值不能为空!"}
+            }
+        });
+    }
+</script>

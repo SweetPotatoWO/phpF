@@ -1,0 +1,56 @@
+<include file="Common:header" />
+<style>
+	.patentDetail .top {padding: 1.07rem 0 1.07rem 1.21rem;}
+	.patentDetail .bottom {padding: 1.428rem 1.21rem;min-height: 42rem;}
+	.patentDetail .bottom table td {border: none;padding: 0;padding-bottom: 1.285rem;}
+</style>
+<div class="patentDetail">
+	<div class="bg-white top mt-10">
+		<h6>专利名称</h6>
+		<div class="clearfix fs-12">
+			<div class="fl pr-25">
+				<p class="mb-5"><font class="color-deep">申请号：</font>2018101064634</p>
+				<p class="mb-0"><font class="color-deep">申请公布号：</font>CN108418696A</p>
+			</div>
+			<div class="fl">
+				<p class="mb-5"><font class="color-deep">申请日：</font>2015.06.30</p>
+				<p class="mb-0"><font class="color-deep">申请公布日：</font>2015.06.30</p>
+			</div>
+		</div>
+	</div>
+	
+	<div class="bg-white bottom mt-10">
+		<table class="table mb-0">
+			<tr>
+				<td width="26.5%" class="color-deep">申请人：</td>
+				<td>深圳市沃德宝投资资讯有限公司</td>
+			</tr>
+			<tr>
+				<td class="color-deep">发明人：</td>
+				<td>王小明</td>
+			</tr>
+			<tr>
+				<td class="color-deep">代理人：</td>
+				<td>王小明</td>
+			</tr>
+			<tr>
+				<td class="color-deep">代理机构：</td>
+				<td>XXX有限公司</td>
+			</tr>
+			<tr>
+				<td class="color-deep">分类号：</td>
+				<td>HM001076347</td>
+			</tr>
+			<tr>
+				<td class="color-deep">地址：</td>
+				<td>深圳市南山区高新科技园12号</td>
+			</tr>
+			<tr>
+				<td class="color-deep">摘要：</td>
+				<td>主要从事金融行业信息咨询服务（根据法律、行政法规、国务院决定等规定需要审批的，依法取得相关审批文件后方可经营）。</td>
+			</tr>
+		</table>
+	</div>
+</div>
+</body>
+</html>

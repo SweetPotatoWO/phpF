@@ -1,0 +1,125 @@
+<?php
+
+namespace Service\Backend\Model;
+
+use Think\Model;
+
+/**
+ * 节点模型
+ *
+ * @author Administrator
+ */
+class ConsoleNodeModel extends Model {
+
+    /**
+     * 添加节点。
+     * @param type $data
+     * @return boolean
+     */
+    public function addNode($data) {
+        $data["addUserID"] = C("userID");
+        $data["addDateTime"] = time();
+        $data["operateIP"] = get_client_ip();
+        return $this->data($data)->add();
+    }
+
+    /**
+     * 更新指定节点。
+     * @param type $nodeID
+     * @param type $data
+     * @return boolean
+     */
+    public function updateNode($nodeID, $data) {
+        if (empty($nodeID) || $nodeID * 1 < 1 || empty($data)) {
+            return false;
+        }
+        $data["editUserID"] = C("userID");
+        $data["editDateTime"] = time();
+        $where["id"] = $nodeID;
+        return $this->where($where)->data($data)->save();
+    }
+
+    /**
+     * 更新节点状态（默认更新为启用）。
+     * @param type $nodeID
+     * @param type $status
+     */
+    public function updateNodeStatus($nodeID, $status = 1) {
+        if (empty($status) || $status * 1 < 1) {
+            return false;
+        }
+        $data["status"] = $status;
+        return $this->updateNode($nodeID, $data);
+    }
+
+    /**
+     * 检测节点名称是否已存在。（存在返回true 不存在返回false $nodeID大于0 搜索项不包含指定节点）
+     * @param type $name
+     * @param type $pid
+     * @param type $nodeID
+     */
+    public function nodeNameIsExist($name, $pid, $nodeID = 0) {
+        if (empty($name)) {
+            return true;
+        }
+        if (empty($pid) || $pid * 1 < 1)
+            return false;
+        $where["name"] = $name;
+        $where["pid"] = $pid;
+        if ($nodeID * 1 > 0) {
+            $where["id"] = array('neq', $nodeID);
+        }
+        return $this->where($where)->count("id") > 0;
+    }
+
+    /**
+     * 检测指定节点是否存在子节点。（存在返回 true  不存在返回false）
+     * @param type $nodeID
+     */
+    public function isExistChildNode($nodeID) {
+        if (empty($nodeID) || $nodeID * 1 < 1)
+            return false;
+        $where["pid"] = $nodeID;
+        return $this->where($where)->count("id") > 0;
+    }
+
+    /**
+     * 获取指定节点。
+     * @param type $nodeID
+     * @return boolean
+     */
+    public function getNode($nodeID) {
+        if (empty($nodeID) || $nodeID * 1 < 1)
+            return false;
+        $where["id"] = $nodeID;
+        return $this->where($where)->field("id,name,title,status,remark,sort,pid,level")->find();
+    }
+
+    /**
+     * 根据父节点ID获取子节点集合。
+     * @param type $pid
+     * @return type
+     */
+    public function getNodeList($pid = 0) {
+        $where["pid"] = $pid;
+        return $this->where($where)->order("sort asc")->field("id,name,title,status,remark,sort,pid,level")->select();
+    }
+
+    /**
+     * 获取所有节点集合。
+     * @return type
+     */
+    public function getAllNodeList() {
+        return $this->where($where)->order("sort asc")->field("id,name,title,status,remark,sort,pid,level")->select();
+    }
+
+    /**
+     * 获取指定类型节点结合。
+     * @param type $level
+     */
+    public function getNodeListByLevel($level = 1) {
+        $where["level"] = $level;
+        return $this->where($where)->order("sort asc")->field("id,name,title,status,remark,sort,pid,level")->select();
+    }
+
+}

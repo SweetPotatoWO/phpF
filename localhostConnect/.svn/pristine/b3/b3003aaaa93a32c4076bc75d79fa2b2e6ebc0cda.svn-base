@@ -1,0 +1,752 @@
+<?php
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+namespace SmallApi\Controller;
+
+use Service\Spread\Logic\AppInfoLogic;
+use Service\Integral\Logic\CardLogic;
+use Service\User\Logic\UserLogic;
+use Service\Connect\Logic\ConnectRelationLogic;
+use Service\User\Model\UserMiniProgramModel;
+use Service\User\Model\UserModel;
+use Service\News\Logic\SendSMSLogic;
+use Common\Common\Redis;
+use Common\Common\Authcode;
+use Think\Cache;
+use Think\Exception;
+
+/**
+ * Description of UserController
+ *
+ * @author Administrator
+ */
+class UserController extends BaseMobileController {
+
+    /**
+     * 用户信息反馈
+     * @return string
+     */
+    public function addFeback() {
+        $par = I('post.');
+        $where = array();
+        $userID = C('userID');
+        $where["terminal"] = 4;
+        $where["versions"] = '小程序1.0';
+        $where["febackInfo"] = $par['febackInfo'];
+        $where["phone"] = $par['phone'];
+        $where["userID"] = $userID;
+        $where["equipmentID"] = strtolower($par['deviceID']);
+        $where["addDatetime"] = time();
+        $logic = new AppInfoLogic();
+        $countInfo = $logic->getDayFeback($where["equipmentID"]);
+        if ($countInfo >= 3) {
+            $this->return["msg"] = "每天只能反馈3次";
+            return $this->return;
+        }
+        if (empty($where["phone"])) {
+            $where["phone"] = C('phone');
+        } else if (!verify_phone($where["phone"])) {
+            $this->return["msg"] = "请输入正确的手机号码！";
+            return $this->return;
+        }
+        $where["feback_type"] = 0;
+        $res = $logic->addFeback($where);
+        if (empty($res)) {
+            $this->return["msg"] = "反馈信息失败";
+            return $this->return;
+        }
+        $newlogic = new NewsLogic();
+        $newlogic->sendSystemME($userID, -1, 'feedBack');   //我方发送系统的信息
+        $this->return["status"] = 1;
+        $this->return['msg'] = '提交成功！';
+        return $this->return;
+    }
+
+    /**
+     * 名片详情
+     */
+    public function cardInfoByID() {
+        $par = I('post.');
+        $cardID = $par['cid'];
+        $logic = new CardLogic();
+        $data = $logic->getCardInfo($cardID);
+        if (empty($data)) {
+            $this->return['msg'] = "返回信息为空";
+        } else {
+            $this->return['status'] = 1;
+            $this->return['data'] = $data;
+            $this->return['msg'] = "操作成功";
+        }
+        return $this->return;
+    }
+
+    /**
+     * 小程序，获取openId及用户信息
+     */
+    public function getOpenId() {
+        $return = ['status' => 0, 'msg' => '', 'data' => ''];
+        $code = I('post.code');
+        $nickName = I('post.nickName');
+        $avatar = I('post.avatar');
+        if (empty($code)) {
+            $return['status'] = 1001;
+            $return['msg'] = '参数错误';
+        } else {
+            try {
+                $result = $this->getAppletOpenidAndSessionKey($code);
+                logger_api('获取openId', $result, 'miniProgram');
+                $resultArr = json_decode($result, true);
+                if (isset($resultArr['errcode']) && $resultArr['errcode'] != 0) {
+                    throw_exception($resultArr['errmsg']);
+                }
+                $openId = $resultArr['openid'];
+                $return['data']['openId'] = $openId;
+                $userMiniProgramModel = new UserMiniProgramModel();
+                $userMiniInfo = $userMiniProgramModel->getUserByOpenId('userId', ['openId' => $openId]);
+                if (empty($userMiniInfo)) {
+                    $data = ['nickname' => $nickName, 'headUrl' => $avatar, 'openId' => $openId];
+                    $userMiniProgramModel->add($data);
+                } else {
+                    $userInfo = $userMiniProgramModel->getUserInfo($userMiniInfo['userId']);
+                    $userInfo['openId'] = $openId;
+                    $userInfo['nickname'] = $nickName;
+                    $userInfo['avatar'] = $avatar;
+                    $userInfo['headUrl'] = UPLOAD . $userInfo['userHeadUrl'];
+                    $return['data'] = $userInfo;
+                }
+            } catch (\Exception $exc) {
+                $return['status'] = 1000;
+                $return['msg'] = '获取openId失败' . $exc->getMessage();
+            }
+        }
+        echo json_encode($return);
+    }
+
+    /**
+     * 名片识别
+     */
+    public function checkCard() {
+        //上传图片
+        logger_api('名片识别', 'start', 'miniProgram');
+        $delPath = "";
+        $appUploadData = $this->uploadImg("CARD", "", $delPath);
+        $status = $appUploadData["status"];
+        if (!empty($status)) {
+            $path = $appUploadData["file"]["path"];
+            $imageUrl = UPLOAD . $path;
+
+            $result = json_decode($this->scanCard($imageUrl), true)['result_list'][0];
+            //排序
+            $columnsArr = ['姓名', '手机', '邮箱', '公司', '部门', '职位', '网址', '地址'];
+            $existColumns = []; //已经添加的数据，防止一个字段多条(多个电话)
+            foreach ($columnsArr as $column) {
+                foreach ($result['data'] as $val) {
+                    //一个字段多个值，取匹配度较高的
+                    if ($val['item'] == $column && (!isset($existColumns[$column]) || $val['confidence'] > $existColumns[$column]['confidence'])) {
+                        $existColumns[$column] = $val;
+                    }
+                }
+                if (!isset($existColumns[$column])) {
+                    $existColumns[$column] = ['item' => $column, 'value' => ''];
+                }
+            }
+            $data = [];
+            foreach ($existColumns as $key => $val) {
+                $data[] = $val;
+            }
+            $return['data'] = $data;
+            $return['filePath'] = $imageUrl;
+            $return['relativePath'] = $path;
+            if ($result['code'] != 0) {
+                $res = array('code' => 2, 'msg' => '名片识别失败！', 'info' => array());
+            } else {
+                $res = array('code' => 0, 'msg' => '名片识别成功！', 'info' => $return);
+            }
+        } else {
+            $res = array('code' => 1, 'msg' => '上传图片失败！', 'info' => array());
+        }
+        echo json_encode($res);
+    }
+
+    /**
+     * 名片新增、编辑
+     */
+    public function saveCard() {
+        $openId = I('post.openId');
+        $this->getLoginStutas($openId);
+        $return = array('code' => 0, 'msg' => '名片保存成功！', 'info' => []);
+
+        $userID = C('userID');
+        $cid = I('post.cid');
+        $userName = I('post.realname');
+        $mobile = I('post.phoneOne');
+        $mail = I('post.mail');
+        $companyName = I('post.companyName');
+        $companyGroup = I('post.companyGroup');
+        $job = I('post.job');
+        $website = I('post.website');
+        $address = I('post.address');
+        $relativePath = I('post.relativePath');
+
+        if (empty($userID)) {
+            $return['code'] = 1;
+            $return['msg'] = "未登录";
+            echo json_encode($return);
+            exit;
+        }
+        if (empty($mobile) || empty($userName)) {
+            $return['code'] = 2;
+            $return['msg'] = "手机和姓名不能同时为空";
+            echo json_encode($return);
+            exit;
+        }
+        if (strlen($mobile) != 11 || !verify_phone($mobile)) {
+            $return['code'] = 3;
+            $return['msg'] = "手机号码不合法";
+            echo json_encode($return);
+            exit;
+        }
+        $data['userName'] = $userName;
+        $data['phoneOne'] = $mobile;
+
+        if (empty($cid)) {
+            $phoneArr = [['key' => '手机', 'value' => $mobile]];
+            $mailContent = empty($mail) ? [] : [['key' => '邮箱', 'value' => $mail]];
+            if (empty($companyName) && empty($companyGroup) && empty($job)) {
+                $companyContent = [];
+            } else {
+                $companyContent = [['name' => $companyName, 'group' => $companyGroup, 'job' => $job]];
+            }
+            $websiteContent = empty($website) ? [] : [['key' => '网址', 'value' => $website]];
+            $areaContent = empty($address) ? [] : [['key' => '地址', 'value' => $address]];
+        } else {
+            $logic = new CardLogic();
+            $cardInfo = $logic->getCardInfo($cid);
+            $cardInfo['phoneArr'][0] = ['key' => '手机', 'value' => $mobile];
+            $phoneArr = $cardInfo['phoneArr'];
+            $websiteContent = $this->formatCardContent('网址', $website, $cardInfo['websiteContent']);
+            $mailContent = $this->formatCardContent('邮箱', $mail, $cardInfo['mailContent']);
+            $areaContent = $this->formatCardContent('地址', $address, $cardInfo['areaContent']);
+            if (empty($cardInfo['companyContent'])) {
+                if (!empty($companyName) || !empty($companyGroup) || !empty($job)) {
+                    $cardInfo['companyContent'] = [['name' => $companyName, 'group' => $companyGroup, 'job' => $job]];
+                }
+            } else {
+                if (!empty($companyName) || !empty($companyGroup) || !empty($job)) {
+                    $cardInfo['companyContent'][0] = ['name' => $companyName, 'group' => $companyGroup, 'job' => $job];
+                } else {
+                    $cardInfo['companyContent'] = array_reverse(array_pop(array_reverse($cardInfo['companyContent'])));
+                }
+            }
+            $companyContent = $cardInfo['companyContent'];
+        }
+
+        $data['phoneContent'] = serialize($phoneArr);
+        $data['mail'] = $mail;
+        $data['mailContent'] = serialize($mailContent);
+        $data['companyName'] = $companyName;
+        $data['companyGroup'] = $companyGroup;
+        $data['job'] = $job;
+        $data['companyContent'] = serialize($companyContent);
+        $data['cardImgUrl'] = $relativePath;
+        $data['websiteContent'] = serialize($websiteContent);
+        $data['areaContent'] = serialize($areaContent);
+        $data['cid'] = isset($cid) && !empty($cid) ? (int) $cid : '';
+        $data['cardKey'] = guid();
+        $data['addDatetime'] = time();
+
+        $logic = new CardLogic();
+        $res = $logic->addOrSaveCard($data, $userID);
+        if ($res) {
+            $logic->saveRedisByCard($userID, array('cid' => $res));  //保存到redis
+            $logicUser = new UserLogic();
+            $infoUser = $logicUser->getByPhone($data['phoneOne']);
+            $logicGraph = new ConnectRelationLogic();
+            if ($infoUser) {
+                $logicGraph->notifyImport4Cards($userID, 0, $infoUser['userID']);
+                if ($infoUser['realAuth'] == 0) {
+                    $logicUser->saveRealName($userID, $data['userName']);
+                }
+            } else {
+                $data['realname'] = $data['userName'];
+                unset($data['userName']);
+                $card_id = $logic->saveCardClear($data, $userID);   //保存到最新的
+                if ($card_id)
+                    $logicGraph->notifyImport4Cards($userID, $card_id, 0);
+            }
+            $return['code'] = 0;
+            $return['msg'] = "操作成功";
+        } else {
+            $return['code'] = 4;
+            $return['msg'] = "操作失败";
+        }
+        echo json_encode($return);
+    }
+
+    /**
+     * 获取验证码
+     * @return type
+     */
+    public function sendLoginCode() {
+        $return = array('code' => 0, 'msg' => '验证码发送成功！', 'info' => []);
+        $phone = I('post.mobile');
+        if (!verify_phone($phone)) {
+            $return["code"] = 1;
+            $return["msg"] = "手机号码不正确";
+            $return["info"] = array();
+        } else {
+            $data = $this->sendCode("LoginSignSmallApi", $phone, 4);
+            if ($data) {
+                $return = array('code' => 0, 'msg' => '验证码发送成功！', 'info' => []);
+            } else {
+                $return = array('code' => 1, 'msg' => '名片识别失败！', 'info' => []);
+            }
+        }
+        echo json_encode($return);
+    }
+
+    /**
+     * 绑定手机
+     */
+    public function bindMobile() {
+        $return = array('code' => 0, 'msg' => '绑定成功！', 'info' => []);
+        $mobile = I('post.mobile');
+        $smsCode = I('post.smsCode');
+        $openId = I('post.openId');
+        $sms = new SendSMSLogic();
+        $stutas = $sms->ConfirmVerify($mobile, $smsCode);
+        if (!$stutas) {
+            $return['code'] = 1;
+            $return['msg'] = '验证码错误';
+        } else {
+            $userModel = new userModel();
+            $userMiniProgramModel = new UserMiniProgramModel();
+            //逻辑处理
+            $userWhere['phone'] = $mobile;
+            $field = ['userId'];
+            $userInfo = $userModel->getUser($field, $userWhere);
+            if (empty($userInfo)) {
+                //新增注册用户
+                $entity["phone"] = $mobile;
+                $entity['openID'] = $openId;
+                $entity["smsCode"] = $smsCode;
+                $entity["terminal"] = 4;
+                $entity['operateIP'] = getIP();
+                $userLogic = new UserLogic();
+                $userId = $userLogic->smsLogin($entity);
+                if ($userId * 1 > 0) {
+                    $updateData = ['userId' => $userId];
+                    $updateWhere = ['openId' => $openId];
+                    try {
+                        $userMiniProgramModel->editUser($updateData, $updateWhere);
+                        $userInfo = $userMiniProgramModel->getUserInfo($userId);
+                        $userInfo['headUrl'] = UPLOAD . $userInfo['userHeadUrl'];
+                        $return['info'] = $userInfo;
+                        $return['code'] = 0;
+                        $return['msg'] = '绑定成功';
+                        $this->setLoginParam($userId,$mobile,$openId);
+                    } catch (Exception $exception) {
+                        $return['code'] = 2;
+                        $return['msg'] = '绑定失败';
+                        logger_api('绑定手机失败,新增用户', $exception->getMessage(), 'miniProgram');
+                    }
+                } else {
+                    $return['code'] = 2;
+                    $return['msg'] = '绑定失败';
+                }
+            } else {
+                $userId = $userInfo['userId'];
+                $updateData = ['userId' => $userId];
+                $updateWhere = ['openId' => $openId];
+                try {
+                    $userMiniProgramModel->editUser($updateData, $updateWhere);
+                    $updateUserData = ['openID' => $openId];
+                    $updateUserWhere = ['userID' => $userId];
+                    $userModel->editUser($updateUserData, $updateUserWhere);
+                    $userInfo = $userMiniProgramModel->getUserInfo($userId);
+                    $userInfo['headUrl'] = UPLOAD . $userInfo['userHeadUrl'];
+                    $return['info'] = $userInfo;
+                    $return['code'] = 0;
+                    $return['msg'] = '绑定成功';
+                    $this->setLoginParam($userId,$mobile,$openId);
+                } catch (Exception $exception) {
+                    $return['code'] = 2;
+                    $return['msg'] = '绑定失败';
+                    logger_api('绑定手机失败，已有用户', $exception->getMessage(), 'miniProgram');
+                }
+            }
+        }
+        echo json_encode($return);
+    }
+
+    /**
+     * 名片列表
+     */
+    public function getCardList() {
+        $openId = I('get.openId');
+        $this->getLoginStutas($openId);
+        $return = array('code' => 0, 'msg' => '获取成功！', 'info' => []);
+        $userId = C('userID');
+        $currentPage = (int) I('get.currentPage', 1);
+        $pageSize = (int) I('get.pageSize', 10);
+
+        $start = ($currentPage - 1) * $pageSize;
+        $limit = $start . ',' . $pageSize;
+        $card = new CardLogic();
+        try {
+            $dataRes = $card->getUserCardInfos($userId, $limit);
+            $return['code'] = 0;
+            $return['userId'] = $userId;
+            $return['info']['currentPage'] = $currentPage;
+            $return['info']['count'] = $dataRes['count'];
+            $return['info']['list'] = $dataRes['list'];
+        } catch (Exception $exception) {
+            $return['code'] = 1;
+            $return['msg'] = '获取失败';
+        }
+
+        echo json_encode($return);
+    }
+
+    /**
+     * 名片详情
+     */
+    public function getCardDetail() {
+        $return = array('code' => 0, 'msg' => '获取成功！', 'info' => []);
+        $cid = (int) I('get.cid');
+
+        if ($cid == 0) {
+            $return['code'] = 1;
+            $return['msg'] = '非法参数';
+        } else {
+            try {
+                $card = new CardLogic();
+                $cardInfo = $card->getCardDetail($cid);
+                $websiteContent = unserialize($cardInfo['websiteContent']);
+                $areaContent = unserialize($cardInfo['areaContent']);
+                $website = empty($websiteContent) ? '' : $websiteContent[0]['value'];
+                $address = empty($areaContent) ? '' : $areaContent[0]['value'];
+
+                $returnCardInfo = [
+                    ['item' => '姓名', 'value' => $cardInfo['userName']],
+                    ['item' => '手机', 'value' => $cardInfo['phoneOne']],
+                    ['item' => '邮箱', 'value' => $cardInfo['mail']],
+                    ['item' => '公司', 'value' => $cardInfo['companyName']],
+                    ['item' => '部门', 'value' => $cardInfo['companyGroup']],
+                    ['item' => '职位', 'value' => $cardInfo['job']],
+                    ['item' => '网址', 'value' => $website],
+                    ['item' => '地址', 'value' => $address],
+                ];
+                $data['cardInfo'] = $returnCardInfo;
+                $data['cid'] = $cid;
+                $data['imgUrl'] = UPLOAD . $cardInfo['cardImgUrl'];
+                $return['info'] = $data;
+            } catch (Exception $exception) {
+                $return['code'] = $exception->getCode();
+                $return['msg'] = $exception->getMessage();
+            }
+        }
+        echo json_encode($return);
+    }
+
+    /**
+     * 保存到我的名片
+     */
+    public function saveToMy() {
+        $return = array('code' => 0, 'msg' => '名片保存成功！', 'info' => []);
+        $openId = I('post.openId');
+        $cid = I('post.cid');
+        $this->getLoginStutas($openId);
+        $userId = C('userID');
+
+        $card = new CardLogic();
+        $data = $card->getCardDetail($cid);
+        if ($data['userID'] == $userId) {
+            $return['code'] = 2;
+            $return['msg'] = '已经是我的名片';
+            echo json_encode($return);exit;
+        }
+        $data['cid'] = '';// 新增，复制别人的名片到自己
+        $data['cardKey'] = guid();
+        $data['addDatetime'] = time();
+
+        $logic = new CardLogic();
+        $res = $logic->addOrSaveCard($data, $userId);
+        if ($res) {
+            $logic->saveRedisByCard($userId, array('cid' => $res));  //保存到redis
+            $logicUser = new UserLogic();
+            $infoUser = $logicUser->getByPhone($data['phoneOne']);
+            $logicGraph = new ConnectRelationLogic();
+            if ($infoUser) {
+                $logicGraph->notifyImport4Cards($userId, 0, $infoUser['userID']);
+                if ($infoUser['realAuth'] == 0) {
+                    $logicUser->saveRealName($userId, $data['userName']);
+                }
+            } else {
+                $data['realname'] = $data['userName'];
+                unset($data['userName']);
+                $card_id = $logic->saveCardClear($data, $userId);   //保存到最新的
+                if ($card_id)
+                    $logicGraph->notifyImport4Cards($userId, $card_id, 0);
+            }
+            $return['code'] = 0;
+            $return['msg'] = "操作成功";
+        } else {
+            $return['code'] = 1;
+            $return['msg'] = "操作失败";
+        }
+        echo json_encode($return);
+    }
+
+    /**
+     * 删除名片
+     */
+    public function delCard()
+    {
+        $return = array('code' => 0, 'msg' => '删除成功！', 'info' => []);
+        $openId = I('post.openId');
+        $this->getLoginStutas($openId);
+        $cid = I('post.cid');
+        $userId = C('userID');
+
+        if ($openId == '' || $cid == '') {
+            $return['code'] = 1;
+            $return['msg'] = '参数错误';
+            echo json_encode($return);exit;
+        }
+        $card = new CardLogic();
+        $cardInfo = $card->getCardDetail($cid);
+        if (empty($cardInfo) || $cardInfo['userID'] != $userId) {
+            $return['code'] = 2;
+            $return['msg'] = '非法参数';
+            echo json_encode($return);exit;
+        }
+        $card = new CardLogic();
+        $res = $card->delCard($cid,$userId);
+        if(!$res) {
+            $this->return['code'] = 3;
+            $this->return['msg'] = "删除失败";
+        }
+        echo json_encode($return);
+    }
+
+    /**
+     * 调微信接口，获取openId
+     * @param $code
+     * @return type
+     * @throws \Exception
+     */
+    private function getAppletOpenidAndSessionKey($code) {
+        /* $url = 'https://api.weixin.qq.com/sns/jscode2session?appid=' . $this->appId . '&secret=' . $this->appSecret .
+          '&js_code=' . $code . '&grant_type=authorization_code'; */
+        $url = 'https://api.weixin.qq.com/sns/jscode2session?appid=' . self::APPID . '&secret=' . self::APP_SECRET .
+                '&js_code=' . $code . '&grant_type=authorization_code';
+        logger_api('获取openId,URL', $url, 'miniProgram');
+        $data = $this->httpGet($url);
+
+        if ($data == false) {
+            throw new \Exception('get wechat applet openid an session_key fail', 4001);
+        }
+        return $data;
+    }
+
+    /**
+     * 首次获取openID
+     */
+    public function getUserOpenID() {
+        $return = ['status' => 0, 'msg' => '', 'data' => ''];
+        $code = I('post.code');
+        if (empty($code)) {
+            $return['msg'] = '请求参数有误！';
+        } else {
+            $result = $this->getwxUserOpenID($code);
+            if ($result['status']) {
+                $openID = $result['data']['openid'];
+                $userMiniProgramModel = new UserMiniProgramModel();
+                $userMiniInfo = $userMiniProgramModel->getUserByOpenId('id', ['openId' => $openID]);
+                empty($userMiniInfo) && $userMiniProgramModel->add(['openId' => $openID, 'addDatetime' => time()]);
+                $return['msg'] = '请求成功！';
+                $return['data'] = $result['data']['info'];
+                $return['status'] = 1;
+            } else {
+                $return['msg'] = '请求失败！';
+            }
+        }
+        echo json_encode($return);
+    }
+
+    /**
+     * 保存图片
+     * @param type $rootPath
+     * @param type $subPath
+     * @param type $del
+     * @return type
+     */
+    private function uploadImg($rootPath, $subPath = "", $del = "") {
+        $imgInfo = explode(UPLOAD, $del);
+        $del = is_array($imgInfo) && !empty($imgInfo) ? $imgInfo[1] : ""; // 1)用户上传新头像将删除之前的头像
+        $file = $_FILES["Filedata"];
+        $client = new \Common\Plugins\UploadClient();
+        try {
+            $result = $client->upLoadSingle($rootPath, $file, $subPath, $del);
+            if (is_array($result)) {
+                $msg["status"] = true;
+                $msg["file"] = $result;
+            } else {
+                $msg["status"] = false;
+                $msg["msg"] = $result;
+            }
+        } catch (Exception $exception) {
+            logger_api('上传图片', $exception->getMessage(), 'miniProgram');
+        }
+
+        return $msg;
+    }
+
+    /**
+     * @param $fileUrl
+     * @return mixed
+     */
+    private function scanCard($fileUrl) {
+        $appid = '1257593105';
+        $bucket = "tencentyun";
+        $secret_id = "AKIDUtMkEYtBWgM7DO4aeGwdXKEgyX2RgFQP";
+        $secret_key = "tpfYN1Wr1z0shOu2FMI3iDZ7JOHzY0UT";
+        $expired = time() + 2592000;
+        $current = time();
+        $rdm = rand();
+        $srcStr = 'a=' . $appid . '&b=' . $bucket . '&k=' . $secret_id . '&e=' . $expired . '&t=' . $current . '&r=' . $rdm . '&f=';
+        $signStr = base64_encode(hash_hmac('SHA1', $srcStr, $secret_key, true) . $srcStr);
+        $requestUrl = 'http://recognition.image.myqcloud.com/ocr/businesscard';
+        $param = ['upload' => file_get_contents($fileUrl), 'appid' => $appid, 'bucket' => $bucket];
+        return $this->putPart($requestUrl, $param, $signStr);
+    }
+
+    /**
+     * post请求调腾讯接口
+     * @param $url
+     * @param $param
+     * @param $signStr
+     * @return mixed
+     */
+    private function putPart($url, $param, $signStr) {
+        $delimiter = uniqid();
+        $post_data = $this->buildData($param, $delimiter);
+        $curl = curl_init($url);
+        curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($curl, CURLOPT_POST, true);
+        curl_setopt($curl, CURLOPT_POSTFIELDS, $post_data);
+        curl_setopt($curl, CURLOPT_HTTPHEADER, [
+            "Content-Type: multipart/form-data; boundary=" . $delimiter,
+            "Content-Length: " . strlen($post_data),
+            'host:recognition.image.myqcloud.com',
+            'authorization:' . $signStr,
+        ]);
+        $response = curl_exec($curl);
+        curl_close($curl);
+        return $response;
+    }
+
+    /**
+     * 构造参数
+     * @param $param
+     * @param $delimiter
+     * @return string
+     */
+    private function buildData($param, $delimiter) {
+        $data = '';
+        $upload = $param['upload'];
+        unset($param['upload']);
+        $delimiter = "--" . $delimiter;
+        ;
+        foreach ($param as $name => $content) {
+            $data .= $delimiter . "\r\n" . 'Content-Disposition: form-data; name="' . $name . "\"\r\n\r\n"
+                    . $content . "\r\n";
+        }
+        // 拼接文件流
+        $data .= $delimiter . "\r\n"
+                . 'Content-Disposition: form-data; name="image"; filename="' . $param['filename'] . '"' . "\r\n"
+                . 'Content-Type: image/jpeg' . "\r\n\r\n";
+        $data .= $upload . "\r\n";
+        $data .= $delimiter . "--\r\n";
+        return $data;
+    }
+
+    /**
+     * 发送短信方法
+     * @param type $type
+     * @param type $mobile
+     * @return type
+     */
+    private function sendCode($type, $mobile) {
+        $logic = new SendSMSLogic();
+        $res = $logic->sendCode($mobile, $type, 4); //PC端
+        return $res;
+    }
+
+    /**
+     * 格式化content数组
+     * @param $key
+     * @param $value
+     * @param $cardValue
+     * @return array
+     */
+    private function formatCardContent($key, $value, $cardValue) {
+        if (empty($cardValue)) {
+            if (!empty($value)) {
+                $cardValue[0] = ['key' => $key, 'value' => $value];
+            }
+        } else {
+            if (!empty($value)) {
+                $tmpArr = [['key' => $key, 'value' => $value]];
+                $cardValue = array_merge($tmpArr, $cardValue);
+            } else {
+                //剔除第一组
+                unset($cardValue[0]);ksort($cardValue);
+            }
+        }
+        return $cardValue;
+    }
+
+    /**
+     * 设置登录信息
+     * @param $userID
+     * @param $phone
+     * @param $openId
+     */
+    private function setLoginParam ($userID, $phone, $openId)
+    {
+        $key = 'WXLOGIN_';
+        $time = 24 * 3600 * 30;
+        $redis = Cache::getInstance('Redis');
+        $redis->delete($key . $openId);
+        $redis->set($key . $openId, $openId . '_' . $userID . '_' . $phone, $time);
+    }
+
+    /**
+     * 获取用户登录情况
+     * @param $openId
+     * @return bool|void
+     */
+    private function getLoginStutas($openId) {
+        $key = 'WXLOGIN_';
+        $redis = Cache::getInstance('Redis');
+        $mem = $redis->get($key . $openId);
+        list($openID, $userID, $phone) = explode('_', $mem);
+        $userInfo = array(
+            'openID' => $openID,
+            'userID' => $userID,
+            'phone' => $phone
+        );
+        $redis->set($key . $openID, $openID . '_' . $userID . '_' . $phone, 24 * 3600 * 30);
+        C('userID', $userInfo["userID"]);
+        C('phone', $userInfo["phone"]);
+        C('openID', $userInfo["openID"]);
+    }
+
+}

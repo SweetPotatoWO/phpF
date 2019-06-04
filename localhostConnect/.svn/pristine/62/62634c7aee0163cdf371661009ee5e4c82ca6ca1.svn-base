@@ -1,0 +1,36 @@
+/*
+Navicat MySQL Data Transfer
+
+Source Server         : 钱盒子测试
+Source Server Version : 50631
+Source Host           : 120.25.85.171:3306
+Source Database       : devmbox_hx
+
+Target Server Type    : MYSQL
+Target Server Version : 50631
+File Encoding         : 65001
+
+Date: 2018-08-08 11:13:08
+*/
+
+SET FOREIGN_KEY_CHECKS=0;
+
+-- ----------------------------
+-- Table structure for d_user_source
+-- ----------------------------
+DROP TABLE IF EXISTS `d_user_source`;
+CREATE TABLE `d_user_source` (
+  `sourceID` int(11) unsigned NOT NULL AUTO_INCREMENT COMMENT '客户来源ID',
+  `name` varchar(50) NOT NULL COMMENT '来源名称',
+  `media` varchar(50) NOT NULL DEFAULT '' COMMENT '投放源',
+  `linkUrl` varchar(100) NOT NULL DEFAULT '' COMMENT 'url地址',
+  `urlCode` varchar(50) NOT NULL DEFAULT '' COMMENT 'url链接code',
+  `isOutside` tinyint(2) unsigned NOT NULL DEFAULT '0' COMMENT '是否站外推广（1：是  0：不是）',
+  `remark` varchar(256) NOT NULL DEFAULT '' COMMENT '备注',
+  `status` tinyint(2) NOT NULL DEFAULT '1' COMMENT '状态  1--可用   0--不可用',
+  `addUserID` int(10) unsigned NOT NULL DEFAULT '0' COMMENT '添加用户ID',
+  `addDatetime` int(11) unsigned NOT NULL DEFAULT '0' COMMENT '添加时间',
+  `editUserID` int(10) unsigned NOT NULL DEFAULT '0' COMMENT '编辑用户ID',
+  `editDatetime` int(11) unsigned NOT NULL DEFAULT '0' COMMENT '编辑时间',
+  PRIMARY KEY (`sourceID`)
+) ENGINE=InnoDB AUTO_INCREMENT=191 DEFAULT CHARSET=utf8 COMMENT='客户来源表';

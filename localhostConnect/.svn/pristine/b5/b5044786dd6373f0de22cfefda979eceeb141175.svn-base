@@ -1,0 +1,167 @@
+<?php
+
+namespace Common\Controller;
+
+use Think\Controller;
+use Think\Upload;
+use Service\System\Logic\SysParameterLogic;
+
+class BaseController extends Controller {
+
+    public $operateIP;
+    public $path;
+
+    public function _initialize() {
+        //初始化加载
+        $this->path = "/" . MODULE_NAME . "/" . CONTROLLER_NAME;
+        if (IS_CLI) {
+            $this->operateIP = get_client_ip();
+        } else {
+            $this->operateIP = $_SERVER["REMOTE_ADDR"];
+        }
+        $par = new SysParameterLogic();
+        $config = $par->getConfig();
+        C($config);
+    }
+
+    function _empty() {
+        header("Location:/404.html");
+    }
+    
+    
+     /**
+     * 操作错误跳转的快捷方法
+     * @access protected
+     * @param string $message 错误信息
+     * @param string $jumpUrl 页面跳转地址
+     * @param mixed $ajax 是否为Ajax方式 当数字时指定跳转时间
+     * @return void
+     */
+    public function error($message='',$jumpUrl='',$ajax=false) {
+        http_response_code(404);
+        parent::error($message,$jumpUrl,$ajax);
+    }
+
+    /**
+     * 返回URL
+     * @return type
+     */
+    function getReturnUrl($chkReturnurl = '') {
+        $domain = COOKIE_DOMAIN; 
+        $returnurl = "/";
+        if ((isset($_GET['returnurl']) && !empty($_GET['returnurl']) || !empty($chkReturnurl))) {
+            $returnurl = !empty($chkReturnurl) ? $chkReturnurl : base64_decode($_GET['returnurl']);
+            //检测是否本网站域名
+            if (strpos($returnurl, $_SERVER['SERVER_NAME']) === FALSE && stripos($returnurl, $domain) === FALSE) {
+                return "/";
+            }
+            $returnurl = htmlspecialchars($returnurl);
+            $returnurl = fliter_str($returnurl);
+            return $returnurl;
+        }
+        $returnurl = "/Account/index.html";
+        //是否为直接打开
+        if (isset($_SERVER['HTTP_REFERER'])) {
+            //是否本站跳转过来的连接stripos()
+            //测试环境 .qianbox.net
+            if ((stripos($_SERVER['HTTP_REFERER'], $_SERVER['SERVER_NAME']) !== FALSE || stripos($_SERVER["HTTP_REFERER"], $domain) !== FALSE) && stripos($_SERVER['HTTP_REFERER'], 'Login') === FALSE) {
+                $returnurl = $_SERVER['HTTP_REFERER'];
+                if (strpos($returnurl, "register")) {
+                    $returnurl = "/";
+                } else if (strpos($returnurl, "resetsucceed")) {
+                    $returnurl = "/Account/index.html";
+                }
+            }
+        }
+        if (strpos($returnurl, "find") > 0) {
+            $returnurl = "/User/login.html";
+        }
+        //返回组装地址
+        return $returnurl;
+    }
+
+    function getPageUrl() {
+        $url = (isset($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] == '443') ? 'https://' : 'http://';
+        $url .= $_SERVER['HTTP_HOST'];
+        $url .= isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : urlencode($_SERVER['PHP_SELF']) . '?' . urlencode($_SERVER['QUERY_STRING']);
+        return $url;
+    }
+
+    /**
+     * 判断是否Ajax请求
+     * @return boolean
+     */
+    public function isAjax() {
+        if (isset($_SERVER['HTTP_X_REQUESTED_WITH']) && $_SERVER['HTTP_X_REQUESTED_WITH'] == 'XMLHttpRequest') {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * 图片验证码
+     * @param type $code
+     * @param type $id
+     * @return type
+     */
+    public function check_verify($code, $id = 1) {
+        ob_clean();
+        $verify = new \Think\Verify();
+        return $verify->check($code, $id);
+    }
+
+    public function jsonReturn($status = 0, $msg = null, $data = null) {
+        $this->ajaxSK(array(
+            "status" => $status,
+            "msg" => $msg,
+            "data" => $data
+                ), "JSON");
+    }
+
+    /**
+     * Ajax方式返回数据到客户端
+     * @access protected
+     * @param mixed $data 要返回的数据
+     * @param String $type AJAX返回数据格式
+     * @return void
+     */
+    public function ajaxSK($data, $type = '') {
+        if (func_num_args() > 2) {// 兼容3.0之前用法
+            $args = func_get_args();
+            array_shift($args);
+            $info = array();
+            $info['data'] = $data;
+            $info['info'] = array_shift($args);
+            $info['status'] = array_shift($args);
+            $data = $info;
+            $type = $args ? array_shift($args) : '';
+        }
+        if (empty($type))
+            $type = C('DEFAULT_AJAX_RETURN');
+        switch (strtoupper($type)) {
+            case 'JSON' :
+                // 返回JSON数据格式到客户端 包含状态信息
+                header('Content-Type:application/json; charset=utf-8');              
+                exit(json_encode($data));
+            case 'XML' :
+                // 返回xml格式数据
+                header('Content-Type:text/xml; charset=utf-8');
+                exit(xml_encode($data));
+            case 'JSONP':
+                // 返回JSON数据格式到客户端 包含状态信息
+                header('Content-Type:application/json; charset=utf-8');
+                $handler = isset($_GET[C('VAR_JSONP_HANDLER')]) ? $_GET[C('VAR_JSONP_HANDLER')] : C('DEFAULT_JSONP_HANDLER');
+                exit($handler . '(' . json_encode($data) . ');');
+            case 'EVAL' :
+                // 返回可执行的js脚本
+                header('Content-Type:text/html; charset=utf-8');
+                exit($data);
+            default :
+                // 用于扩展其他返回格式数据
+                tag('ajax_return', $data);
+        }
+        exit();
+    }
+
+}

@@ -1,0 +1,191 @@
+<div id="sub-banner-edit">
+    <script type="text/javascript" src="{$Think.BPATH}js/datejs/WdatePicker.js"></script> 
+    <script type="text/javascript" src="{$Think.BPATH}js/article/ueditor.config.js?version={$Think.BNO}" ></script>    
+    <script type="text/javascript" charset="utf-8" src="/Public/plugins/ueditor/ueditor.all.min.js"></script>
+    <script type="text/javascript" charset="utf-8" src="{$Think.BPATH}js/uploader/webuploader.min.js"></script>
+    <script type="text/javascript" charset="utf-8" src="{$Think.BPATH}js/uploader/uploader.js"></script>
+    <h4 class="title">编辑-广告</h4>   
+    <input  type="hidden" name="hidAction" id="hidAction" value="view" >
+    <form class="form-horizontal" id="form-banner">
+        <ul id="myTab" class="nav nav-tabs">
+            <li class="active"><a href="#home" data-toggle="tab">基本信息</a></li>
+        </ul>
+        <input type="hidden" id="bannerID" name="bannerID" value="{$data.bannerID}">
+        <input type="hidden" id="hidUpURL" value="{$Think.UPLOAD}">
+        <div id="myTabContent" class="tab-content">
+            <div class="tab-pane fade in active" id="home" style="position: relative;">
+                <div style="position: absolute;top:5px;left:45%;margin-left: 10px;">
+                    <div class="uppic">
+                        <if condition="strlen($data['bannerUrl']) gt 0">
+                            <img src='{$Think.UPLOAD}{$data.bannerUrl}' id='bannerUrl1'  style="width: 240px;height: 180px;display: block;margin-bottom: 15px;" />
+                            <else/>
+                            <img src='/Public/backend/images/graybox.jpg' id='bannerUrl1' style="width: 240px;height: 180px;display: block;margin-bottom: 15px;" />
+                        </if>
+                        <div class="upfilebox">
+                            <label class="upload-box upload-img">上传图片</label>  
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group  has-info pt-10">
+                    <label class="col-sm-1 control-label" >广告图名称：</label>
+                    <div class="col-sm-4">
+                        <input class="form-control" type="text" id="bannerName" placeholder="广告图名称" name="bannerName" value="{$data.bannerName}">
+                    </div>
+                </div>
+                <div class="form-group has-info">
+                    <label class="col-sm-1 control-label" >广告类型：</label>
+                    <div class="col-sm-4">
+                        <select  name="dicType" id="dicType" class="span12 form-control">
+                            {$htmlType}
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group has-info">
+                    <label class="col-sm-1 control-label" for="inputInfo">图片路径：</label>
+                    <div class="col-sm-4">
+                        <input type="text" id="bannerUrl" name="bannerUrl" value="{$data.bannerUrl}" class="form-control" disabled="disabled">          
+                    </div>
+                </div>
+                <div class="form-group has-info">
+                    <label class="col-sm-1 control-label" for="inputInfo">链接URL：</label>
+                    <div class="col-sm-4">
+                        <input type="text" id="linkUrl" name="linkUrl" value="{$data.linkUrl}" class="form-control" placeholder="链接到站点外部" >   
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-1 control-label" for="inputInfo">图片时间：</label>
+                    <div class="col-sm-4">
+                        <input type="text" class="form-control" style="width: 180px; float: left;" name="bannerStartTime" id="bannerStartTime" value="{$data.bannerStartTime|formatshortDate}" onclick="WdatePicker({isShowClear: true, readOnly: true})"  placeholder="请输入开始时间">     
+                        <span style="float: left;">~</span>
+                        <input type="text" name="bannerEndTime" id="bannerEndTime" style="width: 180px; float: left;"  value="{$data.bannerEndTime|formatshortDate}" class="form-control" onclick="WdatePicker({isShowClear: true, readOnly: true})"   placeholder="请输入结束时间">        
+                        <span style="float: left; color: red;position:relative;top: -2px;left: 15px;">不选择代表<br/>不限制时间</span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-1 control-label" >是否内链：</label>
+                    <div class="col-sm-4">
+                        <select name="inLink" id="inLink"  class="form-control">
+                            <option value="0">外链</option>
+                            <option value="1" <eq name="data['inLink']" value="1">selected='selected'</eq>>内链</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-1 control-label" for="inputInfo">广告标题：</label>
+                    <div class="col-sm-4">
+                        <input type="text" id="bannerTitle" name="bannerTitle" value="{$data.bannerTitle}" class="form-control" placeholder="广告标题" >          
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-1 control-label">排序：</label>
+                    <div class="col-sm-4">
+                        <input type="text" id="bannerSort" name="bannerSort" value="{$data.bannerSort|default=0}" class="form-control">
+                    </div>
+                </div>
+                <div class="form-group remarkBanner">
+                    <label class="col-sm-1 control-label" for="inputInfo">文章内容：</label>
+                    <div class="col-sm-1">
+                        <textarea  class="area_edit span12" cols="50" rows="4" name="remark" id="remark">{$data.remark}</textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="col-sm-1 control-label" ></label>
+            <div class="col-sm-4">      
+                <a class="btn btn-primary mt_10 butSaveBanner" href="javascript:;">保存</a>  
+                <a class="btn btn-info mt_10 butReturn" href="javascript:;">返回</a> 
+            </div>
+        </div>   
+    </form>
+    <script type="text/javascript" >
+        $(function() {
+             var ue = UE.getEditor('remark');//初始化编辑器
+            $(".upload-img").InitUploader({
+                filesize: 3,
+                sendurl: "/Backend/Spread/saveBannerImg",
+                inputID: "bannerUrl",
+                browseID: "bannerUrl1",
+                sef: "{$think.BPATH}js/uploader/uploader.swf",
+                filetypes: "jpg,jpge,png,gif",
+            });
+            $(".butReturn").click(function() {
+                $Util.returnRefresh();
+            });
+            bannervalid();
+            $(".butSaveBanner").click(function() {
+                var isOK = $("#form-banner").valid();
+                if (isOK) {
+                    saveBanner();
+                }
+            });
+            $("select[name='dicType']").change(function() {
+                if ($(this).val() * 1 == 181) {
+                    $(".remarkBanner").show();
+                } else {
+                    $(".remarkBanner").hide();
+                }
+            });
+            if ($("select[name='dicType']").val() * 1 == 181) {
+                $(".remarkBanner").show();
+            }
+        });
+        function saveBanner() {
+            var data = $Util.getData($("#form-banner"));
+            data.dicName = $("#dicType").find("option:selected").text();
+            $.ajax({
+                type: "post",
+                url: "/Backend/Spread/saveBanner",
+                data: {'par': data},
+                dataType: "json",
+                beforeSend: function(XMLHttpRequest) {
+                    $(".sub-content").showLoading();
+                },
+                success: function(data, textStatus) {
+                    $(".sub-content").hideLoading();
+                    if (data.status == 1) {
+                        $("#bannerID").val(data.data);
+                        $("#hidAction").val("edit");
+                        $win.confirm(data.msg + ",是否关闭窗口？").on(function() {
+                            $('.butReturn').trigger("click");
+                        });
+                    } else {
+                        $win.warn(data.msg);
+                    }
+                },
+                complete: function(XMLHttpRequest, textStatus) {
+                    $(".sub-content").hideLoading();
+                },
+                error: function() {
+                    $(".sub-content").hideLoading();
+                }
+            });
+        }
+        function bannervalid() {
+            $("#form-banner").validate({
+                rules: {
+                    bannerName: {required: true, maxlength: 30},
+                    dicType: {required: true},
+                    bannerSort: {digits: true},
+                    bannerUrl: {required: true},
+                    linkUrl: {
+                        funCheck: {fun: function(value, element) {
+                                if ($("#inLink").val() == 0 && value) {
+                                    var url = /^http:\/\//;
+                                    return url.test(value);
+                                }
+                                return true;
+                            }}
+                    }
+                },
+                messages: {
+                    bannerName: {required: "名称不能为空!", maxlength: "最大长度30个字符"},
+                    dicType: {required: "请选择类型"},
+                    bannerSort: {digits: "排序为0~999的正整数!"},
+                    bannerUrl: {required: "请上传图片!"},
+                    linkUrl: {funCheck: "非内链类型的url必须以http://开头"},
+                }
+            });
+        }
+    </script>
+</div>

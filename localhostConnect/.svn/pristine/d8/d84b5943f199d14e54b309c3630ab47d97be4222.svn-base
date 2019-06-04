@@ -1,0 +1,163 @@
+<?php
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+namespace Service\Company\Model;
+
+use Common\Model\SlaveModel;
+
+class CompanyModel extends SlaveModel {
+    /**
+     * 获取企业信息
+     */
+    public function getCompanyList($where, $whereArr, $limit){
+        $sqlcount = "select count(1) as total from d_company where companyName<>'' ".$where;
+        $total = $this->SlaveDB()->query($sqlcount,$whereArr);
+        $result['total'] = $total[0]['total'];
+        array_push($whereArr,$limit);
+        $sql = "select companyID,companyName,regCapital,startDatetime,companyLogo,legalName,bssScope,webSite,regAddress,orgStatus from d_company where companyName<>'' ".$where.
+                " order by addDatetime desc limit %s";
+        $result['rows'] = $this->SlaveDB()->query($sql,$whereArr);
+        return $result;
+    }
+    
+    /**
+     * 获取企业成员
+     */
+    public function getCompanyMember($where, $whereArr, $limit) {
+        $sqlcount = 'SELECT COUNT(DISTINCT A.companyID) as total  FROM d_user_company A 
+            INNER JOIN d_company B ON B.companyID=A.companyID
+            WHERE(1=1)' . $where;
+        $total = $this->SlaveDB()->query($sqlcount, $whereArr);
+        $result['total'] = $total[0]['total'];
+        array_push($whereArr, $limit);
+        $sql = 'SELECT A.companyName,B.companyID,COUNT(A.userID) as total,B.bssScope,B.cpyIndustry  FROM d_user_company A 
+            INNER JOIN d_company B ON B.companyID=A.companyID
+            WHERE(1=1) ' . $where . ' GROUP BY A.companyID ORDER BY total desc limit %s';
+        $result['rows'] = $this->SlaveDB()->query($sql, $whereArr);
+        return $result;
+    }
+    
+    /**
+     * 获取公司基本信息
+     */
+    public function getCompanyBaseInfo($filed,$where){
+        return $this->SlaveDB()->field($filed)->where($where)->find();
+    }
+    
+     /**
+     * 获取成员列表
+     */
+    public function memberList($where, $whereArr, $limit) {
+        $sqlcount = 'SELECT count(A.userID) as total  FROM d_user_company A
+            INNER JOIN d_user B ON B.userID=A.userID  
+            WHERE(1=1) '.$where;
+        $total = $this->SlaveDB()->query($sqlcount, $whereArr);
+        $result['total'] = $total[0]['total'];
+        array_push($whereArr, $limit);
+        $sql = 'SELECT B.userID,B.nickname,B.phone,B.regDatetime,A.companyName,A.job,A.group  FROM d_user_company A
+            INNER JOIN d_user B ON B.userID=A.userID  
+            WHERE(1=1) '.$where.' ORDER BY B.regDatetime desc limit %s';
+        $result['rows'] = $this->SlaveDB()->query($sql, $whereArr);
+        return $result;
+    }
+
+
+    public function getCompanyByName($name) {
+        return $this->SlaveDB()->where(array("companyName"=>$name))->field(array('companyName','regCapital','regDatetime','companyID','companyLogo'))->find();
+    }
+
+
+    /**
+     * 添加公司
+     */
+    public function saveCompany($companyName="") {
+        return $this->SlaveDB()->add(array("companyName"=>$companyName));
+    }
+
+    public function vague($value) {
+        return  $this->SlaveDB()->where('companyName like "%'.$value.'%"')->field("companyLogo as img,companyID as ID,companyName as value, case companyID  when true then 2 else 2 end as type")->select();
+    }
+   
+    /**
+     * 高管信息
+     */
+    public function getAdvancedInfo($where){
+        return M('companyAdvanced')->where($where)->find();
+    }
+    
+     /**
+     * 变更信息
+     */
+    public function getChangeInfo($where,$limit){
+        $modle = M('companyChangeinfo');
+        $result['total'] = $modle->where($where)->count('changeInfoID');
+        $result['rows'] = $modle->field('changeItem,changeTime,beforeChange,afterChange')->where($where)->order('changeInfoID desc')->limit($limit)->select();
+        return $result;
+    }
+     /**
+     * 对外投资信息
+     */
+    public function getInvestInfo($where,$limit){
+        $modle = M('companyInvest');
+        $result['total'] = $modle->where($where)->count('investID');
+        $result['rows'] = $modle->field('name,legalName,regCapital,regTime,investTime,investAmount,proportion,lastSyncTime')->where($where)->order('investID desc')->limit($limit)->select();
+        return $result;
+    }
+    /**
+     * 专利信息
+     */
+    public function getPatentInfo($where,$limit){
+        $modle = M('companyPatent');
+        $result['total'] = $modle->where($where)->count('patentID');
+        $result['rows'] = $modle->field('pubDate,title,appNO,pubNO,inventroName,appDate,ipc,agencyName,agentName,abs,lastSyncTime')->where($where)->order('patentID desc')->limit($limit)->select();
+        return $result;
+    }
+    /**
+     * 商标信息
+     */
+    public function getTrademarkInfo($where,$limit){
+        $modle = M('companyTrademark');
+        $result['total'] = $modle->where($where)->count('trademarkID');
+        $result['rows'] = $modle->field('appDate,tmName,regNo,tmType,tmStatus,lastSyncTime')->where($where)->order('trademarkID desc')->limit($limit)->select();
+        return $result;
+    }
+     /**
+     * 行政处罚
+     */
+    public function getPenaltyInfo($where,$limit){
+        $modle = M('companyPenalty');
+        $result['total'] = $modle->where($where)->count('penaltyID');
+        $result['rows'] = $modle->field('punishNO,illegalType,punishContent,dptName,decisionDate,publishDate,description,lastSyncTime')->where($where)->order('penaltyID desc')->limit($limit)->select();
+        return $result;
+    }
+    /**
+     * 异常经营
+     */
+    public function getAbnormalInfo($where,$limit){
+        $modle = M('companyAbnormal');
+        $result['total'] = $modle->where($where)->count('abnormalID');
+        $result['rows'] = $modle->field('inTime,inReason,decisiveOrg,removeTime,removeReason,removeOrg,lastSyncTime')->where($where)->order('abnormalID desc')->limit($limit)->select();
+        return $result;
+    }
+    /**
+     * 异常经营
+     */
+    public function getReportInfo($where,$limit){
+        $modle = M('companyReportlist');
+        $result['total'] = $modle->alias('A')->join('LEFT JOIN d_company_report B on A.wsReportID=B.wsReportID')->where($where)->count('A.reportListID');
+        $result['rows'] = $modle->alias('A')->join('LEFT JOIN d_company_report B on A.wsReportID=B.wsReportID')->field('A.reportYear,A.addDatetime,A.editDatetime,B.orgBaseInfo,B.shareHolder,B.domainInfo,B.obdInvestment,B.orgAssetInfo,B.equityChange,B.reportChange,B.guaranteeInfo')->where($where)->order('reportListID desc')->limit($limit)->select();
+        return $result;
+    }
+
+
+    public function searchCompany($value) {
+        $sql = "select companyName,floor(regCapital) as regCapital ,companyLogo,searchContent,FROM_UNIXTIME(regDatetime, '%Y-%m-%d %H:%i:%S') as regDatetime from d_company where searchContent like '%".$value."%'";
+        return $this->SlaveDB()->query($sql);
+    }
+
+}

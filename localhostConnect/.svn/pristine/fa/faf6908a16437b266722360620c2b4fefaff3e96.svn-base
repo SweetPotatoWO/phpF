@@ -1,0 +1,84 @@
+/*
+Navicat MySQL Data Transfer
+
+Source Server         : 钱盒子测试
+Source Server Version : 50631
+Source Host           : 120.25.85.171:3306
+Source Database       : devmbox_hx
+
+Target Server Type    : MYSQL
+Target Server Version : 50631
+File Encoding         : 65001
+
+Date: 2018-08-08 10:27:32
+*/
+
+SET FOREIGN_KEY_CHECKS=0;
+
+-- ----------------------------
+-- Table structure for d_console_roleuser
+-- ----------------------------
+DROP TABLE IF EXISTS `d_console_roleuser`;
+CREATE TABLE `d_console_roleuser` (
+  `roleUserID` int(11) NOT NULL AUTO_INCREMENT COMMENT '角色人员ID',
+  `userID` int(11) DEFAULT NULL COMMENT '用户ID',
+  `roleID` int(11) DEFAULT NULL COMMENT '角色ID',
+  PRIMARY KEY (`roleUserID`)
+) ENGINE=InnoDB AUTO_INCREMENT=102 DEFAULT CHARSET=utf8;
+
+-- ----------------------------
+-- Records of d_console_roleuser
+-- ----------------------------
+INSERT INTO `d_console_roleuser` VALUES ('1', '15', '1');
+INSERT INTO `d_console_roleuser` VALUES ('2', '1', '1');
+INSERT INTO `d_console_roleuser` VALUES ('5', '26', '16');
+INSERT INTO `d_console_roleuser` VALUES ('7', '27', '12');
+INSERT INTO `d_console_roleuser` VALUES ('14', '16', '11');
+INSERT INTO `d_console_roleuser` VALUES ('17', '36', '3');
+INSERT INTO `d_console_roleuser` VALUES ('20', '41', '18');
+INSERT INTO `d_console_roleuser` VALUES ('22', '35', '18');
+INSERT INTO `d_console_roleuser` VALUES ('23', '20', '4');
+INSERT INTO `d_console_roleuser` VALUES ('25', '7', '7');
+INSERT INTO `d_console_roleuser` VALUES ('26', '29', '18');
+INSERT INTO `d_console_roleuser` VALUES ('27', '17', '2');
+INSERT INTO `d_console_roleuser` VALUES ('28', '44', '11');
+INSERT INTO `d_console_roleuser` VALUES ('30', '46', '3');
+INSERT INTO `d_console_roleuser` VALUES ('36', '47', '3');
+INSERT INTO `d_console_roleuser` VALUES ('37', '37', '26');
+INSERT INTO `d_console_roleuser` VALUES ('40', '39', '21');
+INSERT INTO `d_console_roleuser` VALUES ('41', '43', '23');
+INSERT INTO `d_console_roleuser` VALUES ('44', '32', '27');
+INSERT INTO `d_console_roleuser` VALUES ('45', '48', '20');
+INSERT INTO `d_console_roleuser` VALUES ('47', '50', '20');
+INSERT INTO `d_console_roleuser` VALUES ('48', '28', '29');
+INSERT INTO `d_console_roleuser` VALUES ('49', '51', '3');
+INSERT INTO `d_console_roleuser` VALUES ('50', '52', '23');
+INSERT INTO `d_console_roleuser` VALUES ('51', '53', '20');
+INSERT INTO `d_console_roleuser` VALUES ('54', '12', '30');
+INSERT INTO `d_console_roleuser` VALUES ('62', '2', '12');
+INSERT INTO `d_console_roleuser` VALUES ('63', '2', '33');
+INSERT INTO `d_console_roleuser` VALUES ('66', '42', '33');
+INSERT INTO `d_console_roleuser` VALUES ('68', '25', '18');
+INSERT INTO `d_console_roleuser` VALUES ('73', '18', '2');
+INSERT INTO `d_console_roleuser` VALUES ('74', '59', '33');
+INSERT INTO `d_console_roleuser` VALUES ('75', '11', '33');
+INSERT INTO `d_console_roleuser` VALUES ('76', '14', '33');
+INSERT INTO `d_console_roleuser` VALUES ('77', '60', '33');
+INSERT INTO `d_console_roleuser` VALUES ('78', '13', '33');
+INSERT INTO `d_console_roleuser` VALUES ('79', '64', '1');
+INSERT INTO `d_console_roleuser` VALUES ('82', '61', '1');
+INSERT INTO `d_console_roleuser` VALUES ('83', '58', '1');
+INSERT INTO `d_console_roleuser` VALUES ('84', '57', '1');
+INSERT INTO `d_console_roleuser` VALUES ('87', '54', '1');
+INSERT INTO `d_console_roleuser` VALUES ('88', '56', '1');
+INSERT INTO `d_console_roleuser` VALUES ('89', '55', '1');
+INSERT INTO `d_console_roleuser` VALUES ('90', '49', '1');
+INSERT INTO `d_console_roleuser` VALUES ('91', '45', '1');
+INSERT INTO `d_console_roleuser` VALUES ('92', '65', '26');
+INSERT INTO `d_console_roleuser` VALUES ('93', '38', '1');
+INSERT INTO `d_console_roleuser` VALUES ('94', '38', '18');
+INSERT INTO `d_console_roleuser` VALUES ('95', '66', '21');
+INSERT INTO `d_console_roleuser` VALUES ('96', '67', '26');
+INSERT INTO `d_console_roleuser` VALUES ('97', '68', '16');
+INSERT INTO `d_console_roleuser` VALUES ('100', '63', '26');
+INSERT INTO `d_console_roleuser` VALUES ('101', '62', '26');

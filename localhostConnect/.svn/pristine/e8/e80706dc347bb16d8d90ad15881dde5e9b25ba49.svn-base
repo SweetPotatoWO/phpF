@@ -1,0 +1,31 @@
+<?php
+
+namespace Service\Integral\Model;
+use Common\Model\SlaveModel;
+
+class UserCardModel extends SlaveModel {
+
+
+    public function getList($where="",$field="",$limit="1,100"){
+        if(empty($where)) {
+            return false;
+        }
+        $model = $this->where($where);
+        if(!empty($field)) {
+            $model = $model->field($field);
+        }
+        return $model = $model->limit($limit)->select();
+    }
+
+
+    /**
+     * 根据姓名来获取到名片
+     */
+    public function getGroupByName($name,$userID) {
+
+        return M("cardGroup")->where(array('groupName'=>$name,'userID'=>$userID))->find();
+    }
+
+
+
+}

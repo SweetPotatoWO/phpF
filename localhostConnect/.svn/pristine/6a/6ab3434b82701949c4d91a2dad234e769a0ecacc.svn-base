@@ -1,0 +1,198 @@
+<?php
+
+namespace Service\Spread\Logic;
+
+use Think\Exception;
+use Service\Spread\Model;
+use Common\Common\Redis;
+
+/**
+ * 广告图片管理
+ */
+class HomeBannerLogic {
+
+    /**
+     * 获取图片广告位
+     * @param type $type
+     * @return type
+     */
+    public function getImg($type) {
+        $arr = array();
+        $cache = Redis::GetInstance();
+        $banner = $cache->get("Banner");
+        if (empty($banner) || is_null($banner)) {
+            $model = new Model\HomeBannerModel();
+            $banner = $model->getAll();
+            $cache->set("Banner", $banner, 86400 * 7); //存储一周
+        }
+        foreach ($banner as $key => $value) {
+            if ($value["dicType"] == $type) {
+                $arr[] = $value;
+            }
+        }
+        return $arr;
+    }
+
+    /**
+     * 紧急修复IOS不能发包问题
+     */
+    public function handleImg($info, $version, $terminal) {
+        if ($version == "2.6.2" && $terminal == "3") {//测试环境 2.0.0  正式环境 2.6.2
+            $key = 0;
+            foreach ($info as $k => $v) {
+                $banisDel = preg_match("/Mobile\/activity\/novAct/", $v["linkUrl"]);
+                $cenIsDel = preg_match("/Mobile\/activity\/novAct/", $v["cenLink"]);
+                if (!empty($banisDel) || !empty($cenIsDel)) {
+                    continue;
+                }
+                $data[$key] = $v;
+                $key+=1;
+            }
+        }
+        return $data = !empty($data) ? $data : $info;
+    }
+
+    /**
+     *  获取前台广告图
+     * @param string $where
+     * @param type $whereArr
+     * @param type $limit
+     * @return type
+     */
+    public function getBanner($where, $whereArr, $limit) {
+        $mod = new Model\HomeBannerModel();
+        $where.="AND bannerStatus >'%d'";
+        array_push($whereArr, 0);
+        $result = $mod->getBanner("(1=1)" . $where, $whereArr, $limit);
+        foreach ($result["rows"] as $k => $v) {
+            $result["rows"][$k]["bannerStartTime"] = !empty($v["bannerStartTime"]) ? $v["bannerStartTime"] : "不限制";
+            $result["rows"][$k]["bannerEndTime"] = !empty($v["bannerEndTime"]) ? $v["bannerEndTime"] : "不限制";
+        }
+        return $result;
+    }
+
+    /**
+     * 删除前台广告图
+     * @param type $key
+     * @return boolean
+     */
+    public function delBanner($bannerID) {
+        if ($bannerID * 1 < 1) {
+            return FALSE;
+        }
+        $redis = Redis::GetInstance();
+        $redis->del("Banner");
+        $data["bannerStatus"] = 0;
+        $where["bannerID"] = $bannerID;
+        $mod = new Model\HomeBannerModel();
+        $result = $mod->saveBanner($data, $where);
+        return $result;
+    }
+
+    /**
+     * 获得广告图编辑信息
+     * @param type $bannerID
+     */
+    public function getSinBanner($bannerID) {
+        $model = new Model\HomeBannerModel();
+        if ($bannerID * 1 < 1) {
+            return FALSE;
+        }
+        $where["bannerID"] = $bannerID;
+        $where["bannerStatus"] = 1;
+        $result = $model->getSinBanner($where);
+        return $result;
+    }
+
+    /**
+     * 保存广告图信息
+     * @param type $data
+     */
+    public function saveBanner($data) {
+        try {
+            $where = array();
+            if (empty(trim($data["bannerStartTime"])) || empty(trim($data["bannerEndTime"]))) {
+                $data["bannerStartTime"] = 0;
+                $data["bannerEndTime"] = 0;
+            } else {
+                $data["bannerStartTime"] = strtotime($data["bannerStartTime"]);
+                $data["bannerEndTime"] = strtotime($data["bannerEndTime"]);
+            }
+            if ($data["bannerID"] * 1 > 0 && count($data) > 0) {
+                $where["bannerID"] = $data["bannerID"];
+                $data ['editUserID'] = C('userID');
+                $data ['editUserName'] = C('userName');
+                $data ['editDatetime'] = time();
+                unset($data["bannerID"]);
+            } else {
+                $data ['addUserID'] = C('userID');
+                $data ['addUserName'] = C('userName');
+                $data ['addDatetime'] = time();
+            }
+            $model = new Model\HomeBannerModel();
+            $result = $model->saveBanner($data, $where);
+            $cache = Redis::GetInstance(); //删除缓存
+            $cache->del("Banner");
+            return $result;
+        } catch (Exception $ex) {
+            logger(__METHOD__, $ex->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * 获取后台配置的图片信息并且判断时间
+     * @param type $type
+     * @return type
+     */
+    public function getImgInfo($type) {
+        $arr = array();
+        $cache = Redis::GetInstance();
+        $banner = $cache->get("Banner");
+        if (empty($banner) || is_null($banner)) {
+            $model = new Model\HomeBannerModel();
+            $banner = $model->getAll();
+            $cache->set("Banner", $banner, 86400 * 7); //存储一周
+        }
+        $time = time();
+        foreach ($banner as $value) {
+            if ($value["dicType"] == $type && empty($arr)) {
+                if ($time * 1 >= $value["bannerStartTime"] && $time < ($value["bannerEndTime"] + 86400)) {
+                    $value["bannerUrl"] = UPLOAD . $value["bannerUrl"];
+                    $arr = $value;
+                }
+            }
+        }
+        return $arr;
+    }
+
+    /**
+     * 获取多张图片并组合
+     * @param type $type
+     * @return string
+     */
+    public function getImgListInfo($type) {
+        $arr = array();
+        $cache = Redis::GetInstance();
+        $banner = $cache->get("Banner");
+        if (empty($banner) || is_null($banner)) {
+            $model = new Model\HomeBannerModel();
+            $banner = $model->getAll();
+            $cache->set("Banner", $banner, 86400 * 7); //存储一周
+        }
+        $time = time();
+        foreach ($banner as $value) {
+            if ($value["dicType"] == $type) {
+                if ($time * 1 >= $value["bannerStartTime"] && $time < ($value["bannerEndTime"] + 86400)) {
+                    $value["bannerUrl"] = UPLOAD . $value["bannerUrl"];
+                    $arr[] = $value;
+                } else {
+                    $arr = [];
+                    break;
+                }
+            }
+        }
+        return $arr;
+    }
+
+}

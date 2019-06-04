@@ -1,0 +1,69 @@
+<?php
+
+
+
+namespace Service\User\Model;
+
+use Common\Model\SlaveModel;
+use Service\Connect\Logic\ConnectRelationLogic;
+use Service\Connect\Logic\OperationLogic;
+
+/**
+ * Description of UserSourceModel
+ *
+ * @author Administrator
+ */
+class UserJobauthModel extends SlaveModel {
+
+    public function addAuth($data) {
+        $data['addDatetime'] = time();
+        return $this->add($data);
+    }
+
+
+    public function getAuthList($where,$limit) {
+         $model = $this->alias('uj')->join("d_user_company as uc on uj.userID=uc.userID ")
+             ->join("d_user as u on uc.userID=u.userID")
+           ->field("uj.authID,u.phone,uc.companyName,uc.name,uc.job,uc.group,uc.companyID,uj.mailBox,uj.certificate,uc.group,uj.workCard,uj.authStatus");
+         if($where) $model = $model->where($where);
+         return  $model->limit($limit)->select();
+    }
+
+    public function getAuthCount($where) {
+        return $this->where($where)->count();
+    }
+
+    public function ajaxAuthHanld($id,$status) {
+        $data['authStatus'] = $status;
+        $this->startTrans();
+        $res =  $this->where(array('authID'=>$id))->save($data);
+        if(!$res) {
+            $this->rollback();
+            return false;
+        }
+        if($status == 1) {
+            $info = $this->getOne($id);
+            $res = M("user")->where(array("userID"=>$info['userID'],"jobAuth"=>0))->save(array("jobAuth"=>1));
+            if(!$res) {
+                $this->rollback();
+                return false;
+            } else {
+                $connect = new ConnectRelationLogic();
+                $op = new OperationLogic();
+                $arr = array(
+                    'userID'=>$info['userID'],
+                    'jobAuth'=>$info['jobAuth'],
+                );
+                $person = $op->getPersonModel($arr);
+                $connect->upsertPerson($person);
+            }
+        }
+        $this->commit();
+        return true;
+    }
+
+    public function getOne($cid) {
+        return $this->where(array("authID"=>$cid))->field("userID")->find();
+    }
+
+}

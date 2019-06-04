@@ -1,0 +1,74 @@
+<div class="modal-body">
+    <input  type="hidden" name="hidAction" id="hidAction" value="view" >
+    <form class="form-horizontal" id="form-Role">       
+        <input type="hidden" name='roleID' id='roleID' value="{$data.roleID}"/>
+        <div class="form-group has-info">
+            <label class="control-label col-sm-2" for="inputInfo">角色名：</label>
+            <div class=" col-sm-6">
+                <input type="text" id="roleName" name="roleName" value="{$data.roleName}" class="form-control"  >          
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="control-label col-sm-2" for="inputInfo">备注：</label>
+            <div class=" col-sm-6">
+                <input type="text" id="roleRemark" name="roleRemark" value="{$data.roleRemark}" class="form-control" >         
+            </div>
+        </div>
+    </form>
+</div>
+<div class="modal-footer">
+    <button type="button" id="butCancel" class="btn btn-default" data-dismiss="modal">关闭</button>
+    <button type="button" id="butSaveRole" class="btn btn-primary" >保存</button>
+</div>  
+<script type="text/javascript" >
+    $(function($) {
+        rolevalid();
+        $("#butSaveRole").click(function() {
+            var isOK = $("#form-Role").valid();
+            if (isOK) {
+                saveRole();
+            }
+        });
+    });
+
+    function saveRole() {
+        var data = $Util.getData($("#form-Role"));
+        $.ajax({
+            type: "post",
+            url: "/Backend/Backend/saveRole",
+            data: {'par': data},
+            dataType: "json",
+            beforeSend: function(XMLHttpRequest) {
+                $(".sub-content").showLoading();
+            },
+            success: function(data, textStatus) {
+                $(".sub-content").hideLoading();
+                if (data.status == 1) {
+                    $("#linkID").val(data.data);
+                    $("#hidAction").val("edit");
+                    $win.confirm(data.msg + ",是否关闭窗口？").on(function() {
+                        $('#butCancel').trigger("click");
+                    });
+                } else {
+                    $win.warn(data.msg);
+                }
+            },
+            complete: function(XMLHttpRequest, textStatus) {
+                $(".sub-content").hideLoading();
+            },
+            error: function() {
+                $(".sub-content").hideLoading();
+            }
+        });
+    }
+    function rolevalid() {
+        $("#form-Role").validate({
+            rules: {
+                roleName: {required: true},
+            },
+            messages: {
+                roleName: {required: "角色名不能为空!"},
+            }
+        });
+    }
+</script>

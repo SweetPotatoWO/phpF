@@ -1,0 +1,234 @@
+<?php
+namespace Service\Connect\Logic;
+
+use Service\Connect\Model\CompanyModel;
+use Service\Connect\Model\ConnectModel;
+use Service\Connect\Model\ConnectStudyModel;
+use Service\Connect\Model\ConnectWorkModel;
+use Service\Connect\Model\PersonModel;
+use Service\Connect\Model\SchoolModel;
+use Service\User\Logic\UserLogic;
+use Service\UserCenter\Logic\UserCenterLogic;
+use Service\UserCenter\Model\UserCompanyModel;
+
+class OperationLogic {
+
+
+    /**转换讲数据源转换成Person类
+     * @param $data
+     */
+    protected function  arrToPersonModel($data) {
+        $Model = new PersonModel();
+        if(!empty($data['userID'])) $Model->setUserId($data['userID']);  //用户的ID
+        if(!empty($data['name'])) $Model->setName($data['name']);   //名字
+        if(!empty($data['phone'])) $Model->setMobile($data['phone']);   //电话
+        if(!empty($data['workCity'])) $Model->setCity($data['workCity']);   //城市
+        if(!empty($data['cityBorn'])) $Model->setCityBorn($data['cityBorn']);   //籍贯
+        if(!empty($data['companyName'])) $Model->setCompany($data['companyName']);  //公司
+        if(!empty($data['workMajorName'])) $Model->setIndustry($data['workMajorName']); //行业
+        if(!empty($data['job'])) $Model->setProfession($data['job']);  //职业
+        if(!empty($data['group'])) $Model->setJobTitle($data['group']);   //头衔
+        if(!empty($data['companyID'])) $Model->setCompanyId($data['companyID']);   //头衔
+        if(!empty($data['majorScore'])) $Model->setJobGrade($data['majorScore']);    //个人专业评分
+        if(!empty($data['activity'])) $Model->setActiveGrade($data['activity']);   //活跃度
+        if(!empty($data['userHeadUrl'])) $Model->setHeadPic($data['userHeadUrl']);  //图片
+        if(!empty($data['workCityID'])) $Model->setCityId($data['workCityID']);  // 工作城市的ID
+        if(!empty($data['city'])) $Model->setCityBornId($data['city']);  //图片
+        if(!empty($data['workMajorID'])) $Model->setIndustryId($data['workMajorID']);  //图片
+        return $Model;
+    }
+
+    /**
+     * 转换数据源转成connection类
+     */
+    protected function arrToConnectModel($form,$to) {
+        $form = $this->arrToPersonModel($form);
+        $to = $this->arrToPersonModel($to);
+        $Model = new ConnectModel($form,$to);
+        $Model->setTitle("好友");   //用户的ID
+        return $Model;
+    }
+
+
+    /**保存数据到图数据库中
+     * @param $data 数据源
+     * @param $phone  用户的手机
+     */
+    public function savePersonNeo4j($data="") {
+        if(empty($data)) return false;
+        $person = $this->arrToPersonModel($data);
+        $logic = new ConnectRelationLogic();
+        return $logic->upsertPerson($person);
+    }
+
+
+    /**
+     * 获取到用户的类
+     * @param $data
+     * @return PersonModel
+     */
+    public function getPersonModel($data) {
+        return $this->arrToPersonModel($data);
+    }
+
+    /**
+     * 获取到公司的类
+     */
+    public function getCompanyModel($data) {
+        return $this->arrToCompany($data);
+    }
+
+
+    /**
+     * 保存关系
+     * @param $form  发起的userID
+     * @param $to    目标的userID
+     * @return bool
+     */
+    public function saveConnectNeo4j($form,$to) {
+        if(empty($form) || empty($to)) return false;
+        $connectModel =  $this->arrToConnectModel($form,$to);
+        $logic = new ConnectRelationLogic();
+        return $logic->upsertConnect($connectModel);
+    }
+
+
+    /**
+     * 教育关系的链接
+     * @param $data  用户填写的教育经历
+     * @param $userID   用户的ID
+     * @param $schoolID  学校的名字
+     * @return bool
+     */
+    public function addStudyConnect($data,$userID,$schoolID) {
+        $userCenter = new UserCenterLogic();
+        $school = $userCenter->getSchoolByID($schoolID,array("schoolID","schoolName"));   //获取到学校的信息
+        $model = $this->arrToConnectStudyModel($data,array('userID'=>$userID),$school);
+        $connect = new ConnectRelationLogic();
+        return $connect->upsertStudy($model);
+    }
+
+    /**
+     * 删除教育关系
+     * @param $data    添加的教育经历数据
+     * @param $userID
+     * @return bool
+     */
+
+    public function delStudyConnect($data,$userID) {
+        $userCenter = new UserCenterLogic();
+        $schoolID = $data['schoolID'];
+        $school = $userCenter->getSchoolByID($schoolID,array("schoolID","schoolName"));   //获取到学校的信息
+        $model = $this->arrToConnectStudyModel($data,array('userID'=>$userID),$school);
+        $connect = new ConnectRelationLogic();
+        return $connect->delStudy($model);
+    }
+
+
+
+
+
+    /**
+     * 添加工作经历的
+     * @param $data  用户的填写工作的数据
+     * @param $userID   用户的ID
+     * @param $companyID 公司的ID
+     * @return bool
+     */
+    public function addWorkModel($data,$userID,$companyID) {
+        $companyLogic = new UserCompanyModel();
+        $company = $companyLogic->getCompanyByID($companyID,array("companyCity as city","cpyIndustry as industry ","companyID","companyName"));
+        $model = $this->arrToWorkModel($data,array('userID'=>$userID),$company);
+        $connect = new ConnectRelationLogic();
+        return $connect->upsertWork($model);
+    }
+
+
+    /**
+     * 删除图数据库的工作经历
+     * @param $data
+     * @param $userID
+     * @param $companyID
+     * @return bool
+     */
+    public  function delWorkModel($data,$userID) {
+        $companyLogic = new UserCompanyModel();
+        $companyID = $data['companyID'];
+        $company = $companyLogic->getCompanyByID($companyID,array("companyCity as city","cpyIndustry as industry ","companyID","companyName"));
+
+        $model = $this->arrToWorkModel($data,array('userID'=>$userID),$company);
+        $connect = new ConnectRelationLogic();
+        return $connect->delWork($model);
+    }
+
+
+    /**
+     * 学校学习对象
+     * @param $data
+     * @param $userInfo
+     * @param $school
+     * @return ConnectStudyModel
+     */
+    protected function  arrToConnectStudyModel($data,$userInfo,$school) {
+        $person = $this->arrToPersonModel($userInfo);
+        $school = $this->arrToSchoolModel($school);
+        $model = new ConnectStudyModel($person,$school);
+        $model->setDepartment($data['department']);
+        $model->setEndTime($data['endDatetime']);
+        $model->setMajor($data['major']);
+        $model->setStarttime($data['startDatetime']);
+        return $model;
+
+    }
+
+
+    /**
+     * 数组转学校对象
+     * @param $schoolData
+     * @return SchoolModel
+     */
+    protected function arrToSchoolModel($schoolData) {
+        $school = new SchoolModel();
+        $school->setSchoolId($schoolData['schoolID']);
+        $school->setSchoolName($schoolData['schoolName']);
+        return $school;
+    }
+
+
+    /**
+     * 数组转公司联系对象
+     * @param $work
+     * @param $userInfo
+     * @param $company
+     * @return ConnectWorkModel
+     */
+    protected  function  arrToWorkModel($work,$userInfo,$company) {
+        $company = $this->arrToCompany($company);
+        $user = $this->arrToPersonModel($userInfo);
+        $workmodel = new ConnectWorkModel($user,$company);
+        $workmodel->setStarttime($work['startDatetime']);   //开始时间
+        $workmodel->setEndTime($work['endDatetime']);     //结束时间
+        $workmodel->setDepartment($work['group']);   //所属部门
+        $workmodel->setJobtitle($work['job']);    //所属职位
+        return $workmodel;
+    }
+
+
+    /**
+     * 数组转公司对象
+     * @param $company
+     * @return CompanyModel
+     */
+    protected function arrToCompany($company) {
+        $model = new CompanyModel();
+        $model->setGrade($company['grade']);
+        $model->setCity($company['city']);
+        $model->setIndustry($company['industry']);
+        $model->setCompanyId($company['companyID']);
+        $model->setCompanyName($company['companyName']);
+        return $model;
+    }
+
+
+
+}

@@ -1,0 +1,227 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: zhoull
+ * Date: 2018/8/15
+ * Time: 10:38
+ */
+
+namespace Service\Connect\Logic;
+
+use Common\Common\GraphDbHelper;
+use Service\Connect\Model\CompleteGradeEnum;
+use Service\Connect\Model\ConnectModel;
+use Service\Connect\Model\ConnectTypeEnum;
+
+class DataImportLogic
+{
+    private $db_handler=null;
+    private $neo_import_path = 'D:\Data\neo4j\distributions\neo4j\neo4j-enterprise-3.4.4\import';
+    function __construct()
+    {
+        $this->db_handler=GraphDbHelper::getInstance();
+    }
+
+    /**
+     * 导入qhz模拟数据
+     */
+    public function import4QhzDbMock()
+    {
+        //获取数据
+        $db = M('','','mysql://root:qhz@192.168.1.252:3306/mbox20180813');
+        $list = $db->query("select a.realName as name,a.phone,b.dearName,b.dearPhone,b.dearBear from d_user a 
+INNER JOIN d_user_info b on a.userId=b.userId
+WHERE b.dearName is not NULL and b.dearName<>''");
+        $lst_node = array();
+        $lst_connection = array();
+        foreach ($list as $item) {
+            $item['realName'] = aes($item['name'],'DECODE');
+            $lst_node[]= [$item['realName'],$item['phone']];
+            $lst_node[]= [$item['dearname'],$item['dearphone']];
+            $type_connection = ConnectTypeEnum::CONTACT;
+            $level = ConnectTypeEnum::getLevel($type_connection);
+            $grade = ConnectModel::level2Grade($level);
+            $lst_connection[]=[$item['phone'],$item['dearphone'],$type_connection,$level,$grade];
+        }
+
+        //导出用户
+        $filePath = str_replace('\\','/',dirname(THINK_PATH))."/Publish/tmp/node_" . date('Ymdhis') . ".csv";
+        $fp = fopen($filePath, "a+");
+        //添加表头
+        $field='name,phone';
+        $title=explode(',',$field);
+        fputcsv($fp, $title);
+        //添加内容
+        foreach ($lst_node as $item) {
+            fputcsv($fp,$item);
+        }
+        fclose($fp);
+        //导入neo
+        $fileName=basename($filePath);
+        copy($filePath,$this->neo_import_path.'\\'.$fileName);
+        $rs = $this->db_handler->importNode('file:///'.$fileName,'Person',$field);
+
+        //导出用户关系
+        $filePath = str_replace('\\','/',dirname(THINK_PATH))."/Publish/tmp/rel_" . date('Ymdhis') . ".csv";
+        $fp = fopen($filePath, "a+");
+        //添加表头
+        $field='from_id,to_id,type,level,grade';
+        $title=explode(',',$field);
+        fputcsv($fp, $title);
+        //添加内容
+        foreach ($lst_connection as $item) {
+            fputcsv($fp,$item);
+        }
+        fclose($fp);
+        //导入neo
+        $fileName=basename($filePath);
+        copy($filePath,$this->neo_import_path.'\\'.$fileName);
+        $where_from='phone:from_id';
+        $where_to='phone:to_id';
+        $rs = $this->db_handler->importRelation('file:///'.$fileName,'Person',$where_from,$where_to,'FOLLOW','type,level,grade');
+    }
+
+    /**
+     * 同步屏蔽状态
+     * @param $user_id
+     * @param $to_mobile
+     */
+    public function synShield($user_id,$to_mobile,$status)
+    {
+        $logicConnect = new ConnectRelationLogic();
+        if($status){
+            $logicConnect->addShield($user_id,$to_mobile);
+        }else{
+            $logicConnect->delShield($user_id,$to_mobile);
+        }
+    }
+
+    /**
+     * 从通讯录表导入
+     * @param $user_id
+     */
+    public function import4Contacts($user_id){
+        $model = M("UserMaillist");
+        $list = $model->where(['userID'=>$user_id,'isDataClean'=>0])
+            ->field(["userName","phone","group"])->select();
+        if($list && count($list)>0){
+            $q = "
+MERGE (m:Person{mobile:'%s'}) 
+MERGE (n:Person{user_id:%d})
+MERGE (n)-[r:".ConnectTypeEnum::getKey(ConnectTypeEnum::CONTACT)."]->(m)
+ON MATCH set r.title='%s',r.desc='%s'
+ON CREATE set r.title='%s',r.desc='%s';";
+            $q_batch='';
+            $t=0;
+            $logicConnect = new ConnectRelationLogic();
+            for($i=0;$i<count($list);$i++){
+                $item = $list[$i];
+                if(!$item['phone'])continue;
+                if($item['shieldStatus']){ //屏蔽
+                    $logicConnect->addShield($user_id,$item['phone']);
+                    continue;
+                }
+                //保存通讯录关系
+                $arr_phone = explode(',',$item['phone']);
+                foreach ($arr_phone as $item_phone) {
+                    $q_batch .= sprintf($q,$item_phone,$user_id,$item['userName'],$item['group'],$item['userName'],$item['group']);
+                    $this->db_handler->query($q_batch);
+                    $q_batch='';
+                    /*$t++;
+                    if($t>=15){//每次执行15条
+                        $this->db_handler->query($q_batch);
+                        $q_batch='';
+                        $t=0;
+                    }*/
+                }
+            }
+            /*if($q_batch){
+                $this->db_handler->query($q_batch);
+            }*/
+            $model->where(['userID'=>$user_id,'isDataClean'=>0])->save(['isDataClean'=>1]);
+        }
+    }
+
+    /**
+     * 为名片注册用户导入数据
+     * @param $mobile
+     */
+    public function import4CardsReg($mobile){
+        $model = M();
+        $list = $model->query("SELECT userID FROM d_user_card WHERE phoneOne='$mobile' OR phoneTwo='$mobile'");
+        if($list && count($list)>0){
+            $q = "
+MERGE (m:Person{mobile:'%s'}) 
+MERGE (n:Person{user_id:%d})
+MERGE (n)-[r:CARD]->(m);";
+            $q_batch='';
+            $t=0;
+            for($i=0;$i<count($list);$i++){
+                $item = $list[$i];
+                $user_id = $item['userID'];
+                if(!$user_id)continue;
+                $q_batch .= sprintf($q,$mobile,$user_id);
+                $this->db_handler->execute($q_batch);
+                $q_batch='';
+            }
+        }
+    }
+
+    /**
+     * 导入名片与用户、名片与公司的关系
+     * @param $user_id  上传名片的用户编号
+     * @param $card_id  纯净名片编号-该名片未注册用户的情况
+     * @param $tar_user_id  名片用户编号-该名片已经注册了用户的情况
+     */
+    public function import4Cards($user_id,$card_id,$tar_user_id){
+        if($card_id) {
+            $info = M('card_clear')->where(["ccID" => $card_id])->find();
+            if ($info) {
+                $param = [
+                    'user_id' => (int)$user_id,
+                    'name' => $info['realname'],
+                    'mobile' => $info['phoneOne'],
+                    'job' => $info['job'],
+                    'department' => $info['companyGroup'],
+                    'company_id' => $info['companyID'],
+                    'company_name' => $info['companyName'],
+                    'complete_grade' => CompleteGradeEnum::CARD_AUTH
+                ];
+                if($param['name'] && $param['company_id'] && $param['job']){
+                    $param['is_rec'] = true;
+                }else{
+                    $param['is_rec'] = null;
+                }
+                $q = "
+MATCH (n:Person{user_id:{user_id}})
+MERGE (m:Person{mobile:{mobile}}) 
+ON MATCH SET m.name=CASE WHEN m.user_id is null AND m.name is null THEN {name} ELSE m.name END,
+            m.company_id=CASE WHEN m.user_id is null AND m.company_id is null THEN {company_id} ELSE m.company_id END,
+            m.company_name=CASE WHEN m.user_id is null AND m.company_id is null THEN {company_name} ELSE m.company_name END,
+            m.profession=CASE WHEN m.user_id is null AND m.company_id is null THEN {job} ELSE m.profession END,
+            m.is_rec=CASE WHEN m.is_rec is null THEN {is_rec} THEN m.is_rec END
+ON CREATE SET m.name={name},m.company_id={company_id},m.company={company_name},m.profession={job},m.complete_grade={complete_grade},m.is_rec={is_rec}
+MERGE (n)-[r:CARD]->(m)
+MERGE (c:Company{company_id:{company_id}})
+ON CREATE SET c.company_name={company_name}
+MERGE (m)-[rc:WORK_IN]->(c)
+ON CREATE SET rc.jobtitle={job},rc.department={department};";
+                $this->db_handler->execute($q,$param);
+//                logger('DataImportLogic/import4Cards 导名片', json_encode($param));
+            }
+        }else if($tar_user_id){
+            $info = M('user')->where(["userID" => $tar_user_id])->find();
+            if ($info) {
+                $param = [
+                    'user_id' => (int)$user_id,
+                    'tar_user_id' => (int)$tar_user_id,
+                ];
+                $q = "
+MATCH (n:Person{user_id:{user_id}}),(m:Person{user_id:{tar_user_id}})
+MERGE (n)-[r:CARD]->(m);";
+                $this->db_handler->execute($q,$param);
+//                logger('DataImportLogic/import4Cards 导名片', json_encode($param));
+            }
+        }
+    }
+}

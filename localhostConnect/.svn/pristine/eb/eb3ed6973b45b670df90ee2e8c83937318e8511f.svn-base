@@ -1,0 +1,50 @@
+<?php
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+namespace Service\System\Model;
+
+use Common\Model\SlaveModel;
+
+class UserWanttagModel extends SlaveModel {
+
+    /**
+     * 获取到用户的标签
+     * @param $userID
+     * @return mixed
+     */
+    public function getUserTag($userID) {
+        return $this->where(array('userID'=>$userID))->field('tagName,tagID')->select();
+    }
+
+
+    /**
+     * 批量添加标签
+     * @param $data
+     * @return bool|string
+     */
+    public function addMore($data) {
+        if(empty($data)) {
+            return false;
+        }
+        return $this->addAll($data);
+    }
+
+
+    /**
+     * 根据条件删除用户标签
+     * @param string $where
+     * @return bool|mixed
+     */
+    public function delUserTag($where="") {
+        if(empty($where)) {
+            return false;
+        }
+        return $this->where($where)->delete();
+    }
+
+}

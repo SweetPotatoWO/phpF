@@ -1,0 +1,36 @@
+<?php
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+namespace Service\System\Model;
+
+use Common\Model\SlaveModel;
+
+class SystemLogModel extends SlaveModel {
+
+    /**
+     * 查询系统日志 
+     * @param type $where
+     * @param type $whereArr
+     * @param type $limit
+     */
+    public function getSysLog($where, $whereArr, $limit) {
+        $result["total"] = $this->SlaveDB()->table("d_system_log")->where($where, $whereArr)->count();
+        $result["rows"] = $this->SlaveDB()->table("d_system_log")->where($where, $whereArr)->order("addDatetime DESC")->limit($limit)->select();
+        return $result;
+    }
+
+    /**
+     * 查询系统日历里的日志描述
+     * @param type $where
+     */
+    public function getLogView($where) {
+        $result = $this->SlaveDB()->table("d_system_log")->where($where)->field("logRemark")->find();
+        return $result;
+    }
+
+    }

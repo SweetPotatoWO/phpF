@@ -1,0 +1,54 @@
+<?php
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+namespace Service\Backend\Model;
+
+use Think\Model;
+/**
+ * Description of ConsoleRoleUserModel
+ *
+ * @author Administrator
+ */
+class ConsoleRoleuserModel extends Model{
+    
+    /**
+     * 根据用户ID获取所有角色信息。
+     * @param type $userID
+     * @return boolean
+     */
+    public function getRoleByUser($userID) {
+        if (empty($userID))
+            return false;
+        $where['userID'] = $userID;
+        return $this->where($where)->getField('roleID',true);
+    }
+
+    /**
+     * 根据用户ID删除所有分配角色信息。
+     * @param type $userID
+     * @return boolean
+     */
+    public function delRoleByUser($userID) {
+        if (empty($userID))
+            return false;
+        $where['userID'] = $userID;
+        return $this->where($where)->delete();
+    }
+
+    /**
+     * 添加角色信息。
+     * @param type $data
+     * @return boolean
+     */
+    public function addRoles($data) {
+        if (empty($data) || !is_array($data))
+            return false;
+        $result= $this->addAll($data);
+        return $result;
+    }
+}

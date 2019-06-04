@@ -1,0 +1,111 @@
+/*
+Navicat MySQL Data Transfer
+
+Source Server         : 钱盒子测试
+Source Server Version : 50631
+Source Host           : 120.25.85.171:3306
+Source Database       : devmbox_hx
+
+Target Server Type    : MYSQL
+Target Server Version : 50631
+File Encoding         : 65001
+
+Date: 2018-08-08 10:20:19
+*/
+
+SET FOREIGN_KEY_CHECKS=0;
+
+-- ----------------------------
+-- Table structure for d_console_user
+-- ----------------------------
+DROP TABLE IF EXISTS `d_console_user`;
+CREATE TABLE `d_console_user` (
+  `userID` int(11) unsigned NOT NULL AUTO_INCREMENT,
+  `userName` varchar(50) NOT NULL COMMENT '用户名',
+  `cusName` varchar(50) DEFAULT NULL COMMENT '客服昵称',
+  `password` varchar(50) NOT NULL COMMENT '密码',
+  `realName` varchar(200) NOT NULL DEFAULT '' COMMENT '姓名',
+  `userType` int(11) DEFAULT '1' COMMENT '用户类型 1 用户 2 管理员 7 客服主管 8 客服 ',
+  `phone` varchar(50) DEFAULT NULL COMMENT '电话',
+  `email` varchar(100) DEFAULT NULL COMMENT 'EMAIL',
+  `status` tinyint(4) DEFAULT '1' COMMENT '1,可用，0 删除',
+  `remark` varchar(100) DEFAULT NULL COMMENT '备注',
+  `addUserID` int(11) NOT NULL COMMENT '创建人ID',
+  `addUserName` varchar(50) DEFAULT NULL COMMENT '创建人',
+  `addDatetime` int(11) NOT NULL COMMENT '创建时间',
+  `editUserID` int(11) DEFAULT NULL COMMENT '修改人ID',
+  `editUserName` varchar(50) DEFAULT NULL COMMENT '修改人',
+  `editDatetime` int(11) DEFAULT NULL COMMENT '修改时间',
+  PRIMARY KEY (`userID`)
+) ENGINE=InnoDB AUTO_INCREMENT=69 DEFAULT CHARSET=utf8;
+
+-- ----------------------------
+-- Records of d_console_user
+-- ----------------------------
+INSERT INTO `d_console_user` VALUES ('1', 'weilei', '', '8dd54ee89a8bba1ca1863897dea45827', 'KVgigSRQ5bJKUkG53u2wPQ==', '1', '13751186805', null, '1', '', '2', '管理员', '1452157444', '15', 'mbox', '1520407326');
+INSERT INTO `d_console_user` VALUES ('2', 'qiuwg', null, '8dd54ee89a8bba1ca1863897dea45827', 'cL0wsmQ0y/IczNcGx2iQdw==', '1', '1', null, '0', null, '2', '管理员', '1452157555', '2', '管理员', '1452221095');
+INSERT INTO `d_console_user` VALUES ('3', 'libw', null, '8dd54ee89a8bba1ca1863897dea45827', 'iLaOZueZmLXyChNRdK6RIQ==', '1', '18576400383', null, '0', null, '2', '管理员', '1452157586', '1', 'weilei', '1466645143');
+INSERT INTO `d_console_user` VALUES ('4', 'lilb', null, '8dd54ee89a8bba1ca1863897dea45827', 'n0YyUPzXOqBAP/NrJgdHDA==', '1', '13923868167', null, '0', null, '2', '管理员', '1452157636', null, null, '1452221513');
+INSERT INTO `d_console_user` VALUES ('5', 'wangjq', null, '8dd54ee89a8bba1ca1863897dea45827', 'zsleuaESRuHqHp3wtPDjpQ==', '1', '15017136702', null, '0', null, '2', '管理员', '1452157665', '15', 'mbox', '1458192023');
+INSERT INTO `d_console_user` VALUES ('6', 'yangyang', null, '8dd54ee89a8bba1ca1863897dea45827', 'kqatGyFHvb3Jwwck5agnkw==', '1', '15919856331', null, '0', null, '2', '管理员', '1452157710', '1', 'weilei', '1452511930');
+INSERT INTO `d_console_user` VALUES ('7', 'liyyw', '钱盒子-婷婷', '8dd54ee89a8bba1ca1863897dea45827', 'd2vsanAhQAvTtiEKlwObGw==', '7', '13760168838', null, '1', '15', '2', '管理员', '1452157740', '15', 'mbox', '1502095453');
+INSERT INTO `d_console_user` VALUES ('8', 'meiq', '钱盒子-依依', '8dd54ee89a8bba1ca1863897dea45827', 'lKeR0IspRoQfeMlzD+2Deg==', '8', '13129532914', null, '0', '13', '2', '管理员', '1452157768', '1', 'weilei', '1468303540');
+INSERT INTO `d_console_user` VALUES ('9', 'luoy', null, '8dd54ee89a8bba1ca1863897dea45827', '1terikezkmwrmGERYSel9A==', '1', '13760172334', null, '0', null, '2', '管理员', '1452157799', '15', 'mbox', '1456299126');
+INSERT INTO `d_console_user` VALUES ('10', 'xiaoly', null, '8dd54ee89a8bba1ca1863897dea45827', 'kyi9QvjMTPHrO8fJyxG87g==', '1', '15915499104', null, '0', null, '2', '管理员', '1452157832', '1', 'weilei', '1456188714');
+INSERT INTO `d_console_user` VALUES ('11', 'wangyh', '', '8dd54ee89a8bba1ca1863897dea45827', 'a0pfN959c/2i6fvJ0QYTkA==', '1', '1', null, '0', '', '2', '管理员', '1452157907', '15', 'mbox', '1528874992');
+INSERT INTO `d_console_user` VALUES ('12', 'wenfang', null, '8dd54ee89a8bba1ca1863897dea45827', 'xSJJXVkhIaD6QwX7O05yng==', '1', '13760180371', null, '0', null, '2', '管理员', '1452157931', '2', '管理员', '1452220971');
+INSERT INTO `d_console_user` VALUES ('13', 'linfan', null, '8dd54ee89a8bba1ca1863897dea45827', 'iRh8tCzfj+rP+FiujMM99Q==', '1', '1', null, '0', null, '2', '管理员', '1452158013', null, null, '1453082364');
+INSERT INTO `d_console_user` VALUES ('14', 'jiangt', null, '8dd54ee89a8bba1ca1863897dea45827', 'BrAAWKlfgFcdBULhatK20Q==', '1', '15013504783', null, '0', null, '2', '管理员', '1452158073', null, null, '1452220321');
+INSERT INTO `d_console_user` VALUES ('15', 'mbox', null, '8dd54ee89a8bba1ca1863897dea45827', 'klmF4eQ+svWpE5LnvHnHYA==', '1', '18664987795', null, '1', null, '2', '管理员', '1452158102', null, null, '1458193159');
+INSERT INTO `d_console_user` VALUES ('16', 'liup', null, '14e1b600b1fd579f47433b88e8d85291', 'ye8QrGciOowEu89x73SADQ==', '1', '13751174675', null, '1', null, '2', '管理员', '1452158134', null, null, null);
+INSERT INTO `d_console_user` VALUES ('17', 'wanggh', null, '8dd54ee89a8bba1ca1863897dea45827', 'foKvKxYxdZuMJv/y2OASeQ==', '1', '18926117858', null, '1', null, '2', '管理员', '1452158680', null, null, '1452221541');
+INSERT INTO `d_console_user` VALUES ('18', 'emily', null, '8dd54ee89a8bba1ca1863897dea45827', 'Sq79ekYbNI3Po/dRBZTCSA==', '1', '15889550702', null, '1', null, '15', 'mbox', '1452160708', null, null, '1452221398');
+INSERT INTO `d_console_user` VALUES ('19', 'xuyl', null, '8dd54ee89a8bba1ca1863897dea45827', 'wjdxDJux/iKHs1YATJQN6A==', '1', '15814724815', null, '0', null, '15', 'mbox', '1452240667', '1', 'weilei', '1456188726');
+INSERT INTO `d_console_user` VALUES ('20', 'penghui', null, '8dd54ee89a8bba1ca1863897dea45827', 'vk5YIlLWkcasgafAdM1RPA==', '1', '13632711300', null, '1', null, '1', 'weilei', '1452475184', null, null, '1452749506');
+INSERT INTO `d_console_user` VALUES ('21', 'yutj', null, '8dd54ee89a8bba1ca1863897dea45827', 'LDUccN8vm8hEChIn0x9TqA==', '1', '1', null, '0', null, '1', 'weilei', '1455584471', '1', 'weilei', '1457322541');
+INSERT INTO `d_console_user` VALUES ('23', 'pengxs', null, '8dd54ee89a8bba1ca1863897dea45827', 'YJEB4Ks+jZ2TxklY+uDZeg==', '1', '1', null, '0', null, '1', 'weilei', '1455587676', '1', 'weilei', '1468303531');
+INSERT INTO `d_console_user` VALUES ('24', 'chenyx', null, '8dd54ee89a8bba1ca1863897dea45827', 'LjhGbpvyV1pl+xHqryNGbw==', '1', '1', null, '0', null, '1', 'weilei', '1455873125', '1', 'weilei', '1458207626');
+INSERT INTO `d_console_user` VALUES ('25', 'wangw', '钱盒子-天天', '8dd54ee89a8bba1ca1863897dea45827', '1ag67sz0r15Zu/OztdElXw==', '8', '15813739285', null, '1', '14', '15', 'mbox', '1456726781', '15', 'mbox', '1520408113');
+INSERT INTO `d_console_user` VALUES ('26', 'libing', '', '8dd54ee89a8bba1ca1863897dea45827', 'wWOQjXgjv5egSKhHOtkqSQ==', '1', '18820478080', null, '1', '发标专员', '1', 'weilei', '1457322262', '15', 'mbox', '1495001803');
+INSERT INTO `d_console_user` VALUES ('27', 'tengxiaoliang', null, '8dd54ee89a8bba1ca1863897dea45827', '9jBE+38KpvbTyusZLWkeYw==', '1', '1', null, '0', null, '1', 'weilei', '1457322584', null, null, '1457335241');
+INSERT INTO `d_console_user` VALUES ('28', 'qiubiao', '', '8dd54ee89a8bba1ca1863897dea45827', 'XGHhduX2fvT5yole+5+6hA==', '1', '13802583469', null, '1', '', '1', 'weilei', '1457322621', '15', 'mbox', '1520407387');
+INSERT INTO `d_console_user` VALUES ('29', 'linct', '钱盒子-佳佳', '8dd54ee89a8bba1ca1863897dea45827', 'pGLCWBOwtWuqFoPwl0MlKw==', '8', '15875186530', null, '1', '16', '15', 'mbox', '1458264339', '15', 'mbox', '1502095467');
+INSERT INTO `d_console_user` VALUES ('30', 'yaox', '钱盒子-小凡', '8dd54ee89a8bba1ca1863897dea45827', 'RTOSmqZlspMGgaBwoP7HBA==', '8', '18681486300', null, '0', '8', '15', 'mbox', '1459135550', '15', 'mbox', '1462266451');
+INSERT INTO `d_console_user` VALUES ('31', 'qianhezi', null, '8dd54ee89a8bba1ca1863897dea45827', 'jZTZYVTMfjFjkHucKFBqkw==', '1', '1', null, '0', null, '1', 'weilei', '1459390709', null, null, null);
+INSERT INTO `d_console_user` VALUES ('32', 'caiyixiao', null, '8dd54ee89a8bba1ca1863897dea45827', '7OOZReD38ObVK1g30TxjcQ==', '1', '1', null, '0', null, '1', 'weilei', '1460080932', null, null, '1460098388');
+INSERT INTO `d_console_user` VALUES ('33', 'shankun', null, '8dd54ee89a8bba1ca1863897dea45827', 'hYg9+oa6yuGMI7MnSaKFkg==', '1', '1', null, '0', null, '1', 'weilei', '1460080955', null, null, '1460083247');
+INSERT INTO `d_console_user` VALUES ('34', 'wangmy', '钱盒子-小樱', '8dd54ee89a8bba1ca1863897dea45827', 'Ymo2wzb47fDqHcJpZv5CLg==', '8', '18692239780', null, '0', '10', '15', 'mbox', '1461027233', '15', 'mbox', '1462266455');
+INSERT INTO `d_console_user` VALUES ('35', 'fenghm', '钱盒子-小敏', '8dd54ee89a8bba1ca1863897dea45827', 'JNrc/eoNCWMJUG1wSxHhFQ==', '8', '13119551136', null, '1', '8', '15', 'mbox', '1465198182', '15', 'mbox', '1502095479');
+INSERT INTO `d_console_user` VALUES ('36', 'zhangxd', '', '8dd54ee89a8bba1ca1863897dea45827', 'sG3DbABVAjTsxiqn3aD5Mw==', '1', '13826113883', null, '1', '', '1', 'weilei', '1468303406', '15', 'mbox', '1495001880');
+INSERT INTO `d_console_user` VALUES ('37', 'fanghan', null, '8dd54ee89a8bba1ca1863897dea45827', '53vxG/nTOx9E1fNPsO81Kw==', '1', '1', null, '0', null, '1', 'weilei', '1468307860', null, null, '1468308225');
+INSERT INTO `d_console_user` VALUES ('38', 'lxx', '钱盒子-思思', '8dd54ee89a8bba1ca1863897dea45827', 'gFk6KzJqrqOzvL+puf53pA==', '2', '18682111038', null, '1', '9', '15', 'mbox', '1468390322', '15', 'mbox', '1531905010');
+INSERT INTO `d_console_user` VALUES ('39', 'lijiaxin', null, '8dd54ee89a8bba1ca1863897dea45827', 'UjxQMwTSq5XFii1QEAE5Aw==', '1', '1', null, '0', null, '1', 'weilei', '1468820144', null, null, null);
+INSERT INTO `d_console_user` VALUES ('40', 'xuewenting', null, '8dd54ee89a8bba1ca1863897dea45827', '9DsXDe73qK9N+EzVk7yn/Q==', '1', '1', null, '0', null, '1', 'weilei', '1470272618', null, null, '1470367725');
+INSERT INTO `d_console_user` VALUES ('41', 'gongmq', '钱盒子-依依', '8dd54ee89a8bba1ca1863897dea45827', 'x27W/eScifpuJH8FI21czg==', '8', '15818534929', null, '0', '13', '15', 'mbox', '1470299426', '15', 'mbox', '1470622984');
+INSERT INTO `d_console_user` VALUES ('42', 'liuxiaochan', null, '8dd54ee89a8bba1ca1863897dea45827', 'c8qBsLvaFJ1usRGs82sdiQ==', '1', '1', null, '1', null, '1', 'weilei', '1470735936', null, null, '1470736129');
+INSERT INTO `d_console_user` VALUES ('43', 'yangming', '', '8dd54ee89a8bba1ca1863897dea45827', 'CgKEOkP1eJjwfeqYyevPuw==', '1', '13723495294', null, '0', '推广-新媒体', '1', 'weilei', '1470735954', '15', 'mbox', '1495001754');
+INSERT INTO `d_console_user` VALUES ('44', 'liup', '', '8dd54ee89a8bba1ca1863897dea45827', 'ye8QrGciOowEu89x73SADQ==', '1', '13751174675', null, '1', '开发人员', '15', 'mbox', '1475568027', '15', 'mbox', '1495001720');
+INSERT INTO `d_console_user` VALUES ('45', 'xupeiqin', '', '14e1b600b1fd579f47433b88e8d85291', 'xYUpiUAEVn1+9hkg9yt8qg==', '2', '18682039897', null, '1', '开发', '1', 'weilei', '1476097376', '64', 'lxx', '1531384786');
+INSERT INTO `d_console_user` VALUES ('46', 'lilongbiao', '', '8dd54ee89a8bba1ca1863897dea45827', 'n0YyUPzXOqBAP/NrJgdHDA==', '1', '1', null, '0', '', '1', 'weilei', '1476233460', null, null, null);
+INSERT INTO `d_console_user` VALUES ('47', 'lilongbiao', '', '8dd54ee89a8bba1ca1863897dea45827', 'n0YyUPzXOqBAP/NrJgdHDA==', '1', '1', null, '0', '', '1', 'weilei', '1476410973', null, null, null);
+INSERT INTO `d_console_user` VALUES ('48', 'qiusy', '', '8dd54ee89a8bba1ca1863897dea45827', 'pEmwHScn93d32Efq3EK+6A==', '1', '13691982328', null, '0', '商户借款', '15', 'mbox', '1478852315', null, null, null);
+INSERT INTO `d_console_user` VALUES ('49', 'wusaisai', '', '8dd54ee89a8bba1ca1863897dea45827', 'YcRF67QAbzrmNyAPGj49hA==', '2', '18025329728', null, '0', '安卓开发', '1', 'weilei', '1479189433', '64', 'lxx', '1531384729');
+INSERT INTO `d_console_user` VALUES ('50', 'liuhy', '', '8dd54ee89a8bba1ca1863897dea45827', 'QImRDu2qCP8GJPxPHhd+Ag==', '1', '15099935096', null, '0', '', '15', 'mbox', '1482199338', null, null, null);
+INSERT INTO `d_console_user` VALUES ('51', 'mansh', '', '8dd54ee89a8bba1ca1863897dea45827', 'M/iNPLqvY18vYwn0FsUL4w==', '1', '1', null, '0', '', '1', 'weilei', '1487065364', null, null, null);
+INSERT INTO `d_console_user` VALUES ('52', 'liyd', '', '8dd54ee89a8bba1ca1863897dea45827', 'aZTgoef/WGANoZOAKKm66A==', '1', '18820294603', null, '0', '推广专员', '15', 'mbox', '1491806037', null, null, null);
+INSERT INTO `d_console_user` VALUES ('53', 'yanglh', '', '8dd54ee89a8bba1ca1863897dea45827', 'MQ2cr4ron8mlDkrBCMbI1A==', '1', '13682569586', null, '0', '', '15', 'mbox', '1494491281', null, null, null);
+INSERT INTO `d_console_user` VALUES ('54', 'xiatiejun', '', '8dd54ee89a8bba1ca1863897dea45827', 'StHssslNQyqOvi97RUnrXQ==', '2', '18938645449', null, '0', 'IOS开发', '15', 'mbox', '1495001206', '64', 'lxx', '1531384630');
+INSERT INTO `d_console_user` VALUES ('55', 'guanxiaodan', '', '8dd54ee89a8bba1ca1863897dea45827', 'MBu79W/3SQzPA26qe8yd2A==', '2', '18565699759', null, '0', 'ui设计', '15', 'mbox', '1499821253', '64', 'lxx', '1531384207');
+INSERT INTO `d_console_user` VALUES ('56', 'zhongfangying', '', '8dd54ee89a8bba1ca1863897dea45827', 'uYJqYZnlg4mnykFRd0R4iQ==', '2', '15989892835', null, '1', '开发', '15', 'mbox', '1501232410', '64', 'lxx', '1531384146');
+INSERT INTO `d_console_user` VALUES ('57', 'zhouluole', '', '14e1b600b1fd579f47433b88e8d85291', 'Fpo/TYn+QNxO+Qd3Gp9RhA==', '2', '15818608363', null, '1', '开发', '15', 'mbox', '1511752888', '64', 'lxx', '1531456989');
+INSERT INTO `d_console_user` VALUES ('58', 'xiangjie', '', '14e1b600b1fd579f47433b88e8d85291', 'GuUQQsP/EKsVt5+EwdyC3A==', '2', '15012413545', null, '1', '产品经理', '15', 'mbox', '1513059538', '64', 'lxx', '1531384057');
+INSERT INTO `d_console_user` VALUES ('59', 'yere', '', '8dd54ee89a8bba1ca1863897dea45827', 'sqRtJ+bfA8rNNKvf09AbJQ==', '1', '13533572660', null, '0', '还款人员', '15', 'mbox', '1513059578', '15', 'mbox', '1525315528');
+INSERT INTO `d_console_user` VALUES ('60', 'lizy', '', '8dd54ee89a8bba1ca1863897dea45827', 'P0ussWX4YQZ8uZi1qH36Rg==', '1', '18938888283', null, '0', '', '15', 'mbox', '1515483223', '15', 'mbox', '1520407516');
+INSERT INTO `d_console_user` VALUES ('61', 'qingyu', '', '8dd54ee89a8bba1ca1863897dea45827', 'GT3VdlajcbUlzxeskVwX/A==', '2', '13502833115', null, '0', 'UI设计', '15', 'mbox', '1521527833', '64', 'lxx', '1531383996');
+INSERT INTO `d_console_user` VALUES ('62', 'yiyuling', '', '8dd54ee89a8bba1ca1863897dea45827', 'Mbb6lKnEFH94yImdvqvluw==', '2', '13510771258', null, '1', 'UI设计', '15', 'mbox', '1523409407', '64', 'lxx', '1531384165');
+INSERT INTO `d_console_user` VALUES ('63', 'wangjingwen', '', 'af26610db5e49dd014584b03cd4d3599', 'UREgV5VYCfZaRaQxdL2jYA==', '2', '15521075501', null, '1', '前端', '15', 'mbox', '1523934392', '64', 'lxx', '1531383883');
+INSERT INTO `d_console_user` VALUES ('64', 'lxx', '', '8dd54ee89a8bba1ca1863897dea45827', 'gFk6KzJqrqOzvL+puf53pA==', '2', '18825205767', null, '0', '测试', '15', 'mbox', '1523934418', '64', 'lxx', '1531384652');
+INSERT INTO `d_console_user` VALUES ('65', 'gaolei', '', '14e1b600b1fd579f47433b88e8d85291', 'UuQn3ohgONT+MCe9qAH2bA==', '1', '15818608363', null, '1', '', '64', 'lxx', '1531702404', null, null, null);
+INSERT INTO `d_console_user` VALUES ('66', 'liujingjing', '', '8dd54ee89a8bba1ca1863897dea45827', 'UTiBaJFFTbfU1QAq2ER69w==', '1', '15818608363', null, '1', '活动策划', '38', 'lxx', '1531972019', null, null, null);
+INSERT INTO `d_console_user` VALUES ('67', 'chenleping', '', '14e1b600b1fd579f47433b88e8d85291', 'kC/wFJwJKgDprMkiLZcnkg==', '1', '15818608363', null, '1', '', '38', 'lxx', '1532569325', null, null, null);
+INSERT INTO `d_console_user` VALUES ('68', 'libing', '', '8dd54ee89a8bba1ca1863897dea45827', 'wWOQjXgjv5egSKhHOtkqSQ==', '1', '15818608363', null, '1', '', '38', 'lxx', '1532593434', null, null, null);

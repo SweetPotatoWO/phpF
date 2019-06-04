@@ -1,0 +1,83 @@
+<include file="Common:header" />	
+<div class="management">
+	<div class="navigation text-center bg-white">
+        <ul class="nav nav-tabs bord-n clearfix" role="tablist">
+            <li role="presentation">
+                <a href="#shareHolder" aria-controls="shareHolder" role="tab" data-toggle="tab" class="active">高管</a>
+            </li>
+            <li role="presentation" data="list">
+                <a href="#leader" aria-controls="leader" role="tab" data-toggle="tab">股东</a>
+            </li>
+        </ul>
+    </div>
+    
+    <div class="tab-content">
+    	<div id="shareHolder" role="tabpanel" class="tab-pane active">
+    		<div class="list bg-white">
+    			<!--单条数据start-->
+    			<div class="bord-b clearfix">
+    				<div class="fl portrait"><img src="/Public/wechat/images/company/touxiang.png"></div>
+    				<div class="fl pl-10">
+    					<p class="mb-0">王小明</p>
+    					<div class="tags">
+    						<div class="inline-block fs-12 color-deep">董事长</div>
+    						<div class="inline-block fs-12 color-deep">总经理</div>
+    					</div>
+    					<p class="mb-0 fs-13 color-deep">股权25%</p>
+    				</div>
+    			</div>
+    			<!--单条数据end-->    	
+    		</div>
+    		<!--暂无数据-->
+    		<div class="nodata text-center fs-13 color-deep pl-10">暂无数据~</div>
+    	</div>
+    	<div id="leader" role="tabpanel" class="tab-pane">
+    		<div class="list bg-white">
+    			<!--单条数据start-->
+    			<div class="bord-b clearfix">
+    				<div class="fl portrait"><img src="/Public/wechat/images/company/touxiang.png"></div>
+    				<div class="fl pl-10">
+    					<p class="mb-0">王小明</p>
+    					<div class="tags mb-8">
+    						<div class="inline-block fs-12 color-deep">董事长</div>
+    						<div class="inline-block fs-12 color-deep">总经理</div>
+    					</div>
+    					<p class="mb-0 fs-13 color-deep">股权25%</p>
+    				</div>
+    			</div>
+    			<!--单条数据end-->
+    		</div>
+    		<!--暂无数据-->
+    		<div class="nodata text-center fs-13 color-deep pl-10">暂无数据~</div>
+    	</div>
+    </div>
+</div>
+</body>
+</html>
+<script type="application/javascript">
+	$(function() {
+	    alert("!!");
+	});
+
+
+	function getManageList(page) {   //传递页数获取到高层的信息
+		if(!page) page=1;
+        $.ajax({
+            url:"/wechat/company/getPeople/type/",
+            type:"post",
+            data:attr,
+            dataType:'json',
+            success:function(data){
+                if(data.err == 0) {   //成功
+                    alert("发送成功");
+                } else {
+                    alert(data.msg);
+                }
+            },
+            error:function(data){
+                alert("请求错误");
+            },
+        });
+	}
+
+</script>

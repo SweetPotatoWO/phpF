@@ -1,0 +1,69 @@
+<?php
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+namespace Service\User\Logic;
+
+use Service\User\Model\UserInviteModel;
+use Service\Operate\Logic\TicketLogic;
+use Service\Common\FinishEventLogic;
+
+class UserInviteLogic {
+
+    private $model = null;
+
+    public function __construct() {
+        $this->model = new UserInviteModel();
+    }
+
+    /**
+     * 添加邀请的记录
+     */
+    public function addInvite($data) {
+        return $this->model->addInvite($data);
+    }
+
+
+    /**
+     * 处理邀请中的结果
+     */
+    public function saveInvite($userID,$phone) {
+        $InviteInfo = M('userInvite')->where(array('userID'=>$userID,'invitePhone'=>$phone))->find();
+        if(empty($InviteInfo)) {
+            $data['invitePhone'] = $phone;
+            $data['userID']   = $userID;
+            $data['inviteType'] = 1;
+            $data['stutas'] = 2;
+            return M('userInvite')->add($data);
+        } else {
+            return M('userInvite')->where(array('userID'=>$userID,'invitePhone'=>$phone))->data(array('status'=>2))->save();  //修改状态
+        }
+    }
+
+
+    /**
+     * 获取到列表
+     */
+    public function getList($userID) {
+        $field = array("u.nickname","u.phone");
+        return  M('userInvite')->alias('ui')->join('d_user u on ui.invitePhone = u.phone')
+              ->where(array('ui.userID'=>$userID,'ui.stutas'=>2))
+              ->field($field)
+              ->select();
+    }
+
+
+    /**
+     * 获取到确定的条邀请的记录
+     */
+    public function getInviteOne($userID,$phone) {
+        return M('userInvite')->where(array('userID'=>$userID,'invitePhone'=>$phone,'status'=>2))->find();
+    }
+
+
+
+}

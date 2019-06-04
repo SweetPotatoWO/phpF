@@ -1,0 +1,64 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: Administrator
+ * Date: 2018/8/14 0014
+ * Time: 9:50
+ */
+
+namespace Service\UserCenter\Model;
+use Common\Model\SlaveModel;
+
+class UserWorkexperienceModel extends SlaveModel {
+
+
+    /**获取到用户的工作经历
+     * @param $userID
+     */
+    public function getUserEx($userID) {
+        $sql = "SELECT ex.companyName,ex.userWorkExID,c.companyLogo,ex.companyID,ex.job,ex.group,"
+                . " ex.startDatetime,"
+                . " ex.endDatetime,"
+                . " ex.addDatetime , case ex.endDatetime when 0 then 3000000000 else ex.endDatetime end as sort "
+                . "FROM d_user_workexperience ex left join d_company c on c.companyID=ex.companyID where "
+                . "ex.userID=" . $userID."  order by sort desc,ex.startDatetime desc";
+        return $this->SlaveDB()->query($sql);
+    }
+
+    /**
+     * 获取当前用户的学校信息
+     */
+    public function getUserCompanyEd($userID,$companyID,$field="") {
+        $model =  $this->where(array('userID'=>$userID,'companyID'=>$companyID));
+        if(!empty($field)) {
+            $model = $model->field($field);
+        }
+        return $model->find();
+    }
+
+
+    /**
+     * 根据教育经历的ID获取到信息
+     */
+    public function getWorkOneByID($ID,$field="") {
+        $model = $this->where(array("userWorkExID"=>$ID));
+        if(!empty($field)) {
+            $model = $model->field($field);
+        }
+        return $model->find();
+    }
+
+
+    /**
+     * 根据用户的ID获取到工作经历信息
+     */
+    public function getWorkCompanyByArr($arr) {
+
+        $where = array(
+            'userID'=>array('in',$arr),
+            'endDatetime'=>0
+        );
+        return $this->where($where)->group('userID')->field("userID,companyName,job")->select();
+    }
+
+}

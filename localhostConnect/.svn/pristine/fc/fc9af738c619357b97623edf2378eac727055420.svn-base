@@ -1,0 +1,76 @@
+<?php
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+namespace Service\Statistic\Logic;
+
+use Service\Statistic\Model;
+
+/**
+ * Description of ReportLogic
+ *
+ * @author DREAM
+ */
+class ReportLogic {
+
+    /**
+     * 月统计
+     * @param type $start
+     * @param type $end
+     */
+    public function getMonthDataList($start, $end) {
+        $model = new Model\ReportModel();
+        return $model->getMonthDataList($start, $end);
+    }
+
+    /**
+     * 周统计
+     * @param type $start
+     * @param type $end
+     */
+    public function getWeekDataList($start, $end) {
+        $model = new Model\ReportModel();
+        return $model->getWeekDataList($start, $end);
+    }
+
+    /**
+     * 注册登录统计
+     * @param type $start
+     * @param type $end
+     */
+    public function getRstCollect($start, $end) {
+        $model = new Model\ReportModel();
+        return $model->getRstCollect($start, $end);
+    }
+
+    /**
+     * 平台用户统计
+     * @param type $start
+     * @param type $end
+     * @return type
+     */
+    public function getUserCount() {
+        $model = new Model\ReportModel();
+        $result = $model->getUserCount();
+        return $result;
+    }
+
+    /**
+     * 日邀请数据
+     */
+    public function inviteDayCount($startTime, $endTime) {
+        $model = new Model\ReportModel();
+        $result = $model->inviteDayCount($startTime, $endTime);
+        if (!empty($result)) {
+            $firstData = $result[0];
+            array_shift($result);
+            $result[] = $firstData;
+        }
+        return $result;
+    }
+
+}

@@ -1,0 +1,90 @@
+<div id="sub-Link-list">
+    <input type="hidden" name="hidrefurl" id="hidrefurl" value="{:U(ACTION_NAME, $_GET)}">
+    <h4 class="title">友情链接</h4>
+    <form class="form-inline" id="query_Link">      
+        <label class="control-label">链接名称: </label>
+        <input type="text" class="form-control mr-10" value="{$Think.post.txtlinkName}" name="txtlinkName" placeholder="请输入">   
+        <label class="control-label">联系人: </label>
+        <input type="text" class="form-control" value="{$Think.post.txtlinkMan}" name="txtlinkMan" placeholder="请输入">     
+        <a href="{:U(ACTION_NAME, $_GET)}"  onclick="$Util.openQuery(this, event, 'query_Link')"  class="btn btn-info"><i class="icon-search"></i>查询</a>
+        <a href="/Backend/Spread/editLink" title="编辑-友情链接"  onclick="$win.dialog(this, event)" class="btn btn-success"><i class="icon-plus"></i>新增</a> 
+    </form>
+    <table class="table table-striped table-bordered">
+        <thead>
+            <tr>          
+                <th>链接名称</th>
+                <th>链接URL</th>
+                <th>联系人</th>
+                <th>联系电话</th>
+                <th>排序</th>
+                <th>创建人</th>
+                <th>创建时间</th>
+                <th>修改人</th>
+                <th>修改时间</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody>
+        <volist name="Link" id="item">
+            <tr>         
+                <td style="text-align: left">{$item.linkName}</td>
+                <td style="text-align: left">{$item.linkUrl}</td>
+                <td>{$item.linkMan}</td>
+                <td>{$item.linkPhone}</td>
+                <td>{$item.linkStatus}</td>
+                <td>{$item.addUserName}</td>
+                <td>{$item.addDatetime|formatlongDate}</td>
+                <td>{$item.editUserName}</td>
+                <td>{$item.editDatetime|formatlongDate}</td>
+                <td><a class="btn btn-xs btn-primary pr-10" href="/Backend/Spread/editLink/key/{$item.linkID}" title="编辑-友情链接"  onclick="$win.dialog(this, event)"><span class="icon-edit"></span>修改</a>
+                    <a class="btn btn-xs btn-warning pr-10 delete" href="/Backend/Spread/delLink" data-toggle="modal" data="{$item.linkID}" ><span class="icon-remove"></span>删除</a>
+                </td>
+            </tr>
+        </volist>
+        </tbody>
+    </table>
+    <nav class=" pagination-centered">
+    	<ul class="pagination">  
+        {$pageHtml}
+    	</ul>
+    </nav>
+    <script type="text/javascript" >     
+        $(function($) {
+            $(".delete").click(function(e) {
+                var url = $(this).attr("href");
+                var key = $(this).attr("data");
+                $win.confirm("确定要删除吗").on(function() {
+                    $.ajax({
+                        type: "post",
+                        url: url,
+                        data: {'key': key},
+                        dataType: "json",
+                        beforeSend: function(XMLHttpRequest) {
+                            $(".sub-content").showLoading();
+                        },
+                        success: function(data, textStatus) {
+                            $(".sub-content").hideLoading();
+                            if (data.status == 1) {
+                                $win.message(data.msg).on(function() {
+                                    $Util.openQuery();
+                                });
+                            }else{                             
+                               $win.warn(data.msg);
+                            }
+                        },
+                        complete: function(XMLHttpRequest, textStatus) {
+                            $(".sub-content").hideLoading();
+                        },
+                        error: function() {
+                            $(".sub-content").hideLoading();
+                        }
+                    });
+                });
+                e.preventDefault();
+            });
+        });
+    </script>
+</div>
+
+
+

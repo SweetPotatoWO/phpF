@@ -1,0 +1,330 @@
+<?php
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+namespace Service\Spread\Logic;
+
+use Think\Exception;
+use Service\Spread\Model;
+use Common\Common\Redis;
+
+/**
+ * 文章管理
+ *
+ * @author DREAM
+ */
+class HomeArticleLogic {
+
+    /**
+     * 获取发布文章
+     * @param type $where
+     * @param type $whereArr
+     * @param type $limit
+     * @return type
+     */
+    public function getArticle($where, $whereArr, $limit) {
+        $model = new Model\HomeArticleModel();
+        $where.=" AND status > '%d'";
+        array_push($whereArr, 0);
+        $result = $model->getArticle("(1=1) " . $where, $whereArr, $limit);
+        return $result;
+    }
+
+    /**
+     * 手机端的文章列表(不包含合计)
+     * @param string $where
+     * @param type $whereArr
+     * @param type $limit
+     * @return type
+     */
+    public function getMArticle($where, $whereArr, $limit) {
+        $model = new Model\HomeArticleModel();
+        $where.=" AND status > '%d'";
+        array_push($whereArr, 0);
+        $result = $model->getMArticle("(1=1) " . $where, $whereArr, $limit);
+        return $result;
+    }
+
+    /**
+     * 获取特定文章
+     * @param type $type
+     * @param type $num
+     * @return type
+     */
+    public function getHomeArt($type, $num) {
+        $cache = Redis::GetInstance();
+        $art = $cache->get("Article_" . $type);
+        if (empty($art) || is_null($art)) {
+            $model = new Model\HomeArticleModel();
+            $art = $model->getHomeArt($type, "0," . $num);
+            $cache->set("Article_" . $type, $art, 86400 * 7); //存储一周
+        }
+        return $art;
+    }
+
+    /**
+     * 获取文章
+     * @param type $artID
+     * @return boolean
+     */
+    public function getSinArticle($artID) {
+        $model = new Model\HomeArticleModel();
+        if ($artID * 1 < 1) {
+            return false;
+        }
+        $where["articleID"] = $artID;
+        $where["status"] = array('GT', 0);
+        $result = $model->getEntity($where);
+        $result["articleContent"] = htmlspecialchars_decode($result["articleContent"], ENT_COMPAT);
+        return $result;
+    }
+
+    /**
+     * 保存文章
+     * @param type $data
+     * @return type
+     */
+    public function saveArticle($data) {
+        try {
+            $where = array();
+            if ($data["articleID"] * 1 > 0 && count($data) > 0) {
+                $where["articleID"] = $data["articleID"];
+                $data ['editUserID'] = C('userID');
+                $data ['editUserName'] = C('userName');
+                $data ['editDatetime'] = time();
+                unset($data["articleID"]);
+            } else {
+                $data ['addUserID'] = C('userID');
+                $data ['addUserName'] = C('userName');
+                $data ['addDatetime'] = time();
+            }
+//            if (strlen($data['articleContent']) > 10000) {
+//                $data['articleContent'] = sub_str($data['articleContent'], 0, 10000, '...');
+//            }
+            $data['abstract'] = fliter_str(fliter_script($data['abstract']));
+            $data['seoTitle'] = fliter_str(fliter_script($data['seoTitle']));
+            $data['seoKeys'] = fliter_str(fliter_script($data['seoKeys']));
+            $data['seoDescription'] = fliter_str(fliter_script($data['seoDescription']));
+            $data["articleContent"] = filter_UEditor(htmlspecialchars(stripslashes($data['articleContent'])));
+            $data ['operateIP'] = getIP();
+            $model = new Model\HomeArticleModel();
+            $result['articleID'] = $model->saveArticle($data, $where);
+            $cache = Redis::GetInstance(); //删除缓存
+            $cache->del("Article_" . $data ['typeID']);
+            $cache->del("Article_" . $data ['oldTypeID']);
+            $result['typeID'] = $data ['typeID'];
+            return $result;
+        } catch (Exception $ex) {
+            logger(__METHOD__, $ex->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * 删除友情文章
+     * @param type $articleID
+     * @return boolean
+     */
+    public function delArticle($articleID) {
+        if ($articleID * 1 < 1) {
+            return false;
+        }
+        $where["articleID"] = $articleID;
+        $data["status"] = 0;
+        $model = new Model\HomeArticleModel();
+        $result = $model->saveArticle($data, $where);
+        if ($result) {
+            $whe["articleID"] = $articleID;
+            $rs = $model->getEntity($whe);
+            $type = $rs["typeID"];
+            $redis = Redis::GetInstance();
+            $redis->del("Article_" . $type);
+        }
+        return $result;
+    }
+
+    /**
+     * 获取文章信息 
+     * @param string $where
+     * @param type $whereArr
+     * @param type $limit
+     * @return type
+     */
+    public function getHomeArticle($where, $whereArr, $limit) {
+        $where.="AND status = '%d'";
+        array_push($whereArr, 2);
+        $model = new Model\HomeArticleModel();
+        $result = $model->getHomeArticle("(1=1)" . $where, $whereArr, $limit);
+        if (!empty($limit)) {
+            foreach ($result["rows"] as $k => $v) {
+                $result["rows"][$k]["articleContent"] = htmlspecialchars_decode(htmlspecialchars_decode($v["articleContent"], ENT_COMPAT));
+                $result["rows"][$k]["abstract"] = htmlspecialchars_decode(htmlspecialchars_decode($v["abstract"], ENT_COMPAT));
+                $result["rows"][$k]["addDatetimeFormat"] = date('Y-m-d H:i', $v['addDatetime']);
+                $result["rows"][$k]["articleTitleFormat"] = sub_str($v['articleTitle'], 0, 25, "...");
+            }
+        } else {
+            foreach ($result as $k => $v) {
+                $result [$k]["articleContent"] = htmlspecialchars_decode(htmlspecialchars_decode($v["articleContent"], ENT_COMPAT));
+                $result [$k]["addDatetimeFormat"] = date('Y-m-d H:i', $v['addDatetime']);
+                $result [$k]["articleTitleFormat"] = sub_str($v['articleTitle'], 0, 25, "...");
+            }
+        }
+        return $result;
+    }
+
+    /**
+     * 获取帮助中心的文章
+     * @param type $where
+     * @param type $whereArr
+     * @param type $order
+     */
+    public function center($where, $whereArr) {
+        $where.="AND status = '%d'";
+        array_push($whereArr, 2);
+        $model = new Model\HomeArticleModel();
+        $result = $model->center($where, $whereArr);
+        foreach ($result as $k => $v) {
+            $result[$k]["articleContent"] = htmlspecialchars_decode(htmlspecialchars_decode($v["articleContent"], ENT_COMPAT));
+        }
+        return $result;
+    }
+
+    /**
+     * 修改文章有用或无用数量
+     */
+    public function updateUseCount($articleID, $type) {
+        if (empty($articleID) || empty($type)) {
+            return false;
+        }
+        $where["articleID"] = $articleID;
+        if ($type == "useFul") {
+            $data["usefulCount"] = array('exp', 'usefulCount+1');
+        } else {
+            $data["nouseCount"] = array('exp', 'nouseCount+1');
+        }
+        $model = new Model\HomeArticleModel();
+        return $model->saveArticle($data, $where);
+    }
+
+    /**
+     * 后台预览
+     * @param type $num
+     */
+    public function preview($articleID) {
+        $where["articleID"] = $articleID;
+        $model = new Model\HomeArticleModel();
+        $result = $model->getEntity($where);
+        $result["articleContent"] = htmlspecialchars_decode(htmlspecialchars_decode($result["articleContent"], ENT_COMPAT));
+        return $result;
+    }
+
+    /**
+     * 获取SEO信息 
+     * @param type $num
+     */
+    public function getEntity($articleID) {
+        $where["articleID"] = $articleID;
+        $where["status"] = 2;
+        $model = new Model\HomeArticleModel();
+        $result = $model->getEntity($where);
+        if (!empty($result)) {
+            $result["articleContent"] = htmlspecialchars_decode(htmlspecialchars_decode($result["articleContent"], ENT_COMPAT));
+        }
+        //添加阅读量
+        $this->addArticleViewCount($model, $articleID);
+        return $result;
+    }
+
+    /**
+     * 增加阅读量
+     * @param type $model
+     * @param type $articleID
+     * @return boolean
+     */
+    private function addArticleViewCount($model, $articleID) {
+        $redis = Redis::GetInstance();
+        $key = getIP() . '_' . $articleID;
+        if ($redis->get($key)) {
+            return false;
+        }
+        $redis->set($key, $articleID, 10);
+        $model->addViewCount($articleID);
+    }
+
+    /**
+     * 相关文章信息 
+     */
+    public function relatedArticle($type) {
+        $where["typeID"] = $type;
+        $where["status"] = 2;
+        $model = new Model\HomeArticleModel();
+        $result = $model->relatedArticle($where);
+        return $result;
+    }
+
+    /**
+     * 获取上一篇文章列表
+     * @param type $type
+     * @return type
+     */
+    public function preArticle($type, $num) {
+        $where["articleID"] = array("gt", $num);
+        $where["typeID"] = $type;
+        $where["status"] = 2;
+        $model = new Model\HomeArticleModel();
+        $preArticle = $model->preArticle($where);
+        return $preArticle;
+    }
+
+    /**
+     * 获取下一篇文章 
+     * @param type $type
+     * @param type $num
+     * @return type
+     */
+    public function nextArticle($type, $num) {
+        $where["articleID"] = array("lt", $num);
+        $where["typeID"] = $type;
+        $where["status"] = 2;
+        $model = new Model\HomeArticleModel();
+        $nextArticle = $model->nextArticle($where);
+        return $nextArticle;
+    }
+
+    /**
+     * 获取最新消息
+     */
+    public function getLatestNews() {
+        $where["status"] = 2;
+        $where["typeID"] = 12;
+        $model = new Model\HomeArticleModel();
+        $news = $model->nextArticle($where);
+        return $news;
+    }
+
+    /**
+     * 获取到三个固定信息的文章
+     * 分别为199 pc端基本信息 和 201移动端基本信息 和 202备案信息
+     */
+    public function getDisclosureArticle($typecode) {
+        switch ($typecode) {
+            case "baseInfoPc":
+                $typeID = 196;
+                break;
+            case "baseInfoMobile":
+                $typeID = 197;
+                break;
+            case "recordInfomation":
+                $typeID = 198;
+                break;
+        }
+        $model = new Model\HomeArticleModel();
+        $res = $model->getArticleByTitle($typeID);
+        return $res;
+    }
+
+}

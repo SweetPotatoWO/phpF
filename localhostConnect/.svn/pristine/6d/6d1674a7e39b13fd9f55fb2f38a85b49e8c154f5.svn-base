@@ -1,0 +1,47 @@
+<div id="sub_Sms_list">
+    <script type="text/javascript" src="{$Think.BPATH}js/datejs/WdatePicker.js"></script>
+    <input type="hidden" name="hidrefurl" id="hidrefurl" value="{:U(ACTION_NAME,$_GET)}">
+    <h4 class="title">短信记录<span class="titleqit">默认查询最近一周数据</span></h4>
+    <form class="form-inline" id="query_Sms">
+        <div class="form-group">
+            <label class="control-label">电话号码:</label>
+            <input type="text" name="phone" id="phone" value="{$Think.post.phone}" class="form-control" placeholder="请输入电话号码">
+        </div>
+        <div class="form-group">
+            <label class="control-label">发送时间:</label>
+            <input type="text" class="form-control" name="dateStart" id="dateStart" value="{$Think.post.dateStart}" onclick="WdatePicker({isShowClear: true, readOnly: true, maxDate: '%y-%M-%d'})" placeholder="请输入开始时间">
+            <label class="control-label">～</label>
+            <input type="text" name="dateEnd" id="dateEnd" value="{$Think.post.dateEnd}" class="form-control" onclick="WdatePicker({isShowClear: true, readOnly: true, maxDate: '%y-%M-%d'})" placeholder="请输入结束时间">
+        </div>
+        <div class="form-group">
+            <a href="{:U(ACTION_NAME,$_GET)}" onclick="$Util.openQuery(this, event, 'query_Sms')" class="btn btn-info"><i class="icon-search"></i>查询</a>
+        </div>
+    </form>
+    <table class="table table-striped table-bordered">
+        <thead>
+            <tr>
+                <th>电话号码</th>
+                <th>发送内容</th>
+                <th>发送时间</th>
+                <th>短信类型</th>
+                <th>发送短信的接口</th>
+            </tr>
+        </thead>
+        <tbody>
+        <volist name="result" id="vo">
+            <tr>
+                <td>{$vo.receivePhone}</td>
+                <td style="text-align: left">{$vo.sendContent}</td>
+                <td>{$vo.sendDatetime|formatlongDate}</td>
+                <td>{$vo.smsType}</td>
+                <td>{$vo.sendInterface}</td>
+            </tr>
+        </volist>
+        </tbody>
+    </table>
+    <nav class=" pagination-centered">
+        <ul class="pagination">  
+            {$page}
+        </ul>
+    </nav>  
+</div>

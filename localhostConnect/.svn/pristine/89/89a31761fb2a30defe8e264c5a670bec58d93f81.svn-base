@@ -1,0 +1,93 @@
+<?php
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+namespace Service\System\Logic;
+
+use Service\System\Model\SysRegionModel;
+use Common\Common\Redis;
+
+class SysRegionLogic {
+
+    public $sysRegionModel = "";
+
+    public function __construct() {
+
+        $this->sysRegionModel = new SysRegionModel();
+    }
+
+    /**
+     * 缓存城市列表
+     * 
+     */
+    public function getRegionList() {
+
+        $cache = Redis::GetInstance();
+        $list = $cache->get("region");
+        if (empty($list) || is_null($list)) {
+            $list = $this->sysRegionModel->getRegionList();
+            $cache->set("region", $list, 86400 * 30); //存储一周
+        }
+        return $list;
+    }
+
+    /**
+     * 根据父类获取
+     * @param type $parentID
+     * 
+     */
+    public function getSubRegionList($parentID = 1 ) {
+        $list = $this->getRegionList();
+        $arr = array();
+        foreach ($list as $v) {
+            if($v["parentID"] == $parentID ){
+                $arr[ ] = $v;
+            }
+        }
+        return $arr ;
+    }
+
+    /**
+     * 获取城市并进行字典排序
+     */
+    public function getDicRegList($pid = 1) {
+        $list = $this->getRegionList();
+        $ret = $this->dictree($list, $pid);
+        return $ret;
+    }
+
+    /**
+     * 词典排序树
+     * @staticvar array $tree
+     * @param type $result
+     * @param type $pid
+     * @param type $level
+     * @return type
+     */
+    public function dictree($result, $pid) {
+        $treeArr = array();
+        foreach ($result as $key => $v) {
+            if ($v['parentID'] == $pid) {
+                $arr = $this->dictree($result, $v['regionID']);
+                if (!empty($arr)) {
+                    $v["children"] = $arr;
+                }
+                array_push($treeArr, $v);
+                unset($result[$key]);
+            }
+        }
+        return $treeArr;
+    }
+
+    /**
+     * 获取到ID获取到对应的城市名字
+     */
+    public function getRegionName($id) {
+        return $this->sysRegionModel->where(array("regionID"=>$id))->getField('name');
+    }
+
+}

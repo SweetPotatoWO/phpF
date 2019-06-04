@@ -1,0 +1,211 @@
+<?php
+namespace Common\Common\ThirdApi;
+
+use Service\News\Model\SmsSendModel;
+use Service\News\Model\SmsVerifyModel;
+
+header("Content-type:text/html; charset=UTF-8");
+/* *
+ * 类名：ChuanglanSmsApi
+ * 功能：创蓝接口请求类
+ * 详细：构造创蓝短信接口请求，获取远程HTTP数据
+ */
+
+class ChuanglanSmsApi {
+
+	//参数的配置 请登录zz.253.com 获取以下API信息 ↓↓↓↓↓↓↓
+	const API_SEND_URL='https://smssh1.253.com/msg/send/json'; //创蓝发送短信接口URL
+	
+	const API_VARIABLE_URL ='https://smssh1.253.com/msg/variable/json';//创蓝变量短信接口URL
+	
+	const API_BALANCE_QUERY_URL='https://smssh1.253.com/msg/balance/json';//创蓝短信余额查询接口URL
+	
+	const API_ACCOUNT= 'N7573121'; // 创蓝API账号
+	
+	const API_PASSWORD= 'IzQcShBn9r3693';// 创蓝API密码 
+	
+
+
+	/**
+	 * 发送的动作
+	 * @param string $mobile 		手机号码
+	 * @param string $msg 			短信内容
+	 * @param string $needstatus 	是否需要状态报告
+	 */
+	public function sendSMS( $mobile, $msg, $needstatus = 'true') {
+		//创蓝接口参数
+		$postArr = array (
+			'account'  =>  self::API_ACCOUNT,
+			'password' => self::API_PASSWORD,
+			'msg' => urlencode($msg),
+			'phone' => $mobile,
+			'report' => $needstatus
+        );
+		if(APP_DEBUG) {
+            return array('code'=>0,'errorMsg'=>'');
+        } else {
+            $result = $this->curlPost( self::API_SEND_URL, $postArr);
+            return   json_decode($result,true);
+        }
+	}
+
+
+
+	/**
+	 * 发送变量短信
+	 *
+	 * @param string $msg 			短信内容
+	 * @param string $params 	最多不能超过1000个参数组
+	 */
+	public function sendVariableSMS( $msg, $params) {
+		global $chuanglan_config;
+		//创蓝接口参数
+		$postArr = array (
+			'account'  =>  self::API_ACCOUNT,
+			'password' => self::API_PASSWORD,
+			'msg' => $msg,
+			'params' => $params,
+			'report' => 'true'
+        );
+		$result = $this->curlPost( self::API_VARIABLE_URL, $postArr);
+		return json_decode($result,true);
+	}
+
+    /**
+     * 查询账户的额度
+     * @return mixed
+     */
+	public function queryBalance() {
+		global $chuanglan_config;
+		//查询参数
+		$postArr = array ( 
+		    'account'  =>  self::API_ACCOUNT,
+			'password' => self::API_PASSWORD,
+		);
+		$result = $this->curlPost(self::API_BALANCE_QUERY_URL, $postArr);
+		return $result;
+	}
+
+	/**
+	 * 通过CURL发送HTTP请求
+	 * @param string $url  //请求URL
+	 * @param array $postFields //请求参数 
+	 * @return mixed
+	 */
+	private function curlPost($url,$postFields){
+		$postFields = json_encode($postFields);
+		$ch = curl_init ();
+		curl_setopt( $ch, CURLOPT_URL, $url ); 
+		curl_setopt( $ch, CURLOPT_HTTPHEADER, array(
+			'Content-Type: application/json; charset=utf-8'   //json版本需要填写  Content-Type: application/json;
+			)
+		);
+		curl_setopt($ch, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V4); 
+		curl_setopt( $ch, CURLOPT_RETURNTRANSFER, 1 );
+		curl_setopt( $ch, CURLOPT_POST, 1 );
+        curl_setopt( $ch, CURLOPT_POSTFIELDS, $postFields);
+        curl_setopt( $ch, CURLOPT_TIMEOUT,60); 
+        curl_setopt( $ch, CURLOPT_SSL_VERIFYHOST, 0);
+        curl_setopt( $ch, CURLOPT_SSL_VERIFYPEER, 0);
+		$ret = curl_exec ( $ch );
+        if (false == $ret) {
+            $result = curl_error(  $ch);
+        } else {
+            $rsp = curl_getinfo( $ch, CURLINFO_HTTP_CODE);
+            if (200 != $rsp) {
+                $result = "请求状态 ". $rsp . " " . curl_error($ch);
+            } else {
+                $result = $ret;
+            }
+        }
+		curl_close ( $ch );
+		return $result;
+	}
+
+
+    /**
+     * 发送验证吗短信
+     * @param $mobile
+     * @param $userID
+     * @param $terminal
+     * @param $type
+     * @return bool
+     */
+	public function sendVerify($mobile,$terminal,$type) {
+
+        $smstArr = C('phone_Message');
+        $content = $smstArr["$type"];
+        $code = rand_code(); //生成手机验证
+        $content = sprintf($content, $code);
+        $result = $this->sendSMS($mobile,$content);
+        if($result['code'] == 0 && $result['errorMsg'] == "") { //发送成功
+            $time = time()+60;
+            $model = new SmsVerifyModel();   //数据库的model层
+            $data['receivePhone'] = $mobile;
+            $data['overdueTime'] = $time; //time() + 60 * 5;
+            $data['verifyCode'] = $code;
+            $data['sendInterface'] = '创蓝';
+            $data['sendContent'] = $content;
+            $data["terminal"] = $terminal;
+            $data['type'] = $type;
+            $data['operateIP'] = get_client_ip(); // 参数传入
+            $model->addVerify($data);
+            return $code;
+        }
+        return false;
+    }
+
+
+    /**
+     * 发送业务短信代码
+     * @param $mobile
+     * @param $userID
+     * @param $type
+     * @param array $strArr
+     * @return bool
+     */
+    public function sendBusinessMes($mobile,$userID,$type,$strArr=array("")) {
+
+
+        $smstArr = C('phone_Message');
+        $content = $smstArr[$type];
+        $time = time();
+        $content = vsprintf($content,$strArr);
+
+        $result = $this->sendSMS($mobile,$content);
+        if($result['code'] == 0 && $result['errorMsg'] == "") {   //发送成功
+            $data['userID'] =$userID;
+            $data['receivePhone']  = $mobile;
+            $data['sendContent'] = $content;
+            $data['sendDatetime'] = $time;
+            $data['smsType'] = $type;
+            $data['sendInterface'] = "创蓝";
+            $model = new SmsSendModel();
+            $model->addSend($data);  //记录短信发送的记录
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * 发送一键邀请
+     * @param $phonestr
+     * @param array $strArr
+     * @return bool
+     */
+    public function sendAllInvite($userID,$phonestr,$strArr=array("")) {
+
+        $smstArr = C("phone_Messahe");
+        $content = $smstArr['Invitation'];
+        $content = vsprintf($content,$strArr);
+        $result = $this->sendSMS($phonestr,$content);
+        if($result['code'] == 0 && $result['errorMsg'] == "") {
+            $SmsSend = new SmsSendModel();
+            $SmsSend->allInvitations($userID,$phonestr,$content);
+            return true;
+        }
+        return false;
+    }
+	
+}
+

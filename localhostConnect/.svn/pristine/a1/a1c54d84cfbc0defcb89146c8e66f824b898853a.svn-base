@@ -1,0 +1,68 @@
+<div class="modal-body">
+    <input  type="hidden" name="hidAction" id="hidAction" value="view" >
+    <form class="form-horizontal" id="form-Sen">       
+        <input type="hidden" name='sID' id='sID' value="{$data.sID}"/>
+        <div class="form-group">
+            <label class="control-label col-sm-2" for="inputInfo">敏感词名称：</label>
+            <div class=" col-sm-9">
+                <input type="text" id="contents" name="content" value="{$data.content}" class="form-control" >       
+            </div>
+        </div>
+    </form>
+</div>
+<div class="modal-footer">
+    <button type="button" id="butsen" class="btn btn-default" data-dismiss="modal">关闭</button>
+    <button type="button" id="butSavesen" class="btn btn-primary" >保存</button>
+</div>  
+<script type="text/javascript" >
+    $(function($) {
+        senvalid();
+        $("#butSavesen").click(function() {
+            var isOK = $("#form-Sen").valid();
+            if (isOK) {
+                saveSen();
+            }
+        });
+    });
+
+    function saveSen() {
+        var data = $Util.getData($("#form-Sen"));
+        $.ajax({
+            type: "post",
+            url: "/Backend/System/saveSen",
+            data: {'par': data},
+            dataType: "json",
+            beforeSend: function(XMLHttpRequest) {
+                $(".sub-content").showLoading();
+            },
+            success: function(data, textStatus) {
+                $(".sub-content").hideLoading();
+                if (data.status == 1) {
+                    $("#sID").val(data.data);
+                    $("#hidAction").val("edit");
+                    $win.confirm(data.msg + ",是否关闭窗口？").on(function() {
+                        $('#butsen').trigger("click");
+                    });
+                } else {
+                    $win.warn(data.msg);
+                }
+            },
+            complete: function(XMLHttpRequest, textStatus) {
+                $(".sub-content").hideLoading();
+            },
+            error: function() {
+                $(".sub-content").hideLoading();
+            }
+        });
+    }
+    function senvalid() {
+        $("#form-Sen").validate({
+            rules: {
+                content: {required: true, maxlength: 15},
+            },
+            messages: {
+                content: {required: "名称不能为空!", maxlength: "最大长度15个字符"},
+            }
+        });
+    }
+</script>

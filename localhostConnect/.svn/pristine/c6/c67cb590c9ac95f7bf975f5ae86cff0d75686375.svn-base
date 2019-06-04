@@ -1,0 +1,66 @@
+<?php
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+namespace Service\System\Logic;
+
+use Service\System\Model;
+
+class SystemLogLogic {
+
+    /**
+     * 查询系统日志
+     * @param type $where
+     * @param type $whereArr
+     * @param type $limit
+     */
+    public function getSysLog($where, $whereArr, $limit) {
+        $model = new Model\SystemLogModel();
+        $result = $model->getSysLog("(1=1)" . $where, $whereArr, $limit);
+        return $result;
+    }
+
+    /**
+     * 查看系统日志里的日志描述
+     * @param type $logID
+     */
+    public function getLogView($logID) {
+        $where["logID"] = $logID;
+        $model = new Model\SystemLogModel();
+        $result = $model->getLogView($where);
+        return $result;
+    }
+
+    /**
+     * 获取等级信息
+     */
+    public function getLevel() {
+        $model = new Model\UserLevelModel();
+        $result = $model->getLevel();
+        return $result;
+    }
+
+    /**
+     * 保存等级信息 
+     * @param type $data
+     */
+    public function saveLevel($data) {
+        try {
+            $where = array();
+            $model = new Model\UserLevelModel();
+            $where["id"] = $data["id"];
+            $data["editDatetime"] = time();
+            unset($data["id"]);
+            $result = $model->saveLevel($where, $data);
+            return $result;
+        } catch (Exception $exc) {
+            logger(__METHOD__, $exc->getMessage());
+            return false;
+        }
+    }
+
+}

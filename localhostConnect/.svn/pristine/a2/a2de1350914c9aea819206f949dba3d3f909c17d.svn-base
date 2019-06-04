@@ -1,0 +1,88 @@
+<?php
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+namespace Service\Company\Model;
+
+use Common\Model\SlaveModel;
+
+class CompanyModel extends SlaveModel {
+    /**
+     * 获取企业信息
+     */
+    public function getCompanyList($where, $whereArr, $limit){
+        $sqlcount = 'select count(1) as total from d_company where(1=1) '.$where;
+        $total = $this->query($sqlcount,$whereArr);
+        $result['total'] = $total[0]['total'];
+        array_push($whereArr,$limit);
+        $sql = 'select companyID,companyName,registeredCapital,regDatetime,cpyIndustry,companyLogo,legalName,fromTime,businessScope,toTime,orgStatus from d_company where(1=1) '.$where.
+                ' order by addDatetime desc limit %s';
+        $result['rows'] = $this->query($sql,$whereArr);
+        return $result;
+    }
+    
+    /**
+     * 获取企业成员
+     */
+    public function getCompanyMember($where, $whereArr, $limit) {
+        $sqlcount = 'SELECT COUNT(DISTINCT A.companyID) as total  FROM d_user_company A 
+            INNER JOIN d_company B ON B.companyID=A.companyID
+            WHERE(1=1)' . $where;
+        $total = $this->query($sqlcount, $whereArr);
+        $result['total'] = $total[0]['total'];
+        array_push($whereArr, $limit);
+        $sql = 'SELECT A.companyName,B.companyID,COUNT(A.userID) as total  FROM d_user_company A 
+            INNER JOIN d_company B ON B.companyID=A.companyID
+            WHERE(1=1) ' . $where . ' GROUP BY A.companyID ORDER BY total desc limit %s';
+        $result['rows'] = $this->query($sql, $whereArr);
+        return $result;
+    }
+    
+    /**
+     * 获取公司基本信息
+     */
+    public function getCompanyBaseInfo($filed,$where){
+        return $this->field($filed)->where($where)->find();
+    }
+    
+     /**
+     * 获取成员列表
+     */
+    public function memberList($where, $whereArr, $limit) {
+        $sqlcount = 'SELECT count(A.userID) as total  FROM d_user_company A
+            INNER JOIN d_user B ON B.userID=A.userID  
+            WHERE(1=1) '.$where;
+        $total = $this->query($sqlcount, $whereArr);
+        $result['total'] = $total[0]['total'];
+        array_push($whereArr, $limit);
+        $sql = 'SELECT B.userID,B.nickname,B.phone,B.regDatetime,A.companyName,A.job,A.group  FROM d_user_company A
+            INNER JOIN d_user B ON B.userID=A.userID  
+            WHERE(1=1) '.$where.' ORDER BY B.regDatetime desc limit %s';
+        $result['rows'] = $this->query($sql, $whereArr);
+        return $result;
+    }
+
+
+    public function getCompanyByName($name) {
+        return $this->where(array("companyName"=>$name))->field(array('companyName','regCapital','regDatetime','companyID','companyLogo'))->find();
+    }
+
+
+    /**
+     * 添加公司
+     */
+    public function saveCompany($companyName="") {
+        return $this->add(array("companyName"=>$companyName));
+    }
+
+    public function vague($value) {
+        return $this->where('companyName like "%'.$value.'%"')->field("companyLogo as img,companyID as ID,companyName as value, case companyID  when true then 2 else 2 end as type")->select();
+    }
+
+
+
+}

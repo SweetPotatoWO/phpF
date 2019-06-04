@@ -1,0 +1,313 @@
+<?php
+
+/* ぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇ
+ *
+ * Copyright (c) 2014 Darren, Inc. All Rights Reserved
+ * Dream
+ *
+ * ぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇ
+ * @File           CostCompute.php
+ * @Author         Dream
+ * @Date           2014-6-3上午10:50:15
+ * @Description    各种费用的计算
+ * @Modify
+ */
+
+namespace Common\Common;
+
+class CostCompute {
+
+    /**
+     * 计算所有利息计算方式的合计利息
+     * @param type $amount
+     * @param type $yrate
+     * @param type $months
+     * @param int $type
+     * @param type $days
+     * @return int
+     */
+    static function totalInterest($amount, $yrate, $months, $type, $days = 0) {
+        if ($days * 1 > 0) {
+            $type = 3;
+        }
+        switch ($type * 1) {
+            case 1:   //等额本息
+                return self::equalTotal($amount, $yrate, $months);
+            case 2:     //按月到期还本
+                return self::periodTotal($amount, $yrate, $months);
+            case 3:     //到期还款(一次性还本付息)
+                return self::dayTotal($amount, $yrate, $days);
+            case 4:     //余额计息
+                return self::balanceTotal($amount, $yrate, $months);
+            case 5:     //等本等息
+                return self::equalIntTotal($amount, $yrate, $months);
+            default :
+                return 0;
+        }
+    }
+
+    /**
+     * 返回计算付款待收信息的数组
+     * @param type $amount
+     * @param type $yrate
+     * @param type $months
+     * @param int $type
+     * @param int $borrowDate
+     * @param type $days  
+     * @return int
+     */
+    static function ComputeArr($amount, $yrate, $months, $type, $borrowDate, $days = 0) {
+        if ($days * 1 > 0) {
+            $type = 3;
+        }
+        switch ($type * 1) {
+            case 1:   //等额本息
+                return self::equalArr($amount, $yrate, $months, $borrowDate);
+            case 2:     //先息后本
+                return self::periodArr($amount, $yrate, $months, $borrowDate);
+            case 3:     //到期还款一次性还本付息
+                return self::dayArr($amount, $yrate, $borrowDate, $days);
+            case 4:     //余额还款
+                return self::balanceArr($amount, $yrate, $months, $borrowDate);
+            case 5:     //等本等息
+                return self::equalIntArr($amount, $yrate, $months, $borrowDate);
+            default :
+                return 0;
+        }
+    }
+
+    /**
+     * 
+     * 等额本息还款算法 利息合计
+     * @param $amount 金额  
+     * @param $yrate 年利率
+     * @param $instalments 融资月数
+     */
+    private function equalTotal($amount, $yrate, $instalments) {
+        $mrate = $yrate / (12 * 100);
+        $powinterest = pow((1 + $mrate), $instalments);
+        $repayment = $amount * $mrate * $powinterest / ($powinterest - 1);
+        $intTotal = round((round($repayment, 2) * $instalments - $amount), 2);
+        return $intTotal;
+    }
+
+    /**
+     * 余额计息还款方式计算总额
+     * @param type $totalAmount
+     * @param type $yrate
+     * @param type $months
+     */
+    private function balanceTotal($totalAmount, $yrate, $months) {
+        $totalinterest = 0; //利息合计
+        $mrate = $yrate / (12 * 100);
+        $capital = round(($totalAmount / $months), 2);
+        $capTotal = 0;
+        for ($i = $months; $i > 0; $i--) {
+            if ($i == 1) {
+                $capital = $totalAmount - $capTotal;
+            } else {
+                $capital = round($capital, 2);
+            }
+            $amount = $i * $capital;
+            $totalinterest += round(($amount * $mrate), 2);
+            $capTotal = $capTotal + $capital;
+        }
+        return $totalinterest;
+    }
+
+    /**
+     * 余额计算还款方式
+     * @param type $totalAmount
+     * @param type $yrate
+     * @param type $months
+     * @param type $borrowdate
+     */
+    private function balanceArr($totalAmount, $yrate, $months, $borrowdate) {
+        $mrate = $yrate / (12 * 100);
+        $capital = round(($totalAmount / $months), 2);
+        $result = array();
+        $capTotal = 0;
+        for ($i = $months; $i > 0; $i--) {
+            if ($i == 1) {
+                $capital = $totalAmount - $capTotal;
+            } else {
+               $capital = round($capital, 2);
+            }
+            $amount = $i * $capital;
+            $interest = round(($amount * $mrate), 2);
+            $result[$i]['times'] = $months - $i + 1;
+            $result[$i]['repaymentAmount'] = $capital + $interest;
+            $result[$i]['repaymentDate'] = self::datefrom($borrowdate, ($months - $i + 1));
+            $result[$i]['interest'] = $interest;
+            $result[$i]['capital'] = $capital;
+            $capTotal = $capTotal + $result[$i]['capital'];
+        }
+        return $result;
+    }
+
+    /**
+     * 等额本息还款算法 每月还贷本息：BX=a*i(1+i)^N/[(1+i)^N-1]  第n个月还贷本金：B=a*i(1+i)^(n-1)/[(1+i)^N-1]
+     * 第n个月还贷利息：X=BX-B= a*i(1+i)^N/[(1+i)^N-1]- a*i(1+i)^(n-1)/[(1+i)^N-1]
+     * 计算结果保留6位小数
+     * @param 金额       
+     * @param 年利息 22.4
+     * @param $instalments 期数
+     * @param $borrowdate 融资日期 是时间戳
+     */
+    private function equalArr($amount, $yrate, $instalments, $borrowdate) {
+        $mrate = $yrate / (12 * 100);
+        $powinterest = pow((1 + $mrate), $instalments);
+        $repayment = round($amount * $mrate * $powinterest / ($powinterest - 1), 2);
+        $intAllTotal = round(($repayment * $instalments - $amount), 2);
+        $result = array();
+        $capTotal = 0;
+        $inTotal = 0;
+        for ($i = 1; $i < $instalments + 1; $i++) {
+            $result[$i]['times'] = $i;
+            $result[$i]['repaymentDate'] = self::datefrom($borrowdate, $i);
+            $interest = round(($amount - $capTotal) * $mrate, 2);
+            $capital = $repayment - $interest;
+            if ($i == $instalments) {
+                $capital = $amount - $capTotal;
+                $interest = $intAllTotal - $inTotal;
+                if ($interest < 0) {
+                    $interest = 0;
+                }
+            }
+            $result[$i]['repaymentAmount'] = $capital + $interest;
+            $result[$i]['capital'] = $capital;
+            $result[$i]['interest'] = $interest;
+            $capTotal = $capTotal + $capital;
+            $inTotal = $inTotal + $interest;
+        }
+        return $result;
+    }
+
+    /**
+     * 
+     * 按月付息到期还本
+     * @param $amount 金额
+     * @param $yrate  年利率
+     * @param $instalments 期数
+     * @param $borrowdate  借款日期 是时间戳
+     */
+    private function periodArr($amount, $yrate, $instalments, $borrowdate) {
+        $mrate = $yrate / (12 * 100);
+        $result = array();
+        for ($i = 1; $i < $instalments + 1; $i++) {
+            $result[$i]['times'] = $i;
+            $result[$i]['repaymentDate'] = self::datefrom($borrowdate, $i);
+            $result[$i]['interest'] = round($amount * $mrate, 2);
+            if ($i == $instalments) {
+                $result[$i]['capital'] = $amount;
+                $result[$i]['repaymentAmount'] = $amount + round($amount * $mrate, 2);
+            } else {
+                $result[$i]['capital'] = 0.00;
+                $result[$i]['repaymentAmount'] = round($amount * $mrate, 2);
+            }
+        }
+        return $result;
+    }
+
+    /**
+     * 按月付息到期还本 还款利息合计
+     * @param type $amount
+     * @param type $yrate
+     * @param type $instalments
+     */
+    private function periodTotal($amount, $yrate, $instalments) {
+        $mrate = $yrate / (12 * 100);
+        $totalinterest = 0;
+        for ($i = 1; $i < $instalments + 1; $i++) {
+            $totalinterest += round($amount * $mrate, 2);
+        }
+        return $totalinterest;
+    }
+
+    /**
+     * 
+     * 按天还款
+     * @param $amount 金额
+     * @param $yrate  年利率
+     * @param $borrowdate 借款日期 是时间戳
+     * @param $days 借款天数
+     */
+    private function dayArr($amount, $yrate, $borrowdate, $days) {
+        $drate = $yrate * 1 / (365 * 100);
+        $result = array();
+        $result[0]['times'] = 1;
+        $result[0]['repaymentAmount'] = $amount + round(($amount * $drate) * $days, 2);
+        $result[0]['repaymentDate'] = strtotime("+" . $days . " day", $borrowdate);
+        $result[0]['capital'] = $amount;
+        $result[0]['interest'] = round($amount * $drate * $days, 2);
+        return $result;
+    }
+
+    /**
+     * 
+     * 按天还款
+     * @param $amount 金额
+     * @param $yrate  年利率
+     * @param $days 借款天数
+     */
+    private function dayTotal($amount, $yrate, $days) {
+        $drate = $yrate * 1 / (365 * 100);
+        $result = round($amount * $drate * $days, 2);
+        return $result;
+    }
+
+    /**
+     * 等本等息
+     * @param $amount 金额
+     * @param $yrate  年利率
+     * @param type $months 借款月份
+     */
+    private function equalIntTotal($amount, $yrate, $months) {
+        $mrate = $yrate / (12 * 100);
+        return round($amount * $mrate * $months * 0.5, 2);
+    }
+
+    /**
+     * 等本等息
+     * @param $amount 金额
+     * @param $yrate  年利率
+     * @param type $months 借款月份
+     */
+    private function equalIntArr($amount, $yrate, $months, $borrowdate) {
+        $mrate = $yrate / (12 * 100);
+        $totalInt = round($amount * $mrate * $months * 0.5, 2);
+        $interest = round($totalInt / $months, 2);
+        $capital = round(($amount / $months), 2);
+        $result = array();
+        $capTotal = 0;
+        $intTotal = 0;
+        for ($i = $months; $i > 0; $i--) {
+            if ($i == 1) {
+                $capital = $amount - $capTotal;
+                $interest = $totalInt - $intTotal;
+            }
+            $result[$i]['times'] = $months - $i + 1;
+            $result[$i]['repaymentAmount'] = $capital + $interest;
+            $result[$i]['repaymentDate'] = self::datefrom($borrowdate, ($months - $i + 1));
+            $result[$i]['interest'] = $interest;
+            $result[$i]['capital'] = $capital;
+            $capTotal = $capTotal + $result[$i]['capital'];
+            $intTotal = $intTotal + $result[$i]['interest'];
+        }
+        return $result;
+    }
+
+    /**
+     *  日期时间处理，不然二月份会计算错误
+     * @param type $nowDate
+     * @param type $addmonth
+     */
+    private function datefrom($nowDate, $addmonth) {
+        $day = date('d', $nowDate);
+        $strtotime = strtotime(date("Y-m-d H:i:s", mktime(date("H", $nowDate), date("i", $nowDate), date("s", $nowDate), date('m', $nowDate) + $addmonth, 01, date('Y', $nowDate)))); //算出+2月后正确年份和月份
+        $curryday = date('t', $strtotime);  //获取正确月份最后一天
+        $curryday = ($curryday < $day ) ? $curryday : $day; //如果此月份没有这个号，那么就用 正确月份的号
+        return strtotime(date('Y-m', $strtotime) . '-' . $curryday . ' ' . date('H:i:s', $strtotime));
+    }
+
+}

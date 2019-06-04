@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html>
+    <head>   
+        <title>后台管理</title>
+        <meta name="description" content="网站后台" />
+        <meta name="author" content="えう">
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge, chrome=1" />
+        <link rel="stylesheet" href="{$Think.BPATH}style/bootstrap.css" />
+        <link rel="stylesheet" href="{$Think.BPATH}style/bootstrap-responsive.css" />
+        <link rel="stylesheet" href="{$Think.BPATH}fonts/css/font-awesome.min.css" />
+        <!--[if lte IE 7]>
+            <link rel="stylesheet" href="{$Think.BPATH}fonts/css/font-awesome-ie7.min.css" />
+        <![endif]-->
+        <link rel="stylesheet" href="{$Think.BPATH}style/toastr.css?version={$Think.BNO}" />
+        <link rel="stylesheet" href="{$Think.BPATH}style/qianbox.css?version={$Think.BNO}" />   
+        <script src="{$Think.BPATH}js/jquery.min.js"></script>
+        <script src="{$Think.BPATH}js/bootstrap.min.js"></script>   
+        <script src="{$Think.BPATH}js/toastr.js"></script> 
+        <script type="text/javascript" src="{$Think.BPATH}js/encrypt.js" ></script> 
+        <script type="text/javascript" src="{$Think.BPATH}js/back.js" ></script> 
+        <script type="text/javascript"  src="{$Think.BPATH}js/loading/jquery.showLoading.min.js"></script>
+        <link type="text/css" rel="stylesheet" href="{$Think.BPATH}js/qtip/css/jquery.qtip.min.css?version={$Think.BNO}" />
+        <script type="text/javascript"  src="{$Think.BPATH}js/jquery.validate.min.js"></script>
+        <script type="text/javascript"  src="{$Think.BPATH}js/qtip/jquery.qtip.js"></script>
+        <style>
+            .form-control {
+                padding: 6px 12px;
+                height: 45px;
+                line-height: 30px;
+            }        
+            form .yzm {
+                right: 3px;
+                top: 2px;
+                height: 42px;
+                width: 88px;
+                z-index: 100;
+            }
+            .absolute {
+                position: absolute;
+            }
+        </style>
+    </head>
+    <body >
+        <div class="login">
+            <div class="banner">
+            </div>
+            <form class="row-fluid" id="form-login">
+                <div class="input-group">
+                    <input type="text" id="userName" name="userName" class="form-control" placeholder="用户名" aria-describedby="basic-addon2">
+                    <span class="input-group-addon" id="basic-addon2"><i class="icon-user"></i></span>
+                </div>
+                <div class="input-group">
+                    <input type="password"  id="password" name="password" class="form-control" placeholder="请输入密码" aria-describedby="basic-addon2">
+                    <span class="input-group-addon" id="basic-addon2"><i class="icon-lock"></i></span>
+                </div>
+                <div class="input-group" style="display: none;">
+                    <input type="text" class="form-control" id="imgCode" name="imgCode" placeholder="验证码" aria-describedby="basic-addon2" value="8888" >
+                    <span id="CaptchaSmsImageHead" class="input-group-addon" style="padding: 0 45px" id="basic-addon2"><img id="txtimg" src="/Backend/Login/verifyImage/" onclick="this.src = '/Backend/Login/verifyImage/' + Math.random()"   class="absolute yzm" title="点击刷新"></span>
+                </div>
+
+                <div class="input-group" style="display: none;">
+                    <input type="text" id="smCode" name="smCode" class="form-control" placeholder="短信验证码" value="888888" >
+                    <span class="input-group-addon" style="padding: 0">
+                        <button id="butrSmsPhone" type="button" class="btn btn-primary" style="height: 43px;">点击获取</button>
+                    </span>
+                </div>
+               	<div class="input-group">				
+                    <button type="button" id="butLogin" data-loading-text="登录中..." class="btn btn-primary btn-block btn-loading btn-lg">登录</button>					
+                </div>
+            </form>
+        </div>
+
+        <script type="text/javascript">
+            $(function () {
+                //发送验证码
+                $("#butrSmsPhone").click(function () {
+                    sendCode();
+                });
+                loginvalid();
+                $("#butLogin").click(function () {
+                    var isOK = $("#form-login").valid();
+                    if (isOK) {
+                        startlogin();
+                    }
+                });
+            });
+            function loginvalid() {
+                $("#form-login").validate({
+                    rules: {
+                        userName: {required: true, maxlength: 15},
+                        password: {required: true, maxlength: 15},
+                        imgCode: {required: true, maxlength: 4, minlength: 4},
+                        smCode: {required: true, maxlength: 6, minlength: 6}
+
+                    },
+                    messages: {
+                        userName: {required: "请输入用户名!", maxlength: "最大长度14个字符"},
+                        password: {required: "请输入密码!", maxlength: "最大长度14个字符"},
+                        imgCode: {required: "请输入图片验证码!", maxlength: "最大长度4个字符", minlength: "验证码为4个字符"},
+                        smCode: {required: "请输入短信验证码!", maxlength: "最大长度6个字符", minlength: "验证码为六位字符"}
+
+                    }
+                });
+            }
+
+
+            //发送手机验证码
+            function sendCode() {
+                var data = {};
+                data.name = $("#userName").val();
+                data.code = $("#imgCode").val();
+                $.ajax({
+                    type: "post",
+                    url: "/Backend/Login/loginPhoneCode",
+                    data: {'par': data},
+                    dataType: "json",
+                    befotsend: function () {
+                        $("#butrSmsPhone").attr('disabled', "true");
+                    },
+                    success: function (data) {
+                        if (data.status == 1) {
+                            jstimer(120);
+                        } else {
+                            $("#txtimg").attr("src", '/Backend/Login/verifyImage/' + Math.random());
+                            $win.warn(data.msg);
+                        }
+                    },
+                    complete: function () {
+                        $("#butrSmsPhone").removeAttr("disabled");
+                    },
+                    error: function () {
+                        $("#butrSmsPhone").removeAttr("disabled");
+                    }
+                });
+            }
+
+            function startlogin() {
+                var emp = new Object();
+                emp.password = encrypt("password", $("#imgCode").val());
+                emp.userName = $("#userName").val();
+                emp.imgCode = $("#imgCode").val();
+                emp.smsCode = $("#smCode").val();
+                $.ajax({
+                    type: "post",
+                    url: "/Backend/Login/loginUser",
+                    data: {'par': emp},
+                    dataType: "json",
+                    beforeSend: function (XMLHttpRequest) {
+                        $("#butLogin").attr('disabled', "true");
+                    },
+                    success: function (context, textStatus) {
+                        if (context.status == 1) {
+                            window.location.href = "/Backend/";
+                        } else {
+                            $win.warn(context.msg);
+                        }
+                        $("#butLogin").removeAttr("disabled");
+                        $("#txtimg").attr("src", "/Backend/Login/verifyImage/" + Math.random());
+                    },
+                    complete: function (XMLHttpRequest, textStatus) {
+                        $("#butLogin").removeAttr("disabled");
+                    },
+                    error: function () {
+                        $("#butLogin").removeAttr("disabled");
+                    }
+                });
+            }
+            //倒计时
+            function jstimer(step) {
+                step = step <= 120 && step >= 0 ? step : 120;
+                $("#butrSmsPhone").text(step-- + " S").attr("disabled", true);
+                if (step < 0) {
+                    $("#butrSmsPhone").text("免费获取").removeAttr("disabled");
+                } else {
+                    window.setTimeout("jstimer(" + step + ")", 1000);
+                }
+            }
+        </script>
+    </body>
+</html>

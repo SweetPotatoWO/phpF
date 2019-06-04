@@ -1,0 +1,15 @@
+<extend name="Public/layout"/>
+<block name="body">
+    <div class="reght-content">   
+        <div class="sub-content">          
+            <div class="row-fluid">
+
+                <h4 class="title fl">今天注册用户</h4>
+
+                <h4 class="title fl">昨天注册用户</h4>
+                <h4 class="title fl">今天提现用户</h4>
+
+                <h4 class="title fl">昨天提现用户</h4>
+            </div>
+        </div> </div>
+</block>

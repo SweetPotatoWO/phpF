@@ -1,0 +1,51 @@
+<div id="sub-User-list">
+    <script type="text/javascript" src="{$Think.BPATH}js/datejs/WdatePicker.js"></script> 
+    <input type="hidden" name="hidrefurl" id="hidrefurl" value="{:U(ACTION_NAME, $_GET)}">
+    <h4 class="title">{$companyInfo.companyName}<span class='titleqit'>企业变更信息</span></h4>
+    <table class="table table-striped table-bordered">
+        <thead>
+            <tr> 
+                <th>变更事项</th>
+                <th>变更前</th>
+                <th>变更后</th>
+                <th>变更日期</th>
+            </tr>
+        </thead>
+        <tbody>
+        <volist name="result" id="vo">
+            <tr>  
+                <td>{$vo.changeItem}</td>
+                <td><a href="#"   data-toggle="popover" data-placement="bottom" data-content="{$vo.beforeChange}" title="" data-original-title="提示">{$vo.beforeChange|sub_str=0,20,'...'}</a></td>
+                <td><a href="#"   data-toggle="popover" data-placement="bottom" data-content="{$vo.afterChange}" title="" data-original-title="提示">{$vo.afterChange|sub_str=0,20,'...'}</a></td>
+                <td>{$vo.changeTime}</td>
+            </tr>
+        </volist>
+        </tbody>
+    </table>
+    <nav class=" pagination-centered">
+        <ul class="pagination">
+            {$page}
+        </ul>
+    </nav>
+    <script type="text/javascript" >
+        $(function ($) {
+            $("[data-toggle='popover']").popover().on("mouseenter", function () {
+                var _this = this;
+                $(this).popover("show");
+                $(this).siblings(".popover").on("mouseleave", function () {
+                    $(_this).popover('hide');
+                });
+            }).on("mouseleave", function () {
+                var _this = this;
+                setTimeout(function () {
+                    if (!$(".popover:hover").length) {
+                        $(_this).popover("hide")
+                    }
+                }, 100);
+            });
+        });
+    </script>
+</div>
+
+
+

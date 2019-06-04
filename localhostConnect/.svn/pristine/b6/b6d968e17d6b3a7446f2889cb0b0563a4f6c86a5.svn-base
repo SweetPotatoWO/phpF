@@ -1,0 +1,193 @@
+/* 
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+/**
+ * Created by Administrator on 14-10-20.
+ */
+
+
+$(function() {
+
+    RuleValid();
+    $(".butSaveRule").click(function() {
+        var isOK = $("#form-Rule").valid();
+        if (isOK) {
+            saveTicket();
+        }
+    });
+
+    $(".butReturn").click(function() {
+        $Util.returnRefresh(); //返回
+    });
+
+    disabledTicket();
+    changeValidityType();
+    $(":radio").click(function() {
+        changeValidityType();
+    });
+
+});
+// $win.warn("融资详情未输入");
+function saveTicket() {
+    var data = $Util.getData($("#form-Rule"));
+
+    data['validityType'] = $("input[name='validityType']:checked").val();
+    data['startDay'] = $("#startDay").val();
+    data['effectiveDays'] = $("#effectiveDays").val();
+    data['ticketsource'] = $("#ticketsource").val();
+    if ($("#isExcess").is(":checked")) {
+        data['isExcess'] = 1;
+    } else {
+        data['isExcess'] = 0;
+    }
+
+    $.ajax({
+        type: "post",
+        url: "/Backend/Ticket/saveTicket",
+        data: {'par': data},
+        dataType: "json",
+        beforeSend: function(XMLHttpRequest) {
+            $(".sub-content").showLoading();
+        },
+        success: function(data, textStatus) {
+            $(".sub-content").hideLoading();
+            if (data.status == 1) {
+                $win.confirm(data.msg + ",是否关闭窗口？").on(function() {
+                    $('.butReturn').trigger("click");
+                });
+            } else {
+                $win.warn(data.msg);
+            }
+        },
+        complete: function(XMLHttpRequest, textStatus) {
+            $(".sub-content").hideLoading();
+        },
+        error: function() {
+            $(".sub-content").hideLoading();
+        }
+    });
+}
+function RuleValid() {
+
+    $("#form-Rule").validate({
+        rules: {
+            ticketName: {required: true},
+            ticketCredits: {required: true},
+            preNumber: {required: true, Number: true},
+            limitNumber: {required: true, Number: true},
+            numberprefix: {required: true},
+        },
+        messages: {
+            ticketName: {required: "请填写优惠券名称"},
+            ticketCredits: {required: "请填写额度(加息)"},
+            preNumber: {required: "请输入预计发放数量", Number: "格式不正确"},
+            limitNumber: {required: "请输入每人可领取数量", Number: "格式不正确"},
+            numberprefix: {required: "请填写券编号前缀"},
+        }
+    });
+}
+
+
+function changeValidityType() {
+
+    $.validator.addMethod("dateLimit", function(value, element) {
+        var min = $("#effectiveDate").val();
+        var max = $("#expireDate").val();
+        if (min != "" && max != "") {
+            if (min > max) {
+                return false;
+            }
+        }
+        return true;
+    }, "起始时间不能大于结束时间");
+
+    $.validator.addMethod("dayLimit", function(value, element) {
+        if (value * 1 < 1) {
+            return false;
+        }
+        var regexp = /^([1-9][\d]{0,8}|0)?$/;
+        return   this.optional(element) || (regexp.test(value));
+    }, "天数必须为大于0正整数");
+
+   var validityType = $("input[name='validityType']:checked").val();
+
+    switch (validityType) {
+        case "2":
+
+            $("#startDay").attr("disabled", "disabled");
+            $("#effectiveDays").attr("disabled", "disabled");
+            $("#startDay").rules("remove");
+            $("#effectiveDays").rules("remove");
+            $("#effectiveDate").removeAttr("disabled");
+            $("#expireDate").removeAttr("disabled");
+
+            $("#effectiveDate").rules("add", {required: true, dateLimit: true, dateFormat: true,
+                messages: {
+                    required: "必填项",
+                    dateFormat: "日期格式不对!"
+                }
+            });
+            $("#expireDate").rules("add", {required: true, dateLimit: true, dateFormat: true,
+                messages: {
+                    required: "必填项",
+                    dateFormat: "日期格式不对!"
+                }
+            });
+            break;
+        case "3":
+            $("#effectiveDate").attr("disabled", "disabled");
+            $("#expireDate").attr("disabled", "disabled");
+            $("#effectiveDate").rules("remove");
+            $("#expireDate").rules("remove");
+            $("#startDay").removeAttr("disabled");
+            $("#effectiveDays").removeAttr("disabled");
+
+            $("#startDay").rules("add", {required: true, dayLimit: true,
+                messages: {
+                    required: "不能为空"
+                }
+            });
+            $("#effectiveDays").rules("add", {required: true, dayLimit: true,
+                messages: {
+                    required: "不能为空"
+                }
+            });
+            break;
+        default:
+            $("#effectiveDate").attr("disabled", "disabled");
+            $("#expireDate").attr("disabled", "disabled");
+            $("#startDay").attr("disabled", "disabled");
+            $("#effectiveDays").attr("disabled", "disabled");
+            $("#startDay").rules("remove");
+            $("#effectiveDays").rules("remove");
+
+            break;
+    }
+}
+
+
+
+function disabledTicket() {
+    var typeCode = $("#typeCode").val();
+
+    if (typeCode == 10) {  //加息
+        $("#unit").html("%");
+        $("#deductScale").val("");
+        $("#deductScale").attr("readonly", "readonly");
+    } else if (typeCode == 20) { //现金
+        $("#unit").html("元");
+        $("#deductScale").val("");
+        $("#deductScale").attr("readonly", "readonly");
+    } else if (typeCode == 30) { //抵扣
+        $("#unit").html("元");
+        $("#deductScale").removeAttr("readonly");
+    } else {
+        $("#unit").html("%");
+        $("#deductScale").attr("readonly", "readonly");
+
+
+    }
+}

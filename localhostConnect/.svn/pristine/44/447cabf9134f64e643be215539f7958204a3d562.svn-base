@@ -1,0 +1,32 @@
+<?php
+
+/* ぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇ
+ *
+ * Copyright (c) 2014 Darren, Inc. All Rights Reserved
+ * Dream
+ *
+ * ぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇ
+ * @File           siteConfig.php
+ * @Author         DREAM
+ * @Date           2014-06-17 15:37:58
+ * @Description   站点配置
+ * @Modify
+ */
+
+if (!defined('DARREN'))
+    exit();
+return array(
+    'SHORT_CODE' => 'Mbox_', //简称Code 用于缓存，cookie 的前缀   
+    'COMPANY' => '钱盒子(官网)', //公司简称用于SEO的前缀
+    'MKEY' => 'darren', // 密码加密字符串 
+    'PAGE_SIZE' => '10',
+    'HX_Limit' => "300", //对接华兴数据的迁移分割限制
+    'HX' => array(
+        'HX_URL' => 'http://183.63.131.106:40015/extServiceTest/ghbExtService.do', //档版环境地址      
+//        'HX_URL' => 'http://183.63.131.106:40011/extService/ghbExtService.do', //SIT测试地址
+//        'HX_URL' => 'http://183.63.131.106:40013/extService/ghbExtService.do'//UAT测试地址
+        'MERCHANTID' => 'QHZ', //商户名
+        'CHANNELCODE' => 'P2P047',
+    ),
+    'Borrow_Fees' => 0.004,
+);

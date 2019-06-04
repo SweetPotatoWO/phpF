@@ -1,0 +1,23 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: Administrator
+ * Date: 2018/8/14 0014
+ * Time: 9:50
+ */
+
+namespace Service\UserCenter\Model;
+use Common\Model\SlaveModel;
+
+class companyModel extends SlaveModel {
+
+
+
+    public function searchCompany($value) {
+        $sql = "select companyName,floor(registeredCapital) as registeredCapital ,companyLogo,searchContent,FROM_UNIXTIME(regDatetime, '%Y-%m-%d %H:%i:%S') as regDatetime from d_company where searchContent like '%".$value."%'";
+        return $this->query($sql);
+    }
+
+
+
+}

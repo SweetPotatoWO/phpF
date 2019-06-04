@@ -1,0 +1,41 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: Administrator
+ * Date: 2018/9/14 0014
+ * Time: 18:22
+ */
+namespace Service\System\Model;
+
+use Common\Model\SlaveModel;
+
+class SysSchoolModel extends SlaveModel {
+
+    public function getSchoolInfoByName($name) {
+        return $this->where(array("schoolName"=>$name))->find();
+    }
+
+    /**
+     * 获取到学校的信息
+     */
+    public function getSchoolByID($ID,$filed="") {
+        $model =  $this->where(array('schoolID'=>$ID));
+        if(!empty($filed)) {
+            $model = $model->field($filed);
+        }
+        return $model->find();
+    }
+
+
+    /**
+     * 添加学校
+     */
+    public function saveSchool($schoolName="") {
+        return $this->add(array("name"=>$schoolName));
+    }
+
+
+    public function vague($value) {
+        return  $this->where('schoolName like "%'.$value.'%"') ->field("schoolID as img,schoolID as ID,schoolName as value")->select();
+    }
+}

@@ -1,0 +1,899 @@
+<?php
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+namespace MobileApi\Api;
+
+use Common\Common\CodeGenerator;
+use MobileApi\Common\MobileApiBase;
+use Service\Connect\Logic\ConnectRelationLogic;
+use Service\Connect\Logic\OperationLogic;
+use Service\Integral\Logic\CardLogic;
+use Service\Integral\Logic\IntegralLogic;
+use Service\Integral\Logic\SignLogic;
+use Service\News\Logic\NewsLogic;
+use Service\Operate\Logic;
+use Service\User\Logic\UserFriendLogic;
+use Service\User\Logic\UserLogic;
+use Service\User\Logic\UserInviteLogic;
+use Service\User\Logic\UserLogLogic;
+use Service\User\Logic\UserLevelLogic;
+use Service\Account\Logic\AccountLogic;
+use Service\News\Logic\SendSMSLogic;
+use Service\Spread\Logic\AppInfoLogic;
+use Common\Common\Redis;
+use Service\Operate\Logic\JpushLogic;
+use Service\Operate\Logic\TicketLogic;
+use Service\News\Logic\SendEmailLogic;
+use Service\User\Logic\ProblemLogic;
+use Service\Business\Logic\TenderLogic;
+use Service\Common\FinishEventLogic;
+use Service\UserCenter\Logic\UserCenterLogic;
+use Service\UserCenter\Model\UserCompanyModel;
+
+/**
+ * Description of ApiUser
+ *
+ * @author Administrator
+ */
+class ApiUser extends MobileApiBase {
+
+    public function getRules() {
+        return array(
+            'login' => array(
+                'phone' => array('name' => 'phone', 'require' => true, 'type' => 'phone', 'desc' => '用户手机号码'),
+                'password' => array('name' => 'password', 'require' => true, 'desc' => '用户登录密码'),
+            ),
+            'isPasswordSet' => array(
+                'phone' => array('name' => 'phone', 'require' => true, 'type' => 'phone', 'desc' => '用户手机号码')
+            ),
+            'loginByToken' => array(
+                'token' => array('name' => 'token', 'require' => true, 'desc' => 'Token')
+            ),
+            'loginOut' => array(),
+            'register' => array(
+                'phone' => array('name' => 'phone', 'require' => true, 'type' => 'phone', 'desc' => '用户手机号码'),
+                'password' => array('name' => 'password', 'require' => true, 'desc' => '用户登录密码'),
+                'phoneCode' => array('name' => 'phoneCode', 'require' => true, 'desc' => '手机短信验证码'),
+                'inviteCode' => array('name' => 'inviteCode', 'desc' => '邀请码'),
+                'agreement' => array('name' => 'agreement', 'type' => 'int', 'require' => true, 'desc' => '是否同意注册协议'),
+            ),
+            'info' => array(),
+            'changePwd' => array(
+                'phone' => array('name' => 'phone', 'require' => true, 'type' => 'phone', 'desc' => '用户手机号码'),
+                'smsCode' => array('name' => 'smsCode', 'require' => true, 'type' => 'string', 'desc' => '手机短信验证码'),
+                "newPwd" => array('name' => 'newPwd', 'type' => 'string', 'require' => true, 'desc' => '新密码'),
+            ),
+            'editPassword' => array(
+                'phone' => array('name' => 'phone', 'require' => true, 'type' => 'phone', 'desc' => '用户手机号码'),
+                'smsCode' => array('name' => 'smsCode', 'require' => true, 'type' => 'string', 'desc' => '手机短信验证码'),
+                "newPwd" => array('name' => 'newPwd', 'type' => 'string', 'require' => true, 'desc' => '新密码'),
+            ),
+            'changePhone' => array(
+                'newPhone' => array('name' => 'phone', 'require' => true, 'type' => 'phone', 'desc' => '用户新手机号码'),
+                'smsCode' => array('name' => 'smsCode', 'require' => true, 'type' => 'string', 'desc' => '手机短信验证码'),
+            ),
+            "getAppInfo" => array(
+                'type' => array("name" => "type", "type" => "int", "desc" => "第一次打开传值为1 其他打开传值为2"),
+                'phoneInfo' => array("name" => "phoneInfo", "type" => "string", "desc" => "手机信息 手机的系统 机型信息"),
+                "latitude" => array('name' => 'latitude', 'type' => 'string', 'desc' => '纬度'),
+                "longitude" => array('name' => 'longitude', 'type' => 'string', 'desc' => '经度'),
+                'province' => array("name" => "province", "type" => "string", "desc" => "省份"),
+                'city' => array("name" => "city", "type" => "string", "desc" => "城市"),
+                "area" => array('name' => 'area', 'type' => 'string', 'desc' => '区'),
+                "place" => array('name' => 'place', 'type' => 'string', 'desc' => '详细地址'),
+                "jphId" => array('name' => 'jphId', 'type' => 'string', 'desc' => '极光推送ID'),
+                'key' => array('name' => 'qdKey', 'type' => 'string', 'desc' => '渠道Key'),
+            ),
+            "isRegCheck" => array(),
+            'uploadHeadImg' => array(),
+            'uploadCardHeadImg' => array(
+                'cid' => array('name' => 'cid', 'type' => 'int', 'desc' => '名片的ID'),
+            ),
+            'smsLogin' => array(
+                'phone' => array('name' => 'phone', 'require' => true, 'type' => 'phone', 'desc' => '用户手机号码'),
+                'smsCode' => array('name' => 'smsCode', 'require' => true, 'type' => 'string', 'desc' => '手机短信验证码')
+            ),
+            'getUserVisitor' => array(
+                'pageindex' => array('name' => 'pageindex', 'type' => 'int', 'default' => 1, 'desc' => '页码'),
+                'pagesize' => array('name' => 'pagesize', 'type' => 'int', 'default' => 15, 'desc' => '每页显示数量')
+            ),
+            'addFeback' => array(
+                'phone' => array("name" => "phone", "type" => "string", "desc" => "反馈预留电话"),
+                'febackInfo' => array("name" => "febackInfo", "require" => true, "type" => "string", "desc" => "用户反馈的信息")
+            ),
+            'getInviteCode' => array(),
+            'remind'=>array(
+                'userKey' => array("name" => "userKey", "type" => "string", "require"=>true, "desc" => "用户通信的唯一标识"),
+            ),
+            'InfoByUserKey'=>array(
+                'userKey' => array("name" => "userKey", "type" => "string", "require"=>true, "desc" => "用户通信的唯一标识"),
+            ),
+            "isFriendByUserKey"=>array(
+                'userKey' => array("name" => "userKey", "type" => "string", "require"=>true, "desc" => "用户通信的唯一标识"),
+            ),
+        );
+    }
+
+    /**
+     * 检测是否设置密码
+     * @desc 用于检测是否设置密码
+     * @return int code                 操作码，0表示成功未设置密码， 1失败已设置密码
+     */
+    public function isPasswordSet() {
+        $rs = array('code' => 0, 'msg' => '', 'info' => array());
+        $phone = $this->phone;
+        $userLogic = new UserLogic();
+        $result = $userLogic->getByPhone($phone);
+        if ($result['password'] != '') {
+            $rs['code'] = 1;
+            $rs['msg'] = '已设置密码';
+        }
+        return $rs;
+    }
+
+    /**
+     * 用户登录。
+     * @desc 用于用户登录
+     * @return int code                 操作码，0表示成功， 1登录失败
+     * @return array info              登录成功信息
+     * @return int info.phone           登录用户手机号码
+     * @return string info.deviceID     设备ID
+     * @return string info.token        Token
+     * @return string info.loginTime    登录时间
+     * @return string info.expiresTime  Token过期时间
+     * @return string info.userKey      用户标识（用于对接在线客服）
+     * @return string info.showTip      是否弹出提示(true：显示 false：不显示)
+     * @return string info.tipHtml      提示HTML内容
+     * @return string msg 提示信息
+     */
+    public function login() {
+        $rs = array('code' => 0, 'msg' => '', 'info' => array());
+        $entity["phone"] = $this->phone;
+        $entity["password"] = $this->password;
+        $entity["terminal"] = $this->terminal;
+        $userLogic = new UserLogic();
+        $result = $userLogic->Login($entity);
+        if ($result * 1 > 0) {
+            $data = $this->getLoginInfoData($result, $this->phone);
+            $this->setUserInfo($data, array($this, 'loginSucceedCallback'));
+            $rs['info'] = $this->getLoginBackInfo($data);
+            $score = $userLogic->getInformationScore($result);
+            $rs['info']['score'] = $score['score'];
+            $rs['info']['isFill'] = $score['isFill'];
+            $userInfo = $userLogic->getUserInfo($result);
+            $rs['info']['name'] = ($userInfo['name'])?$userInfo['name']:"";
+            $rs['info']['userHeadUrl'] = ($userInfo['userHeadUrl'])?UPLOAD.$userInfo['userHeadUrl']:"";
+            $rs['msg'] = '登录成功';
+        } else {
+            $rs['code'] = 1;
+            $rs['msg'] = $result;
+        }
+        return $rs;
+    }
+
+    /**
+     * 短信登录
+     * @desc 用于用户登录
+     * @return int code                 操作码，0表示成功， 1登录失败
+     * @return object info              登录成功信息
+     * @return int info.phone           登录用户手机号码
+     * @return string info.deviceID     设备ID
+     * @return string info.token        Token
+     * @return string info.loginTime    登录时间
+     * @return string info.expiresTime  Token过期时间
+     * @return string info.userKey      用户标识（用于对接在线客服）
+     * @return string info.showTip      是否弹出提示(true：显示 false：不显示)
+     * @return string info.tipHtml      提示HTML内容
+     * @return string info.score         积分
+     * @return string info.isFill         是否完善了信息 0否 1是
+     * @return string msg 提示信息
+     */
+    public function smsLogin() {
+        $rs = array('code' => 0, 'msg' => '', 'info' => array());
+        $entity["phone"] = $this->phone;
+        $entity["smsCode"] = $this->smsCode;
+        $entity["terminal"] = $this->terminal;
+        $entity['operateIP'] = getIP();
+        $userLogic = new UserLogic();
+        $result = $userLogic->smsLogin($entity);
+        if ($result * 1 > 0) {
+            $data = $this->getLoginInfoData($result, $this->phone, "smsLogin");
+            $this->setUserInfo($data, array($this, 'loginSucceedCallback'));
+            $rs['info'] = $this->getLoginBackInfo($data);
+            $score = $userLogic->getInformationScore($result);
+            $rs['info']['score'] = $score['score'];
+            $rs['info']['isFill'] = $score['isFill'];
+            $userInfo = $userLogic->getUserInfo($result);
+            $rs['info']['name'] = ($userInfo['name'])?$userInfo['name']:"";
+            $rs['info']['userHeadUrl'] = ($userInfo['userHeadUrl'])?UPLOAD.$userInfo['userHeadUrl']:"";
+            $rs['msg'] = '登录成功';
+        } else {
+            $rs['code'] = 1;
+            $rs['msg'] = $result;
+        }
+        perr($rs);
+        return $rs;
+    }
+
+    /**
+     * 用户注册。
+     * @desc 用于用户注册
+     * @return int code                 操作码，0表示成功， 1登录失败
+     * @return array info               注册成功信息
+     * @return int info.phone           注册用户手机号码
+     * @return string info.deviceID     设备ID
+     * @return string info.token        Token
+     * @return string info.loginTime    登录时间
+     * @return string info.expiresTime  Token过期时间
+     * @return string info.userKey      用户标识（用于对接在线客服）
+     * @return bool info.showTip      是否弹出提示 (true：显示 false：不显示)
+     * @return string info.tipHtml      提示HTML内容
+     * @return string msg 提示信息
+     */
+    public function register() {
+        $rs = array('code' => 0, 'msg' => '', 'info' => array());
+        //验证动态码是否正确
+        $smsSendLogic = new SendSMSLogic();
+        if (!$smsSendLogic->ConfirmVerify($this->phone, $this->phoneCode)) {
+            $rs['code'] = 1;
+            $rs['msg'] = '短信验证码错误';
+            return $rs;
+        }
+        if ($this->agreement * 1 != 1) {
+            $rs['code'] = 1;
+            $rs['msg'] = '您必须同意条款！';
+            return $rs;
+        }
+        $entity["userName"] = $this->phone;
+        $entity["phone"] = $this->phone;
+        $entity["inviteCode"] = $this->inviteCode;
+        $entity["password"] = $this->password;
+        $entity["regTerminal"] = $this->terminal;
+        $equipmentID = $this->deviceID;
+        $userLogic = new UserLogic();
+        $result = $userLogic->Register($entity);
+        if ($result * 1 > 0) {
+            $data = $this->getLoginInfoData($result, $this->phone, 'RegisterLogin');
+            $this->setUserInfo($data, array($this, 'loginSucceedCallback'));
+            $rs['info'] = $this->getLoginBackInfo($data);
+            $this->saveJpush($result, $equipmentID);
+            $rs['msg'] = "您已领取68元红包，还有600元红包等着您！";
+        } else {
+            $rs['code'] = 1;
+            $rs['msg'] = $result;
+        }
+        return $rs;
+    }
+
+    /**
+     * 注册过后更新userID
+     */
+    private function saveJpush($userID, $equipmentID) {
+        $logic = new JpushLogic();
+        $logic->saveJpush($userID, $equipmentID);
+        return true;
+    }
+
+    /**
+     * 注册是否勾选按钮。
+     * @desc 用于获取标详细信息
+     * @return int code 操作码，0表示成功， 1表示失败
+     * @return object info 注册信息对象
+     * @return int info.isCheck    注册是否勾选（1 默认勾选  0 默认不勾选）
+     * @return string msg 提示信息
+     */
+    public function isRegCheck() {
+        $rs = array('code' => 0, 'msg' => '', 'info' => array());
+        $userLogic = new UserLogic();
+        $isCheck = $userLogic->isRegCheck();
+        $info["isCheck"] = $isCheck;
+        $rs['info'] = $info;
+        return $rs;
+    }
+
+    /**
+     * 获取用户的基本信息。
+     * @desc 用于获取用户的基本信息
+     * @return int code                 操作码，0表示成功， 1 表示未找到相应数据
+     * @return object info              用户信息对象
+     * @return string info.userSex      性别
+     * @return string info.userKey      用户的通信凭证
+     * @return string info.userheadUrl      头像链接
+     * @return string info.userCompany["name"] 用户的名字
+     * @return string info.userCompany["phone"] 用户的电话
+     * @return string info.userCompany["job"] 用户的职业,
+     * @return string info.userCompany["group"] 部门,
+     * @return string info.userCompany["companyName"] 公司名字,
+     * @return string info.userCompany["registeredCapital"] 公司的注册资金,
+     * @return string info.userCompany["regDatetime"]  公司的注册时间
+     * @return string info.label["labelCode"] 对应的标签名字
+     * @return string info.label["labelLogo"] 对应的logo
+     * @return string info.label["labelDesc"] 对应的描述
+     * @return string info.integral["totalIntegral"] 用户的总的启币
+     * @return string info.integral["availableIntegral"] 用户的可用启币
+     * @return string info.integral["useIntegral"] 用户消耗的启币
+     * @return string msg               提示信息
+     */
+    public function info() {
+        $this->userCheck();
+        $rs = array('code' => 0, 'msg' => '', 'info' => array());
+        $logic = new UserLogic();
+        $userInfo = $logic->getUserInfo($this->userID);
+        if (!empty($userInfo)) {
+            $info['phone'] = hidPhone($userInfo['phone']);
+            $info['userSex'] = (empty($userInfo['userSex'])) ? "" : $userInfo['userSex'];
+            $info['headUrl'] = (empty($userInfo['userHeadUrl'])) ? "" : UPLOAD.$userInfo['userHeadUrl'];
+            $code = new CodeGenerator();
+            $info['userKey'] = $code->createCode($this->userID);
+            $ceterlogic = new UserCenterLogic();
+            $userCompanyInfo = $ceterlogic->getUserCompanyInfo($this->userID);  //公司用户的基本信息
+            $label = $ceterlogic->getUserLabel($this->userID); //获取到用户身份标签
+            $info['label'] = (empty($label)) ? array() : $label;
+            $info['userCompany'] = $userCompanyInfo;
+            $logic = new IntegralLogic();
+            $inInfo = $logic->getUserIntegral($this->userID);        //获取用户积分信息
+            $info['integral'] = (empty($inInfo)) ? array() : $inInfo;
+            $rs['info'] = $info;
+        } else {
+            $rs['code'] = 1;
+            $rs['msg'] = '未找到相应数据';
+        }
+        return $rs;
+    }
+
+    /**
+     * 获取登录数据。
+     * @param type $userID
+     * @param type $type
+     */
+    private function getLoginInfoData($userID, $phone, $type = 'PassWordLogin', $token = '') {
+        $data['phone'] = $phone;
+        $data['deviceID'] = $this->deviceID;
+        if (!empty($token)) {
+            $data['token'] = $token;
+        } else {
+            $data['token'] = $this->getToken();
+        }
+        $data['loginTime'] = $_SERVER['REQUEST_TIME'];
+        $data['expiresTime'] = $_SERVER['REQUEST_TIME'] + self::MAX_EXPIRE_TIME_FOR_SESSION;
+        $data['operateIP'] = getIP();
+        $data['loginType'] = $type;
+        $data['terminal'] = $this->terminal;
+        $data['userID'] = $userID;
+        $code = new CodeGenerator();
+        $data['userKey'] = $code->createCode($userID);
+        return $data;
+    }
+
+    /**
+     * 获取用户登录成功返回信息。
+     * @param type $data
+     */
+    private function getLoginBackInfo($data) {
+        unset($data['userID']);
+        unset($data['type']);
+        unset($data['loginType']);
+        unset($data['operateIP']);
+        unset($data['terminal']);
+        $data['showTip'] = 0;
+        $data['tipHtml'] = '';
+        return $data;
+    }
+
+    /**
+     * 登录成功回调（非接口 ）。
+     * @param type $data
+     */
+    public static function loginSucceedCallback($data) {
+        logger_applog($data["userID"], $data["phone"], $data["terminal"], $data['loginType'] . '|' . $data['deviceID'] . '|' . $data['token']);
+    }
+
+    /**
+     * 忘记密码。
+     * @desc 用户忘记修改密码
+     * @return int code 操作码，0表示成功， 1表示失败 
+     * @return string msg 提示信息
+     */
+    public function changePwd() {
+        $res = array('code' => 0, 'msg' => '', 'info' => array());
+        $phone = $this->phone;
+        $code = $this->smsCode;
+        $newPwd = $this->newPwd;
+        $sms = new SendSMSLogic();
+        $stutas = $sms->ConfirmVerify($phone, $code);
+        if (!$stutas) {
+            $res['code'] = 1;
+            $res['msg'] = "验证码不正确！";
+            return $res;
+        }
+        $userLogic = new UserLogic();
+        $userinfo = $userLogic->getByPhone($phone);
+        if (empty($userinfo) || $userinfo['userID'] * 1 < 1) {
+            $res["code"] = 1;
+            $res["msg"] = "手机号码不存在";
+            return $res;
+        }
+        $result = $userLogic->forgotPassword($phone, $newPwd, $this->terminal);
+        if ($result === true) {
+            $cache = Redis::GetInstance();
+            $key = "Login_Lock_".$this->phone;
+            $cache->del($key);
+            $res['msg'] = "修改密码成功！";
+        } else {
+            $res["msg"] = $result;
+            $res["code"] = 1;
+        }
+        return $res;
+    }
+
+    /**
+     * 修改手机号码
+     * @desc 修改手机号
+     * @return int code 操作码，0表示成功， 1表示失败 
+     * @return string msg 提示信息
+     */
+    public function changePhone() {
+        $this->userCheck();
+        $res = array('code' => 0, 'msg' => '', 'info' => array());
+        $newPhone = $this->newPhone;
+        $code = $this->smsCode;
+        $userID = $this->userID;
+        $sms = new SendSMSLogic();
+        $stutas = $sms->ConfirmVerify($newPhone, $code);
+        if (!$stutas) {
+            $res['code'] = 1;
+            $res['msg'] = "验证码不正确！";
+            return $res;
+        }
+        $logic = new UserLogic();
+        $result = $logic->changePhone($userID, $newPhone, $this->terminal);
+        if ($result === true) {
+            $connect = new ConnectRelationLogic();
+            $connect->modifyPhone($this->userID, $newPhone);  //修改图数据的代码
+            $res['msg'] = "修改成功！";
+        } else {
+            $res["msg"] = $result;
+            $res["code"] = 1;
+        }
+        return $res;
+    }
+
+    /**
+     * 修改登录密码
+     * @desc 修改登录密码
+     * @return int code 操作码，0表示成功， 1表示失败 
+     * @return string msg 提示信息
+     */
+    public function editPassword() {
+        $this->userCheck();
+        $res = array('code' => 0, 'msg' => '', 'info' => array());
+        $phone = $this->phone;
+        $code = $this->smsCode;
+        $newPwd = $this->newPwd;
+        $userID = $this->userID;
+        $sms = new SendSMSLogic();
+        $stutas = $sms->ConfirmVerify($phone, $code);
+        if (!$stutas) {
+            $res['code'] = 1;
+            $res['msg'] = "验证码不正确！";
+            return $res;
+        }
+        $userLogic = new UserLogic();
+        $result = $userLogic->restLoginPassword($userID, $newPwd, $phone);
+        if ($result * 1 > 0) {
+            $redis = Redis::GetInstance();
+            $redis->del("Login_Lock_" . $phone);
+            $res["code"] = 0;
+            $res["msg"] = "密码修改成功";
+        } else {
+            $res["code"] = 1;
+            $res["msg"] = $result;
+        }
+        return $res;
+    }
+
+    /**
+     * 退出登录
+     * @desc用户退出登录
+     * @return int    code         操作码，0表示成功， 1表示失败
+     * @return  array  info         返回数据 
+     * @return  string msg          提示信息
+     */
+    public function loginOut() {
+        $this->userCheck();
+        $data = array('code' => 0, 'msg' => '退出成功', 'info' => array());
+        $redis = Redis::GetInstance();
+        $token = $this->userToken;
+        $userID = $this->userID;
+        $this->setAppJmpCookie($token, time() - 1);
+
+        logger_api('loginOut', "userID：$userID");
+        $keys = $redis->getKeysLogin($userID);
+
+        logger_api('loginOut', "Keys：" . json_encode($keys));
+        if (!empty($keys)) {
+            $redis->dels($keys);
+            $data["msg"] = "退出成功";
+        } else {
+            $data["code"] = 1;
+            $data["msg"] = "退出失败";
+        }
+        return $data;
+    }
+
+    /**
+     *  接收手机APP信息
+     * @desc 接收手机APP信息
+     * @return int    code         操作码，0表示成功， 1表示失败
+     * @return  array  info         返回数据 
+     * @return  string msg          提示信息
+     */
+    public function getAppInfo() {
+        $data = array('code' => 0, 'msg' => '', 'info' => array());
+        $saveData['equipmentID'] = $this->deviceID; //设备ID
+        $saveData['versions'] = $this->version; //客户端APP的版本号
+        $saveData['terminal'] = $this->terminal; //终端
+        $saveData['jphRegId'] = $this->jphId; //极光推送ID
+        $saveData['type'] = $this->type; //第一次打开传值为1 其他打开传值为2
+        $saveData['phoneInfo'] = $this->phoneInfo; //手机信息 手机的系统 机型信息
+        $saveData['latitude'] = $this->latitude; //纬度
+        $saveData['longitude'] = $this->longitude; //经度
+        $saveData['province'] = $this->province; //省份
+        $saveData['city'] = $this->city; //城市
+        $saveData['area'] = $this->area; //区
+        $saveData['place'] = $this->place; //地址详情
+        $key = $this->key;
+        $arr = array("qhz" => "主包", "qq" => "应用宝", "baidu" => "百度手机助手", "360" => "360手机助手", "huawei" => "华为应用市场", "xiaomi" => "小米应用商店",
+            "oppo" => "OPPO软件商店", "vivo" => "VIVO应用商店", "meizu" => "魅族应用商店", "lianxiang" => "联想乐商店", "ali" => "阿里应用", "jifeng" => "机锋网", "anzhi" => "安智网"
+            , "developer-default" => "测试包");
+        $iosArr = array("zhongChen" => "深圳中辰科技有限公司");
+        if ($this->terminal == 2) {
+            if (!empty($arr[$key])) {
+                $appKey = $key;
+                $appChannel = $arr[$key];
+            } else {
+                $appKey = "defChannel";
+                $appChannel = "未知渠道 ";
+            }
+        } else {
+            if (!empty($iosArr[$key])) {
+                $appKey = $key;
+                $appChannel = $iosArr[$key];
+            } else {
+                $appKey = "appShop";
+                $appChannel = "苹果商店";
+            }
+        }
+        $saveData["chanKey"] = $appKey;
+        $saveData["channel"] = $appChannel;
+        $saveData['addDatetime'] = time();
+        $AppInfoLogic = new AppInfoLogic();
+        $result = $AppInfoLogic->saveAppInfo($saveData);
+        if ($result) {
+            $data["msg"] = "成功";
+        } else {
+            $data["code"] = 1;
+            $data["msg"] = "失败";
+        }
+        return $data;
+    }
+
+    /**
+     * 用户上传头像
+     * @desc 用户上传头像
+     * @return string msg 报错信息
+     * @return int code 返回码
+     */
+    public function uploadHeadImg() {
+        $this->userCheck();
+        $res = array('code' => 1, 'msg' => '上传头像失败！', 'info' => array());
+        $userID = $this->userID;
+        $logic = new UserLogic();
+        $userInfo = $logic->getSinUserInfo($userID);
+        $delPath = !empty($userInfo["headUrl"]) ? $userInfo["headUrl"] : "";
+        $appUploadData = $this->uploadImg("CONNECTHeadImg", "", $delPath);
+        $status = $appUploadData["status"];
+        if (!empty($status)) {
+            $path = $appUploadData["file"]["path"];
+            $data["headUrl"] = $path;
+            $logic->editUser($userID, $data);
+            $ceterlogic = new UserCenterLogic();    //更新其他的数据
+            $centerData['userHeadUrl'] = $data['headUrl'];
+            $centerData['userID'] = $userID;
+            $ceterlogic->saveUserCompany($centerData, $userID);
+            $ceterlogic->saveMore($centerData);
+
+            $connect = new OperationLogic();
+            $connect->savePersonNeo4j($centerData, $this->userPhone);   //向图数据保存用户的数据
+
+            $res["code"] = 0;
+            $res["info"]['headUrl'] = UPLOAD.$data['headUrl'];
+        }
+        $res["msg"] = !empty($status) ? "上传头像成功" : $appUploadData["msg"];
+        return $res;
+    }
+
+
+    /**
+     * 上传图片
+     * @desc 用户上传头像
+     * @return string msg 报错信息
+     * @return int code 返回码
+     */
+    public function upload() {
+        $this->userCheck();
+        $res = array('code' => 1, 'msg' => '上传头像失败！', 'info' => array());
+        $delPath = "";
+        $appUploadData = $this->uploadImg("QIMAIFILE", "", $delPath);
+        $status = $appUploadData["status"];
+        if (!empty($status)) {
+            $path = $appUploadData["file"]["path"];
+            $res["info"]['Url'] = $path;
+            $res["code"] = 0;
+        }
+        $res["msg"] = !empty($status) ? "上传头像成功" : $appUploadData["msg"];
+        return $res;
+    }
+
+    /**
+     * 上传名片
+     * @desc 上传名片
+     * @return string msg 报错信息
+     * @return int code 返回码
+     */
+    public function uploadCardHeadImg() {
+        $this->userCheck();
+        $res = array('code' => 1, 'msg' => '上传头像失败！', 'info' => array());
+        $delPath = "";
+        $appUploadData = $this->uploadImg("CARD", "", $delPath);
+        $status = $appUploadData["status"];
+        if (!empty($status)) {
+            $path = $appUploadData["file"]["path"];
+            $res["code"] = 0;
+            $data['cardHeadUrl'] = $path;
+            $data['cid'] = $this->cid;
+            $card = new CardLogic();
+            $card->addOrSaveCard($data,$this->userID);
+        }
+        $res["msg"] = !empty($status) ? "上传头像成功" : $appUploadData["msg"];
+        return $res;
+    }
+
+    /**
+     * 保存图片
+     * @param type $rootPath
+     * @param type $subPath
+     * @param type $del
+     * @return type
+     */
+    private function uploadImg($rootPath, $subPath = "", $del = "") {
+        $imgInfo = explode(UPLOAD, $del);
+        $del = is_array($imgInfo) && !empty($imgInfo) ? $imgInfo[1] : ""; // 1)用户上传新头像将删除之前的头像
+        $file = $_FILES["Filedata"];
+        $client = new \Common\Plugins\UploadClient();
+        $result = $client->upLoadSingle($rootPath, $file, $subPath, $del);
+        if (is_array($result)) {
+            $msg["status"] = true;
+            $msg["file"] = $result;
+        } else {
+            $msg["status"] = false;
+            $msg["msg"] = $result;
+        }
+        return $msg;
+    }
+
+    /**
+     * 获取登录缓存key
+     * @param type $token
+     * @param type $userID
+     * @return type
+     */
+    private function getLoginCaheKey($token, $userID = '') {
+        return sprintf('APP_Login_%s_%s', $token, $userID);
+    }
+
+    /**
+     * 用户登录日志
+     * @desc 用户登录日志
+     * @return string terminal 终端 1 PC 2 安卓 3 IOS 4 微信
+     * @return string loginTime 登录时间
+     */
+    public function userLoginLog() {
+        $this->userCheck();
+        $data = array('code' => 0, 'msg' => '', 'info' => array());
+        $userID = $this->userID;
+        $log = new UserLogLogic();
+        $where = " And A.userID = %s";
+        $whereArr = array($userID);
+        $limit = 10;
+        $logInfo = $log->getLogItem($where, $whereArr, $limit);
+        if ($logInfo["rows"]) {
+            foreach ($logInfo["rows"] as $k => $v) {
+                $info[$k]["terminal"] = $v["terminal"];
+                $info[$k]["loginTime"] = date("m-d H:i", $v["loginDatetime"]);
+            }
+            $data["info"] = $info;
+        } else {
+            $data["code"] = 1;
+            $data["msg"] = "暂无数据";
+        }
+        return $data;
+    }
+
+    /**
+     * 获取到访客的信息
+     * @desc 用户访客信息
+     * @return int    code         操作码，0表示成功， 1表示失败
+     * @return  array  info         返回数据 
+     * @return  string msg          提示信息
+     * @return string totalVisitor   被访问总次数
+     * @return string todayVisitor   今日被访问次数
+     * @return string list        信息列表
+     * @return string list.nickname     姓名
+     * @return string list.job 职业
+     * @return string list.companyName  公司
+     * @return string list.addDatetime     访问时间
+     * @return string total  总条数
+     */
+    public function getUserVisitor() {
+        $this->userCheck();
+        $res = array('code' => 0, 'msg' => '', 'info' => array());
+        $userID = $this->userID;
+        $limit = $this->getLimit($this->pageindex, $this->pagesize);
+        $logic = new \Service\User\Logic\UserVisitorLogic;
+        $data = $logic->getVisitorList($userID, $limit);
+        if (!empty($data['list'])) {
+            $res['info'] = $data;
+        } else {
+            $res['code'] = 1;
+            $res['msg'] = '暂无访客';
+        }
+        return $res;
+    }
+
+    /**
+     * 用户反馈信息
+     * @desc   用户投诉的信息
+     * @return   int       code                          操作码，0表示成功， 1表示失败
+     * @return   array    info
+     * @return   string    msg                           提示信息
+     * -
+     */
+    public function addFeback() {
+        $this->userCheck();
+        $data = array("code" => 0, "msg" => "提交成功", "info" => array());
+        $where = array();
+        $where["terminal"] = $this->terminal;
+        $where["versions"] = $this->version;
+        $where["febackInfo"] = $this->febackInfo;
+        $where["phone"] = $this->phone;
+        $where["userID"] = $this->userID;
+        $where["equipmentID"] = strtolower($this->deviceID);
+        $where["addDatetime"] = time();
+        $logic = new AppInfoLogic();
+        $countInfo = $logic->getDayFeback($where["equipmentID"]);
+        if ($countInfo >= 3) {
+            $data["code"] = 1;
+            $data["msg"] = "每天只能反馈3次";
+            return $data;
+        }
+        if (empty($where["phone"])) {
+            $where["phone"] = $this->userPhone;
+        } else if (!verify_phone($where["phone"])) {
+            $data["code"] = 1;
+            $data["msg"] = "请输入正确的手机号码！";
+            return $data;
+        }
+        $where["feback_type"] = 0;
+        $res = $logic->addFeback($where);
+        if (empty($res)) {
+            $data["code"] = 1;
+            $data["msg"] = "反馈信息失败";
+        }
+        $newlogic = new NewsLogic();
+        $newlogic->sendSystemME($this->userID,-1,'feedBack');   //我方发送系统的信息
+        $data = array("code" => 0, "msg" => "提交成功", "info" => array());
+        return $data;
+    }
+
+
+
+
+    /**
+     * 提醒用户完善信息
+     * @desc 提醒用户完善信息
+     * @return   int       code                          操作码，0表示成功， 1表示失败
+     * @return   array    info
+     * @return   string    msg                           提示信息
+     */
+    public function remind() {
+        $this->userCheck();
+        $code = new CodeGenerator();
+        $userID = $code->decode($this->userKey);
+        $userLogic = new UserCompanyModel();
+        $userInfo = $userLogic->getOne($userID);  //获取到自己当前的信息
+        $newlogic = new NewsLogic();
+        $newlogic->sendSystemME($userID,$this->userID,'information',array($userInfo['companyName'],$userInfo['name']));   //我方发送系统的信息
+
+        $user = new UserLogic();
+        $phone = $user->getPhoneByUserID($userID);   //获取到对方的手机号码
+        $userCenter = new UserCenterLogic();
+        $userInfo = $userCenter->getOneByUserID($this->userID);  //获取到己方的信息
+        $sms = new SendSMSLogic();
+        $sms->Information($phone,$this->userID,$userInfo['companyName'],$userInfo['name']);
+        $data = array("code" => 0, "msg" => "提交成功", "info" => array());
+        return $data;
+    }
+
+
+    /**
+     * 根据userKey获取到用户的信息
+     * @desc 用于获取用户的基本信息
+     * @return int code                 操作码，0表示成功， 1 表示未找到相应数据
+     * @return object info              用户信息对象
+     * @return string info.userSex      性别
+     * @return string info.userKey      用户的通信凭证
+     * @return string info.userheadUrl      头像链接
+     * @return string info.userCompany["name"] 用户的名字
+     * @return string info.userCompany["phone"] 用户的电话
+     * @return string info.userCompany["job"] 用户的职业,
+     * @return string info.userCompany["group"] 部门,
+     * @return string info.userCompany["companyName"] 公司名字,
+     * @return string info.userCompany["registeredCapital"] 公司的注册资金,
+     * @return string info.userCompany["regDatetime"]  公司的注册时间
+     * @return string info.friendStatus  0不是好友 1是
+     * @return string msg               提示信息
+     */
+    public function InfoByUserKey() {
+        $this->userCheck();
+        $rs = array('code' => 0, 'msg' => '', 'info' => array());
+        $code = new CodeGenerator();
+        $userID = $code->decode($this->userKey);
+        $logic = new UserLogic();
+        $userInfo = $logic->getUserInfo($userID);
+        if (!empty($userInfo)) {
+            $code = new CodeGenerator();
+            $info['userKey'] = $code->createCode($userID);
+
+            $ceterlogic = new UserCenterLogic();
+            $status = $ceterlogic->isFriend($this->userID,$userID);
+            $info['friendStatus'] = ($status)?1:0;//是否为好友
+            $userCompanyInfo = $ceterlogic->getUserCompanyInfo($userID);  //公司用户的基本信息
+            $info['userCompany'] = $userCompanyInfo;
+            $rs['info'] = $info;
+        } else {
+            $rs['code'] = 1;
+            $rs['msg'] = '未找到相应数据';
+        }
+        return $rs;
+    }
+
+
+    /**
+     * 根据UserKey判断是否为好友
+     * @desc 判断是否为好友
+     * @return int code 返回的状态
+     * @return string msg  错误信息
+     * @return int status 0 不是好友 1是
+     */
+    public function isFriendByUserKey() {
+        $this->userCheck();
+        $logic  = new UserFriendLogic();
+        $code = new CodeGenerator();
+        $friendID = $code->decode($this->userKey);
+        $info = $logic->isFriend($this->userID,$friendID);
+        if(empty($info)) {
+            $status = 0;  //不是好友
+        } else {
+            $status = 1; //是好友
+        }
+        $rs = array("code"=>0,'msg'=>"","info"=>array('status'=>$status));
+        return $rs;
+    }
+
+}

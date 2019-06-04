@@ -1,0 +1,33 @@
+/*
+Navicat MySQL Data Transfer
+
+Source Server         : 钱盒子测试
+Source Server Version : 50631
+Source Host           : 120.25.85.171:3306
+Source Database       : devmbox_hx
+
+Target Server Type    : MYSQL
+Target Server Version : 50631
+File Encoding         : 65001
+
+Date: 2018-08-08 14:26:08
+*/
+
+SET FOREIGN_KEY_CHECKS=0;
+
+-- ----------------------------
+-- Table structure for d_sms_send
+-- ----------------------------
+DROP TABLE IF EXISTS `d_sms_send`;
+CREATE TABLE `d_sms_send` (
+  `smsID` int(11) NOT NULL AUTO_INCREMENT COMMENT '短信ID',
+  `receiveUserID` int(11) DEFAULT NULL COMMENT '接收人',
+  `receivePhone` varchar(50) DEFAULT NULL COMMENT '接收号码',
+  `sendContent` varchar(500) DEFAULT NULL COMMENT '发送内容',
+  `sendDatetime` int(11) DEFAULT NULL,
+  `smsType` varchar(50) DEFAULT NULL COMMENT '短信类型：投标成功，融资成功，还款成功，收到回款',
+  `sendInterface` varchar(50) DEFAULT NULL COMMENT '发送短信的接口',
+  `remark` varchar(50) DEFAULT '' COMMENT '备注',
+  PRIMARY KEY (`smsID`),
+  KEY `index_name` (`receivePhone`)
+) ENGINE=InnoDB AUTO_INCREMENT=667299 DEFAULT CHARSET=utf8 COMMENT='短信发送历史记录';

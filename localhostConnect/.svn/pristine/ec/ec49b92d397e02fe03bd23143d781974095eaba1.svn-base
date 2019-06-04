@@ -1,0 +1,118 @@
+<div class="modal-body">
+    <input  type="hidden" name="hidAction" id="hidAction" value="view" >
+    <form class="form-horizontal" id="form-Type">       
+        <input type="hidden" name='typeID' id='roleID' value="{$data.typeID}"/>
+        <div class="form-group has-info">
+            <label class="control-label col-sm-2" for="inputInfo">启币类型名：</label>
+            <div class=" col-sm-7">
+                <input type="text"  name="typeName" value="{$data.typeName}" class="form-control"  >          
+            </div>
+        </div>
+        <div class="form-group has-info">
+            <label class="control-label col-sm-2" for="inputInfo">启币代码：</label>
+            <div class=" col-sm-7">
+                <input type="text" name="typeCode" value="{$data.typeCode}" class="form-control" <notempty name='data.typeCode'>disabled</notempty>>         
+            </div>
+        </div>
+        <div class="form-group has-info">
+            <label class="control-label col-sm-2" for="inputInfo">启币类型：</label>
+            <div class=" col-sm-7">
+                <input type="text"  name="typeWeight" value="{$data.typeWeight}" class="form-control" <notempty name='data.typeWeight'>disabled</notempty>>         
+            </div>
+        </div>
+        <div class="form-group has-info">
+            <label class="control-label col-sm-2" for="inputInfo">启币值：</label>
+            <div class=" col-sm-7">
+                <input type="text"  name="typeValue" value="{$data.typeValue|subOnlyMoney}" class="form-control"  onkeyup="(this.v = function () {
+                            this.value = this.value.replace(/[^0-9-]+/, '');
+                        }).call(this)" />         
+            </div>
+        </div>
+        <div class="form-group has-info">
+            <label class="control-label col-sm-2" for="inputInfo">是否使用：</label>
+            <div class="col-sm-7">
+                <label class="checkbox checkbox-inline" style="padding-left: 10px;">
+                    启用 <input type="checkbox" name="statusMark" id="statusMark" value='1' <eq name="data.statusMark"  value="1">checked</eq>>
+                    <span class="lbl"> </span>      
+                </label>
+            </div>
+        </div>
+<!--        <div class="form-group has-info">
+             <label class="control-label col-sm-2" for="inputInfo"> 变化类型：</label>
+            <label class="radio radio-inline">
+               <input type="radio" name="changeType"  value="add" <eq name="data.changeType"  value="1">checked</eq>>
+                <span class="lbl"></span>增加 
+            </label> 
+            <label class="radio radio-inline">
+                <input type="radio" name="changeType"  value="cut" <eq name="data.changeType"  value="2">checked</eq>>
+                <span class="lbl"></span>消耗 
+            </label> 
+        </div>-->
+        <div class="form-group">
+            <label class="control-label col-sm-2" for="inputInfo">备注：</label>
+            <div class=" col-sm-9">
+                <textarea rows="5" cols="61" name="remark">{$data.remark} </textarea>
+            </div>
+        </div>
+    </form>
+</div>
+<div class="modal-footer">
+    <button type="button" id="butCancel" class="btn btn-default" data-dismiss="modal">关闭</button>
+    <button type="button" id="butSaveType" class="btn btn-primary" >保存</button>
+</div>  
+<script type="text/javascript" >
+    $(function ($) {
+        typevalid();
+        $("#butSaveType").click(function () {
+            var isOK = $("#form-Type").valid();
+            if (isOK) {
+                saveType();
+            }
+        });
+    });
+
+    function saveType() {
+        var data = $Util.getData($("#form-Type"));
+        $.ajax({
+            type: "post",
+            url: "/Backend/Integral/saveType",
+            data: {'par': data},
+            dataType: "json",
+            beforeSend: function (XMLHttpRequest) {
+                $(".sub-content").showLoading();
+            },
+            success: function (data, textStatus) {
+                $(".sub-content").hideLoading();
+                if (data.status == 1) {
+                    $("#integralTypeID").val(data.data);
+                    $("#hidAction").val("edit");
+                    $win.confirm(data.msg + ",是否关闭窗口？").on(function () {
+                        $('#butCancel').trigger("click");
+                    });
+                } else {
+                    $win.warn(data.msg);
+                }
+            },
+            complete: function (XMLHttpRequest, textStatus) {
+                $(".sub-content").hideLoading();
+            },
+            error: function () {
+                $(".sub-content").hideLoading();
+            }
+        });
+    }
+    function typevalid() {
+        $("#form-Type").validate({
+            rules: {
+                typeName: {required: true},
+                typeCode: {required: true},
+                typeValue: {required: true},
+            },
+            messages: {
+                typeName: {required: "启币类型不能为空!"},
+                typeCode: {required: "启币代码不能为空!"},
+                typeValue: {required: "启币值不能为空!"},
+            }
+        });
+    }
+</script>

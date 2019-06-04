@@ -1,0 +1,343 @@
+<?php
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+namespace Wechat\Controller;
+
+use Common\Controller\BaseController;
+use Service\System\Logic\SysParameterLogic;
+use Service\System\Logic\HomeMenuLogic;
+use Common\Common\Redis;
+use Common\Common\Authorized;
+use Common\Common\AesSecurity;
+use Common\Common\WxJssdk;
+use Service\Spread\Logic\WxShareLogic;
+
+/**
+ * Description of BaseMobileController
+ *
+ * @author Administrator
+ */
+abstract class BaseMobileController extends BaseController {
+
+    protected $headers;
+    public $loginURL = ""; //需要有微信授权
+    public $registerURL = "User/register"; //需要有微信授权
+    protected $appLoadLink = "";
+    public $seoInfo = ['title' => '', 'keyword' => '', 'description' => ''];
+
+    public function _initialize() {
+//        !isApp()
+        if (false) {
+            foreach ($_REQUEST as $key => $value) {
+                if (is_array($value)) {
+                    break;
+                }
+                if ($value != wx_fliter_str($value)) {
+                    if (IS_AJAX) {
+                        $this->jsonReturn(0, "非法输入字符");
+                    }
+                    $this->error("请求失败,原因：" . '您的请求有非法输入', 'Index/index');
+                }
+                if ($value != fliter_script($value)) {
+                    if (IS_AJAX) {
+                        $this->jsonReturn(0, "非法输入字符");
+                    }
+                    $this->error("请求失败,原因：" . '您的请求有非法输入', 'Index/index');
+                }
+            }
+        }
+
+        $pars = new SysParameterLogic();
+        $config = $pars->getConfig();
+        C($config);
+        $this->_init();
+        if (!IS_AJAX) {
+//            $this->getSeo();
+        }
+    }
+
+    /**
+     * 初始化。
+     */
+    private function _init() {
+        $this->getLoginStutas();
+        $this->getActiveUrl();
+    }
+
+    function _empty() {
+        header("HTTP/1.0 404 Not Found");
+        $this->display('Public:404');
+    }
+
+    function index() {
+        header("HTTP/1.0 404 Not Found");
+        $this->display('Public:404');
+    }
+
+    /**
+     * 登录跳转
+     * @param type $fun
+     */
+    protected function redirectLogin() {
+        $userID = C('userID');
+        if (!isset($userID)) {
+            if (IS_AJAX) {
+                $this->jsonReturn(-1, "登录超时");
+            } else {
+                $returnurl = "User/login";
+                if (isApp()) {
+                    $result = array('url' => 'User/Login', 'msg' => '您还未登录，请登录后再操作');
+                    $par = urlencode(base64_encode(json_encode($result)));
+                    $returnurl = sprintf('%s%s', WECHAT . 'Common/error/par/', $par);
+                } else {
+                    $http_type = ((isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] == 'on') || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] == 'https')) ? 'https://' : 'http://';
+                    $url = $http_type . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
+                    $returnurl = $this->getAuthUrl("User/login/returnurl/" . base64_encode($url));
+                }
+                header('Location:' . $returnurl);
+                exit;
+            }
+        }
+    }
+
+    /**
+     * 获取链接
+     */
+    function getReturnUrl() {
+        $domain = COOKIE_DOMAIN;
+        $returnurl = "/Wechat";
+        if (isset($_GET["returnurl"]) && !empty($_GET["returnurl"])) {
+            $returnurl = base64_decode($_GET["returnurl"]);
+            return $returnurl;
+        }
+        $returnurl = "/Wechat/Account/index.html";
+        if ((stripos($_SERVER["HTTP_REFERER"], $_SERVER["SERVER_NAME"]) !== FALSE || stripos($_SERVER["HTTP_REFERER"], $domain) !== FALSE) && stripos($_SERVER["HTTP_REFERER"], "Login") === FALSE) {
+            $returnurl = $_SERVER['HTTP_REFERER'];
+            if (stripos($returnurl, "register")) {
+                $returnurl = "/Wechat";
+            } else if (stripos($returnurl, "resetsucceed")) {
+                $returnurl = "/Wechat/Account/index.html";
+            }
+        }
+        if (stripos($returnurl, "find") > 0) {
+            $returnurl = $this->getAuthUrl($this->loginURL);
+        }
+        //返回组装地址
+        return $returnurl;
+    }
+
+    /**
+     * 获取微信Auth2.0网页授权链接
+     * @param unknown $redirect  必填    跳转页面
+     * @param string $state      非必填  用于传递参数
+     * @param string $scope      非必填  snsapi_base （不弹出授权页面，直接跳转，只能获取用户openid），snsapi_userinfo （弹出授权页面)
+     * @return string             
+     */
+    protected function getAuthUrl($redirect, $state = 'STATE', $scope = 'snsapi_userinfo') {
+        if (!isWeixinBrowser()) {
+            return WECHAT . $redirect;
+        } else {
+            $appid = APPID;
+            $redirect_url = urlencode(WECHAT . $redirect);
+            $url = "https://open.weixin.qq.com/connect/oauth2/authorize?appid=$appid&redirect_uri=$redirect_url&response_type=code&scope=$scope&state=$state#wechat_redirect";
+            // $url = "http://wap.teamtop-weixin.com/controller/FInterface.ashx?parm=Authorization_SnsApiBase&wyb_code=0B782EDE48684EAD68C8E731656D04AEE30526BE5D9AEACD&ret_type=0&ret_url=$redirect_url";
+            return $url;
+        }
+    }
+
+    /**
+     * 获取分页limit
+     * @return type
+     */
+    protected function getPage($size = 0) {
+        $size = $size == 0 ? C("PAGE_SIZE") : $size;
+        $page = I("post.p") * 1 > 0 ? I("post.p") * 1 : I("get.p") * 1;
+        if (!preg_match('/^\d+$/', $page)) {
+            $page = 0;
+        }
+        $page = ($page * 1 == 0 ? 0 : $page * 1 - 1) * 1 * $size;
+        return $page . "," . $size;
+    }
+
+    /**
+     * 获取用户登录情况
+     */
+    private function getLoginStutas() {
+        $loginInfo = array();
+        if (isApp() === true) {
+            $loginInfo = $this->getLoginInfoByApp();
+        } else {
+            $loginInfo = Authorized::getAuthorized();
+        }
+        $this->setLoginStutas($loginInfo);
+    }
+
+    /**
+     * 设置登录状态。
+     * @param type $loginInfo
+     */
+    private function setLoginStutas($loginInfo = array()) {
+        if (is_array($loginInfo) && !empty($loginInfo)) {
+            C('userID', $loginInfo["userID"]);
+            C('phone', $loginInfo["phone"]);
+        } else {
+            C('userID', null);
+            C('phone', null);
+        }
+        $this->assign('userID', C('userID'));
+        $this->assign('phone', C('phone'));
+    }
+
+    /**
+     * 根据Token获取用户登录信息。
+     * @param type $token
+     * @return boolean
+     */
+    private function getLoginInfoByApp() {
+        $aes = new AesSecurity();
+        $token = $aes->decryptData($_COOKIE['token']);
+        $deviceID = $aes->decryptData($_COOKIE['sid']);
+        if (!empty($token) && strlen($token) > 5 && !empty($deviceID) && strlen($deviceID) > 5) {
+            $redis = Redis::GetInstance();
+            $searchKey = $this->getLoginCaheKey($token);
+            $keys = $redis->getKeys($searchKey);
+            if ($keys) {
+                $userInfo = $redis->get($keys[0]);
+                if ($userInfo && $deviceID == $userInfo['deviceID']) {
+                    $loginInfo['userID'] = $userInfo['userID'];
+                    $loginInfo['phone'] = $userInfo['phone'];
+                    return $loginInfo;
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * 获取登录缓存key
+     * @param type $token
+     * @param type $userID
+     * @return type
+     */
+    private function getLoginCaheKey($token, $userID = '') {
+        return sprintf('APP_Login_%s_%s', $token, $userID);
+    }
+
+    /**
+     * Http Get请求。
+     * @param type $url
+     * @return type
+     */
+    protected function httpGet($url) {
+        $curl = curl_init();
+        curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($curl, CURLOPT_TIMEOUT, 500);
+        curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, false);
+        curl_setopt($curl, CURLOPT_URL, $url);
+        $res = curl_exec($curl);
+        curl_close($curl);
+        return $res;
+    }
+
+    /**
+     * 显示底部激活模块
+     */
+    private function getActiveUrl() {
+        $url = $_SERVER['REQUEST_URI'];
+        if (strpos($url, "Index")) {
+            $this->assign('ActiveUrl', "Index");
+        } elseif (strpos($url, "Project")) {
+            $this->assign('ActiveUrl', "Project");
+        } elseif (strpos($url, "About")) {
+            $this->assign('ActiveUrl', "About");
+        } elseif (strpos($url, "Account")) {
+            $this->assign('ActiveUrl', "Account");
+        } else {
+            $this->assign('ActiveUrl', "Index");
+        }
+
+        /**
+         * 如果是app的话，foot模板不用加载
+         */
+        if (isApp()) {
+            $this->assign('isApp', 1);
+        } else {
+            $this->assign('isApp', 0);
+        }
+    }
+
+    /**
+     * 获取微信分享动态数据信息
+     */
+    protected function getShare($code, $shareUrl) {
+        $logic = new WxJssdk(APPID, APPSECRET);
+        $wxLogic = new WxShareLogic();
+        $signPackage = $logic->getSignPackage();
+        $wxResult = $wxLogic->getWxshare($code);
+        $this->assign("shareUrl", WECHAT . $shareUrl);
+        $this->assign("wxResult", $wxResult);
+        $this->assign("signPackage", $signPackage);
+    }
+//
+//    /**
+//     * 返回seo数据
+//     */
+//    public function getSeo() {
+//        $logic = new HomeMenuLogic();
+//        $menu = $logic->getMenu(4);
+//        $seoInfo = array();
+//        $fun = ACTION_NAME;
+//        $modename = CONTROLLER_NAME;
+//        $url = "/" . $modename . "/" . $fun . ".html";
+//        foreach ($menu as $value) {
+//            if ($value["functionUrl"] == $url || $value["functionUrl"] == ("/" . $modename . "/" . $fun)) {
+//                $seoInfo = $value;
+//            }
+//        }
+//        $this->exitsSEO($seoInfo);
+//    }
+
+    /**
+     * seo信息
+     */
+    private function exitsSEO($value) {
+
+        $seo['title'] = strlen($value["menuTitle"]) < 2 ? $this->seoInfo['title'] : $value["menuTitle"];
+        $seo['keyword'] = strlen($value["keyword"]) < 2 ? $this->seoInfo['keyword'] : $value["keyword"];
+        $seo['description'] = strlen($value["description"]) < 2 ? $this->seoInfo['description'] : $value["description"];
+        $this->seoInfo = $seo;
+        $this->assign('seoInfo', $this->seoInfo);
+    }
+
+    /**
+     * 征对数据提交到另外一个界面，需要登陆，提交数据时，刚才好登陆会话消失，登陆后，跳转到填写数据界面
+     * @param  type $returnUrl  获取的url地址
+     * @param  type $terminal   终端
+     */
+    public function goLastLink($returnUrl, $terminal) {
+        $link_arr = array(
+            'invest' => array('last' => 'Project/detail/', 'current' => 'Project/investment/'),
+            'cash' => array('last' => 'Huax/withDraw/', 'current' => 'Huax/hxCash/'),
+            'recharge' => array('last' => 'Huax/recharge/', 'current' => 'Huax/hxRecharge/'),
+        );
+        $host = '';
+        if ($terminal == 4) {
+            $host = WECHAT;
+        } else {
+            return false;
+        }
+        foreach ($link_arr as $k => $v) {
+            if (strripos($returnUrl, $v['current']) !== false) {
+                return $host . $v['last'];
+            }
+        }
+        return false;
+    }
+
+}

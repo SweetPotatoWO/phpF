@@ -1,0 +1,149 @@
+<?php
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+namespace Service\User\Model;
+
+use Common\Common\CodeGenerator;
+use Common\Model\SlaveModel;
+use Think\Model;
+
+/**
+ * 用户邀请
+ *
+ * @author DREAM
+ */
+class UserInviteModel extends SlaveModel {
+
+    /**
+     * 新增邀请记录
+     * @param array $entity
+     * @return type
+     */
+    public function addInvite($entity) {
+        try {
+            if (empty($entity['invitePhone']) || empty($entity['userID'])) {
+                return false;
+            }
+            $info = $this->where(array('userID' => $entity['userID'], 'invitePhone' => $entity['invitePhone']))->getField('inviteID');
+            if (!empty($info)) {   //不为空 代表已经邀请过一次了
+                return false;
+            }
+            $entity["addDatetime"] = time();
+            $entity['sendDatetime'] = time(); //发送的时间
+            $result = $this->data($entity)->add();
+            return $result;
+        } catch (Exception $ex) {
+            logger(__METHOD__, $ex->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * 用户要求记录
+     * @param type $where
+     * @param type $whereArr
+     * @param type $limit
+     * @return type
+     */
+    public function getInvite($where, $whereArr, $limit) {
+        $sqlcount = "select count(1) as count from d_user_invite A
+                    inner join d_user B on A.inviteUserID=B.userID
+                    left join d_user C on A.userID=B.userID
+                     WHERE (1=1)" . $where . " ";
+        $total = $this->SlaveDB()->query($sqlcount, $whereArr);
+        $result["total"] = $total[0]["count"];
+        $sql = "select C.nickname,A.phone,B.nickname,A.invitePhone,A.status,A.inviteType,C.regDatetime from d_user_invite A
+                 inner join d_user B on A.inviteUserID=B.userID
+                 left join d_user C on A.userID=B.userID
+                 WHERE (1=1)" . $where . " ORDER BY A.addDatetime DESC LIMIT %s;";
+        array_push($whereArr, $limit);
+        $result["rows"] = $this->SlaveDB()->query($sql, $whereArr);
+        return $result;
+    }
+        /**
+     * 获取总的用户人数
+     * @param type $userID
+     */
+    public function getInviteCount($userID, $startDate = 0, $endDate = 0) {
+        if (empty($userID)) {
+            return 0;
+        }
+        $where["inviteUserID"] = $userID;
+        if (!empty($startDate)) {
+            $where['addDatetime'][0] = array('egt', $startDate);
+        }
+        if (!empty($endDate)) {
+            $where['addDatetime'][1] = array('elt', $endDate);
+        }
+        $count = $this->where($where)->count();
+
+        return $count;
+    }
+
+    /**
+     * 批量插入
+     */
+    public function addAllData($data) {
+        if(empty($data)) {
+            return false;
+        }
+        return $this->addAll($data);
+    }
+ 
+    /**
+     * 处理邀请中的结果
+     */
+    public function saveInvite($userID,$phone,$inviteUserID) {
+        $InviteInfo = $this->where(array('userID'=>$userID,'invitePhone'=>$phone))->find();
+        if(empty($InviteInfo)) {
+            $data['invitePhone'] = $phone;
+            $data['userID']   = $userID;
+            $data['inviteType'] = 1;
+            $data['inviteUserID'] = $inviteUserID;
+            $data['stutas'] = 2;
+            return $this->add($data);
+        } else {
+            return $this->where(array('userID'=>$userID,'invitePhone'=>$phone))->data(array('status'=>2,'inviteUserID'=>$inviteUserID))->save();  //修改状态
+        }
+    }
+
+
+    /**
+     * 获取到列表
+     */
+    public function getList($userID) {
+        $field = array("u.nickname","u.phone");
+        return  $this->alias('ui')->join('d_user u on ui.invitePhone = u.phone')
+            ->where(array('ui.userID'=>$userID,'ui.stutas'=>2))
+            ->field($field)
+            ->select();
+    }
+
+
+    /**
+     * 获取到确定的条邀请的记录
+     */
+    public function getInviteOne($userID,$phone) {
+        return $this->where(array('userID'=>$userID,'invitePhone'=>$phone,'status'=>2))->find();
+    }
+
+
+    /**
+     * 批量插入
+     */
+    public function InsertAll($data) {
+        if(empty($data)) {
+            return false;
+        }
+        return $this->addAll($data);
+    }
+
+
+
+
+}

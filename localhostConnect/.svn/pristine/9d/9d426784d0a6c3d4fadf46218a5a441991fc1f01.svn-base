@@ -1,0 +1,488 @@
+<?php
+
+namespace MobileApi\Api;
+
+use MobileApi\Common\MobileApiBase;
+use Service\Integral\Logic\CardLogic;
+use Service\Integral\Logic\IntegralLogic;
+use Service\Integral\Logic\SignLogic;
+use Service\Integral\Logic\TaskLogic;
+use Service\Integral\Model\UserTaskModel;
+use Service\User\Logic\UserFriendLogic;
+use Service\User\Logic\UserLogic;
+use Service\UserCenter\Logic\UserCenterLogic;
+
+/**
+ * Description of index
+ *
+ * @author Administrator
+ */
+class ApiIntegral extends MobileApiBase {
+
+    private $return = array("code" => 1, "msg" => "", "info" => array());
+
+    public function getRules() {
+        return array(
+            'index' => array(),
+            "getNewbieTask" => array(),
+            "sgin" => array(),
+            "getSignRewardInfo" => array(),
+            "receive" => array(
+                'typecode' => array('name' => 'typecode', 'type' => 'string', 'require' => true, 'desc' => '获取到类型'),
+                "typeweight" => array('name' => 'typeweight', 'type' => 'string', 'require' => true, 'desc' => '唯一标识'),
+            ),
+            "getDaysTask" => array(),
+            'getCoinTask' => array(),
+            "finishTask" => array(
+                'typecode' => array('name' => 'typecode', 'type' => 'string', 'require' => true, 'desc' => '获取到类型'),
+                "typeweight" => array('name' => 'typeweight', 'type' => 'string', 'require' => true, 'desc' => '唯一标识'),
+            ),
+            "getConvertibilityInterface" => array(),
+            "convertibility" => array(
+                'typecode' => array('name' => 'typecode', 'type' => 'string', 'require' => true, 'desc' => '获取到类型'),
+                "typeweight" => array('name' => 'typeweight', 'type' => 'string', 'require' => true, 'desc' => '唯一标识'),
+            ),
+            "detail" => array(
+                'pageindex' => array('name' => 'pageindex', 'type' => 'int', 'default' => 1, 'desc' => '页码'),
+                'pagesize' => array('name' => 'pagesize', 'type' => 'int', 'default' => 15, 'desc' => '每页显示数量')
+            ),
+            'getTotalIntegral' => array(),
+            'totalSign' => array()
+        );
+    }
+
+
+
+    /**
+     * 获取到全部任务的列表
+     * @desc 任务列表
+     * @return string dayTask["typeCode"] 每日任务种类
+     * @return string dayTask["typeWeight"]  唯一标识
+     * @return double dayTask["typeValue"] 达到能获取到的积分
+     * @return int dayTask["isReceive"] 是否领取过 1是 0否
+     * @return int dayTask["isCan"] 是否能领取 1是 0否
+     * @return string dayTask["remark"]  描述
+     * @return string newTask["typeCode"] 新手任务
+     * @return string newTask["typeWeight"]  唯一标识
+     * @return double newTask["typeValue"] 达到能获取到的积分
+     * @return int newTask["isReceive"] 是否领取过 1是 0否
+     * @return int newTask["isCan"] 是否能领取 1是 0否
+     * @return string newTask["remark"]  描述
+     * @return strint newTask["content"]  规则内容
+     */
+    public function getCoinTask() {
+         $this->userCheck();
+        $logic = new IntegralLogic();
+        //每日任务
+        $where['typeCode'] = "dayTasks";
+        $field = array('typeCode', "typeWeight", "typeValue", "content", "remark");
+        $list = $logic->getAllIntegral($where, $field);
+        $taskLogic = new TaskLogic();    //用户是否完成了每日任务
+        $userTaskList = $taskLogic->getTaskListByDays($this->userID);
+        $userTaskList = array_column($userTaskList, "taskWeight");
+
+        foreach ($list as $key => $value) {   //循环遍历处理
+            switch ($value['typeWeight']) {
+                case "socialContact":   //扩展人脉
+                    $Flogic = new UserFriendLogic();
+                    $num = $Flogic->getNowTimeApplyConnt($this->userID);
+                    $value['isCan'] = ($num >= 3) ? 1 : 0; //是否可以领取
+                    $value['isReceive'] = (in_array("socialContact", $userTaskList)) ? 1 : 0;  //是否领取了
+                    $value['content'] = "";
+                    $returnList[] = $value;
+                    break;
+                case "browseEnterprise":   //浏览企业
+                    $Ulogic = new UserCenterLogic();
+                    $num = $Ulogic->getNowTimeRedisByCompany($this->userID);
+                    $value['isCan'] = ($num >= 3) ? 1 : 0; //是否可以领取
+                    $value['isReceive'] = (in_array("browseEnterprise", $userTaskList)) ? 1 : 0;  //是否领取了
+                    $value['content'] = "";
+                    $returnList[] = $value;
+                    break;
+            }
+        }
+
+
+
+        //新手任务
+        $rwhere['typeCode'] = "newbieTasks";
+        $newlist = $logic->getAllIntegral($rwhere, $field);
+        $typeList = array_column($taskLogic->getTaskListByNewbie($this->userID), "taskWeight"); //获取到用户全部实现的新手任务
+
+
+        $userlogic = new UserLogic();
+        foreach ($newlist as $key => $val) {
+            switch ($val['typeWeight']) {
+                case "supplementaryInformation":   // 完善信息
+                    $ScoreInfo = $userlogic->getInformationScore($this->userID);
+                    $val['isCan'] = ( $ScoreInfo['score'] < 70 ) ? 0 : 1;  //完善度
+                    $val['isReceive'] = (in_array("supplementaryInformation", $typeList)) ? 1 : 0;  //是否领取了
+                    $val['content'] = explode("|",$val['content']);
+                    $retList[] = $val;
+                    break;
+                case "businessCard":   //使用名片
+                    $card = new CardLogic();
+                    $info = $card->getUserCardList($this->userID);
+                    $val['isCan'] = (empty($info['list'])) ? 0 : 1;
+                    $val['isReceive'] = (in_array("businessCard", $typeList)) ? 1 : 0;  //是否领取了
+                    $val['content'] = explode("|",$val['content']);
+                    $retList[] = $val;
+                    break;
+                case "invitingFriends":  //邀请好友
+                    $val['isCan'] = 1;
+                    $val['isReceive'] = 0;
+                    $val['content'] = explode("|",$val['content']);
+                    $retList[] = $val;
+                    break;
+            }
+        }
+
+        $listData['dayTask'] = $returnList;
+        $listData['newTask'] = $retList;
+        $this->return['code'] = 0;
+        $this->return['info'] = $listData;
+
+        return $this->return;
+    }
+
+    /**
+     * 签到操作
+     * @desc  签到
+     * @return string msg 提示信息
+     * @return int code 成功0 失败1
+     */
+    public function sgin() {
+        $this->userCheck();
+        //先检查今日是否已经签到过
+        $signLogic = new SignLogic();
+        $newSign = $signLogic->getTodayDetail($this->userID);
+        if (!empty($newSign)) {
+            $this->return['code'] = 1;
+            $this->return['msg'] = "已经签到过了";
+            return $this->return;
+        }
+        $res = $signLogic->signHanld($this->userID);
+        if ($res['error'] == 0) {
+            $this->return['code'] = 0;
+            $this->return['msg'] = "操作成功";
+        } else {
+            $this->return['msg'] = $res['msg'];
+            $this->return['code'] = 1;
+        }
+        return $this->return;
+    }
+
+    /**
+     * 用户的签到的信息
+     * @desc 获取到用户的签到信息和对应累计日期能获取到的奖励
+     * @return string info.monthInfo["month"] 月份
+     * @return string info.monthInfo["monthTotal"] 当前月份的累计签到次数
+     * @return string info.list["typeCode"] 累计签到的种类
+     * @return string info.list["typeWeight"]  唯一标识
+     * @return double info.list["typeValue"] 达成累计数能获取到多少启币
+     * @return int info.list["isReceive"] 是否领取过 1是 0否
+     * @return int info.list["isCan"] 是否能领取 1是 0否
+     * @return int info.list["days"]  天数
+     * @return int info.commonSign  普通签到一次的积分
+     * @return int info.isSign  当天是否签到 1签了 0没签到
+     *
+     */
+    public function getSignRewardInfo() {
+        $this->userCheck();
+        $sgin = new SignLogic();
+        $useMonthInfo = $sgin->getSignStatByUserID($this->userID);
+
+        $integral = new IntegralLogic();
+        $field = array("typeCode", "typeWeight", "typeValue");
+        $list = $integral->getAllIntegral(array("typeCode" => "sign"), $field);
+
+        $nowMonth = strtotime(date("Y-m") . "-01");   //每月的第一天
+        $where['addDatetime'] = array('egt', $nowMonth);
+        $where['userID'] = $this->userID;
+        foreach ($list as $k => $v) {
+            $where['typeWeight'] = $v['typeWeight'];
+            switch ($v['typeWeight']) {
+                case "rewardThree"://3天
+                    $info = $integral->getIntegraDetail($where, array("userID"));
+                    $v['isReceive'] = (empty($info)) ? 0 : 1;   //是否领取了
+                    $v['isCan'] = ($useMonthInfo['monthTotal'] >= 3 ) ? 1 : 0;    //是否可以领取
+                    $v['days'] = 3;    //天数
+                    $v['typeValue'] = numInteger($v['typeValue']);
+                    $returnList[] = $v;
+                    break;
+                case "rewardSeven": //7天
+                    $info = $integral->getIntegraDetail($where, array("userID"));
+                    $v['isReceive'] = (empty($info)) ? 0 : 1;   //是否领取了
+                    $v['isCan'] = ($useMonthInfo['monthTotal'] >= 7 ) ? 1 : 0;    //是否可以领取
+                    $v['days'] = 7;    //天数
+                    $v['typeValue'] = numInteger($v['typeValue']);
+                    $returnList[] = $v;
+                    break;
+                case "rewardFifteen":  //15天
+                    $info = $integral->getIntegraDetail($where, array("userID"));
+                    $v['isReceive'] = (empty($info)) ? 0 : 1;   //是否领取了
+                    $v['isCan'] = ($useMonthInfo['monthTotal'] >= 15 ) ? 1: 0;    //是否可以领取
+                    $v['days'] = 15;    //天数
+                    $v['typeValue'] = numInteger($v['typeValue']);
+                    $returnList[] = $v;
+                    break;
+                case "rewardTwentyeight"://28天
+                    $info = $integral->getIntegraDetail($where, array("userID"));
+                    $v['isReceive'] = (empty($info)) ? 0 : 1;   //是否领取了
+                    $v['isCan'] = ($useMonthInfo['monthTotal'] >= 28 ) ? 1 : 0;    //是否可以领取
+                    $v['days'] = 28;    //天数
+                    $v['typeValue'] = numInteger($v['typeValue']);
+                    $returnList[] = $v;
+                    break;
+                case "common":
+                    //先检查今日是否已经签到过
+                    $signLogic = new SignLogic();
+                    $newSign = $signLogic->getTodayDetail($this->userID);
+                    $dayIsSign = (empty($newSign))?0:1;
+                    $commonSign = $v['typeValue'];   //单次签到的数据
+                    break;
+            }
+        }
+        $info['list'] = $returnList;
+        $info['monthInfo'] = $useMonthInfo;
+        $info['commonSign'] = intval($commonSign);
+        $info['isSign'] = $dayIsSign;
+        $this->return['code'] = 0;
+        $this->return['info'] = $info;
+        return $this->return;
+    }
+
+    /**
+     * 领取累计签到的奖励
+     * @desc 领取每月的奖励
+     * @return string msg 提示信息
+     * @return int code 成功0 失败1
+     */
+    public function receive() {
+        $this->userCheck();
+        $code = $this->typecode;
+        $weight = $this->typeweight;
+        $interglLogic = new IntegralLogic();
+        $nowMonth = strtotime(date("Y-m") . "-01");   //每月的第一天
+        $where['addDatetime'] = array('egt', $nowMonth);
+        $where['typeWeight'] = $weight;
+        $where['userID'] = $this->userID;
+        $userStat = $interglLogic->getStat($this->userID);
+        $sg = $this->switchInt($this->typeweight,$userStat['monthTotal']);
+        if(!$sg) {
+            $this->return['code'] = 1;
+            $this->return['msg'] = "尚未到领取条件";
+            return $this->return;
+        }
+        $info = $interglLogic->getIntegraDetail($where, array("userID"));
+        if (!empty($info)) {
+            $this->return['code'] = 1;
+            $this->return['msg'] = "已经领取过了";
+            return $this->return;
+        }
+        $res = $interglLogic->userIntegralInc($this->userID, $code, $weight);
+        if ($res) {
+            $this->return['code'] = 0;
+            $this->return['msg'] = "操作成功";
+            return $this->return;
+        } else {
+            $this->return['code'] = 1;
+            $this->return['msg'] = "操作失败";
+            return $this->return;
+        }
+    }
+
+
+    private function switchInt($type,$stat) {
+        switch ($type) {
+            case 'rewardThree':
+                if($stat >= 3 && $stat <7 ) return true;
+            case 'rewardSeven':
+                if($stat >= 7 && $stat <15 ) return true;
+            case 'rewardFifteen':
+                if($stat >= 15 && $stat <28 ) return true;
+            case 'rewardTwentyeight':
+                if($stat >= 28 ) return true;
+        }
+        return false;
+    }
+
+    /**
+     * 完成任务
+     * @desc 完成任务
+     * @return string msg 提示信息
+     * @return int code 成功0 失败1
+     */
+    public function finishTask() {
+        $this->userCheck();
+        $code = $this->typecode;
+        $weight = $this->typeweight;
+        $interglLogic = new IntegralLogic();
+        $intergWhere = array("typeWeight" => $weight);          //先查询下是否存在这样的积分类型
+        $interglType = $interglLogic->getOneIntegral($intergWhere);
+        if (empty($interglType)) {
+            $this->return['code'] = 1;
+            $this->return['msg'] = "不存在该积分信息";
+            return $this->return;
+        }
+        $dayTask = array(//整理下每日任务的类型大全
+            "socialContact",
+            "browseEnterprise"
+        );
+        $where['typeWeight'] = $weight;
+        if (in_array($this->typeweight, $dayTask)) {  //每日任务  检测条件需要加上是否为当天的
+            $where['addDatetime'] = array('egt', strtotime(date("Y-m-d")));   //大于今天的
+        }
+        $where['userID'] = $this->userID;
+        $info = $interglLogic->getIntegraDetail($where, array("userID"));      //获取到用户的积分明细 就能知道是否已经完过该任务
+        if (!empty($info)) {
+            $this->return['code'] = 1;
+            $this->return['msg'] = "已经领取过了";
+            return $this->return;
+        }
+        $Tasklogic = new TaskLogic();
+        $save_task_data = array(
+            "taskName" => $interglType['typeName'],
+            "taskCode" => $interglType['typeCode'],
+            "taskWeight" => $interglType['typeWeight'],
+            "addDatetime" => time(),
+            "userID" => $this->userID,
+            "taskValue" => $interglType['typeValue'],
+            "typeID" => $interglType['typeID'],
+        );
+        $Tasklogic->addTaskLog($save_task_data);   //添加完成任务的历史
+        $res = $interglLogic->userIntegralInc($this->userID, $code, $weight);   //给账户加积分
+
+        if ($res) {
+            $this->return['code'] = 0;
+            $this->return['msg'] = "操作成功";
+        } else {
+            $this->return['code'] = 1;
+            $this->return['msg'] = "操作失败";
+        }
+        return $this->return;
+    }
+
+    /**
+     * 启币兌换界面
+     * @desc 包含两种余额和下面的启币兌换的可兌换列表
+     * @return string info.account["apply"] 申请好友可用次数
+     * @return string info.account["letter"] 私信次数
+     * @return string info.list["typeCode"] 兌换余额的种类
+     * @return string info.list["typeWeight"]  唯一标识
+     * @return double info.list["typeValue"] 达成累计数能获取到多少启币
+     * @return string info.list['sign]  -为负 + 为正
+     */
+    public function getConvertibilityInterface() {
+        $this->userCheck();
+        $integral = new IntegralLogic();
+        $useAccount = $integral->getUserIntegral($this->userID);   //账户的信息
+        $Flogic = new UserFriendLogic();
+        $applyNum = $Flogic->getNowTimeApplyConnt($this->userID);    //申请的额度
+        $applyNum = ((10 - $applyNum) > 0 )? 10 - $applyNum : 0;
+        $freeLetter = $Flogic->getNowTimeRedisByletter($this->userID);
+        $freeLetter = ((10 - $freeLetter) > 0)? 10 - $freeLetter : 0;
+        $info['account']['apply'] = strval($useAccount['friendBalance'] + $applyNum);
+        $info['account']['leffer'] = strval($useAccount['letterBalance'] + $freeLetter);
+        $interglLogic = new IntegralLogic();
+        $intergWhere = array("typeCode" => "convertibility");          //先查询下是否存在这样的积分类型
+        $interglType = $interglLogic->getAllIntegral($intergWhere, array('typeName', 'typeWeight', 'typeCode', 'typeValue'));
+        foreach ($interglType as $key=>$value) {
+            $interglType[$key]['typeValue'] = numInteger($value['typeValue']);
+        }
+        $info['list'] = $interglType;
+
+        $this->return['code'] = 0;
+        $this->return['msg'] = "操作成功";
+        $this->return['info'] = $info;
+        return $this->return;
+    }
+
+    /**
+     * 兌换操作
+     * @desc 兌换操作
+     * @return string msg 提示信息
+     * @return int code 成功0 失败1
+     */
+    public function convertibility() {
+        $this->userCheck();
+        $code = $this->typecode;
+        $weight = $this->typeweight;
+        $interglLogic = new IntegralLogic();
+        $res = $interglLogic->userIntegralDec($this->userID, $code, $weight);
+        if ($res) {
+            $interglLogic->userBalanceInc($this->userID, $this->typeweight);
+            $this->return['code'] = 0;
+            $this->return['msg'] = "操作成功";
+            return $this->return;
+        } else {
+            $this->return['code'] = 1;
+            $this->return['msg'] = "余额不足";
+            return $this->return;
+        }
+    }
+
+    /**
+     * 积分明细
+     * @desc 积分明细
+     * @return string msg 提示信息
+     * @return int code 成功0 失败1
+     * @return string list.addDatetime  添加时间
+     * @return string list.typeName  启币类型名称
+     * @return string list.typeValue 值
+     * @return string info.list['sign]  -为负 + 为正
+     */
+    public function detail() {
+        $this->userCheck();
+        $limit = $this->getLimit($this->pageindex, $this->pagesize);
+        $integral = new IntegralLogic();
+        $where = array("A.userID" => $this->userID);
+        $list = $integral->getIntegraDetailByID($where, $limit);
+        if (empty($list)) {
+            $this->return['msg'] = "数据为空";
+        } else {
+            $this->return['code'] = 0;
+            $this->return['info'] = $list;
+        }
+        return $this->return;
+    }
+
+    /**
+     * 启币的总量
+     * @desc 用户启币总量
+     * @return string totalIntegral 总启币
+     * @return string availableIntegral 可用启币
+     */
+    public function getTotalIntegral() {
+        $this->userCheck();
+        $integral = new IntegralLogic();
+        $info = $integral->getIntegral($this->userID);
+        $this->return['info'] = array(
+            'totalIntegral' => numInteger($info['totalIntegral']),
+            'availableIntegral' => numInteger($info['availableIntegral']),
+        );
+        $this->return['code'] = 0;
+        return $this->return;
+    }
+
+    /**
+     * 用户的当月的签到统计
+     * @desc 用户当月签到统计
+     * @return string info.total  总次数
+     * @return string info.month  月份
+     */
+    public function totalSign() {
+        $this->userCheck();
+        $integral = new IntegralLogic();
+        $where['userID'] = $this->userID;
+        $where['signinDate'] = array('egt', strtotime(date('Y-M-01')));
+        $total = $integral->getTotalSign($where);
+        $this->return['code'] = 0;
+        $this->return['info'] = array(
+            'total' => $total > 0 ? strval($total) : '0',
+            'month' => date('m')
+        );
+        return $this->return;
+    }
+
+}

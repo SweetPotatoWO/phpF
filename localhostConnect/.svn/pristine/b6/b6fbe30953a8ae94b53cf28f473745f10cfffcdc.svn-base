@@ -1,0 +1,131 @@
+<?php
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+namespace Service\User\Logic;
+use Service\User\Model\ShieldMaillistModel;
+use Service\User\Model\UserMaillistModel;
+use Think\Model;
+
+
+/**
+ * RealName 
+ *
+ * @author DREAM
+ */
+class userMaillistLogic {
+
+    public function addAll($data) {
+        $model = new UserMaillistModel();
+        return $model->addBatch($data);
+    }
+
+    /**批量更新
+     * @param $data
+     */
+    public function saveAll($data) {
+        $model = new UserMaillistModel();
+        foreach ($data as $key=>$value) {
+            $model->saveAll($value['userName'],$value);
+        }
+        return true;
+    }
+
+    /**获取到同学的电话
+     * @param $userID
+     * @return mixed
+     */
+    public function getPhoneList($userID) {
+        $model = new UserMaillistModel();
+        return $model->getPhoneList($userID);
+    }
+
+
+    /**
+     * 获取到电话号码根据名字
+     */
+    public function getPhoneByName($userID,$arr) {
+        $model = new UserMaillistModel();
+        return $model->getPhoneByName($userID,$arr);
+    }
+
+
+    /**
+     * 删除某人的通讯录列表
+     * @param $userID
+     * @return mixed
+     */
+    public function deleteMaillist($userID)
+    {
+        return (new UserMaillistModel())->deleteMaillist($userID);
+    }
+
+
+    /**
+     * 添加到屏蔽列表中
+     * @param $data
+     * @return bool|void
+     */
+    public function addShieldData($data) {
+        if(empty($data)) {
+            return false;
+        }
+        $model = new ShieldMaillistModel();
+        return $model->addShieldAll($data);
+    }
+
+
+    /**
+     * 获取到单个通讯录的信息
+     * @param $phone
+     */
+    public function getMoreMail($phoneArr,$userID) {
+        return (new UserMaillistModel())->getMore($phoneArr,$userID);
+    }
+
+
+    /**
+     * 添加多条条屏蔽的记录
+     * @param $data
+     */
+    public function addShieldRecord($data) {
+        return (new ShieldMaillistModel())->addShieldRecord($data);
+    }
+
+
+    /**
+     * 修改通讯录的状态
+     * @param $data
+     */
+    public function updateMailShieldStatus($phoneArr,$userID,$status) {
+        return (new UserMaillistModel())->updateShieldStatus($phoneArr,$userID,$status);
+    }
+
+
+    /**
+     * 移除屏蔽状态
+     * @param $data
+     */
+    public function removeShieldRecord($phoneArr,$userID) {
+        return (new ShieldMaillistModel())->removeShieldRecord($phoneArr,$userID);
+    }
+
+
+    public function getAllMail($userID) {
+        $model = new UserMaillistModel();
+        $info = $model->getAllMail($userID);
+        return $info;
+    }
+
+
+
+
+
+
+
+
+}

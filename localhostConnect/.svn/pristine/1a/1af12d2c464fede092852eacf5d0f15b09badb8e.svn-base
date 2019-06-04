@@ -1,0 +1,79 @@
+/*
+Navicat MySQL Data Transfer
+
+Source Server         : 钱盒子测试
+Source Server Version : 50631
+Source Host           : 120.25.85.171:3306
+Source Database       : devmbox_hx
+
+Target Server Type    : MYSQL
+Target Server Version : 50631
+File Encoding         : 65001
+
+Date: 2018-08-08 10:38:46
+*/
+
+SET FOREIGN_KEY_CHECKS=0;
+
+-- ----------------------------
+-- Table structure for d_sys_parameter
+-- ----------------------------
+DROP TABLE IF EXISTS `d_sys_parameter`;
+CREATE TABLE `d_sys_parameter` (
+  `parID` int(11) NOT NULL AUTO_INCREMENT COMMENT '参数ID',
+  `parName` varchar(100) NOT NULL COMMENT '参数描述',
+  `parKey` varchar(50) NOT NULL COMMENT 'Key建唯一值',
+  `parType` tinyint(4) DEFAULT '1' COMMENT '参数类型 1单类型 ， 2多类型',
+  `parValue` varchar(200) DEFAULT NULL COMMENT '参数值',
+  `parStart` varchar(50) DEFAULT NULL COMMENT '参数起始值',
+  `parEnd` varchar(50) DEFAULT NULL COMMENT '参数结束值',
+  `parStatus` tinyint(4) DEFAULT '1' COMMENT '状态 1 整除 0 删除',
+  `remark` varchar(200) DEFAULT NULL COMMENT '备注',
+  `addUserID` int(11) NOT NULL COMMENT '创建人ID',
+  `addUserName` varchar(50) DEFAULT NULL COMMENT '创建人',
+  `addDatetime` int(11) NOT NULL COMMENT '创建时间',
+  `editUserID` int(11) DEFAULT NULL COMMENT '修改人ID',
+  `editUserName` varchar(50) DEFAULT NULL COMMENT '修改人',
+  `editDatetime` int(11) DEFAULT NULL COMMENT '修改时间',
+  PRIMARY KEY (`parID`)
+) ENGINE=InnoDB AUTO_INCREMENT=37 DEFAULT CHARSET=utf8 COMMENT='系统参数表';
+
+-- ----------------------------
+-- Records of d_sys_parameter
+-- ----------------------------
+INSERT INTO `d_sys_parameter` VALUES ('1', '管理员账户', 'MAN_USER', '1', '2', null, null, '1', '管理员账户（用于数据列表中的交易显示）', '2', '管理员', '1467423337', null, null, null);
+INSERT INTO `d_sys_parameter` VALUES ('2', '风险金账户', 'BOND_USER', '1', '3', null, null, '1', '风险金账户', '2', '管理员', '1467423405', null, null, null);
+INSERT INTO `d_sys_parameter` VALUES ('3', '平台融资账户', 'LOAN_USER', '1', '4', null, null, '1', '平台融资账户', '2', '管理员', '1467423441', null, null, null);
+INSERT INTO `d_sys_parameter` VALUES ('4', '支出账户', 'PAY_USER', '1', '5', null, null, '1', '支出账户', '2', '管理员', '1467423511', null, null, null);
+INSERT INTO `d_sys_parameter` VALUES ('5', '平台收益账户', 'IN_USER', '1', '6', null, null, '1', '平台收益账户', '2', '管理员', '1467423543', null, null, null);
+INSERT INTO `d_sys_parameter` VALUES ('6', '逾期还款账户', 'OVE_USER', '1', '7', null, null, '1', '逾期还款账户', '2', '管理员', '1467423585', null, null, null);
+INSERT INTO `d_sys_parameter` VALUES ('7', '体验金融资账户', 'EXP_USER', '1', '8', null, null, '1', '体验金融资账户', '2', '管理员', '1467423687', null, null, null);
+INSERT INTO `d_sys_parameter` VALUES ('8', '最大融资金额', 'MAXLOAN', '1', '200000', null, null, '1', '最大融资金额', '2', '管理员', '1467423787', '15', 'mbox', '1481685801');
+INSERT INTO `d_sys_parameter` VALUES ('9', '最小融资金额', 'MINLOAN', '1', '1000', null, null, '1', '最小融资金额', '2', '管理员', '1467423820', null, null, null);
+INSERT INTO `d_sys_parameter` VALUES ('10', '融资有效时间', 'VALIDTIME', '1', '10', null, null, '1', '融资有效时间（按天计算）', '2', '管理员', '1467423857', '2', '管理员', '1467423876');
+INSERT INTO `d_sys_parameter` VALUES ('11', '最大融资利率', 'MAXAPR', '1', '16', null, null, '1', '最大融资利率百分比', '2', '管理员', '1467423923', '15', 'mbox', '1519955202');
+INSERT INTO `d_sys_parameter` VALUES ('12', '最小利率', 'MINAPR', '1', '3', null, null, '1', '最小利率', '2', '管理员', '1467423973', '15', 'mbox', '1475031294');
+INSERT INTO `d_sys_parameter` VALUES ('13', '最小投资额', 'MINTENDER', '1', '100', null, null, '1', '最小投资额', '2', '管理员', '1467423999', null, null, null);
+INSERT INTO `d_sys_parameter` VALUES ('14', '截标限制', 'AUTO_END', '1', '70', null, null, '1', '达到多少可以截标，以下就会出现流标', '2', '管理员', '1467424047', null, null, null);
+INSERT INTO `d_sys_parameter` VALUES ('15', '自动投标', 'AUTO_RATIO', '1', '0.1', null, null, '1', '最大自动投标的金额比例占项目总额的多少', '2', '管理员', '1467424095', null, null, null);
+INSERT INTO `d_sys_parameter` VALUES ('16', '最大投资人数', 'MAXTENDER_NUM', '1', '190', null, null, '1', '最大投资人数，投资人数不可超出此范围', '14', 'jiangt', '1471942079', '15', 'mbox', '1476844820');
+INSERT INTO `d_sys_parameter` VALUES ('17', 'PC端抽奖', 'LOTTERY_PC', '1', '1', null, null, '1', 'PC端大转盘，参数值为活动ID', '14', 'jiangt', '1472111673', '16', 'liup', '1473651434');
+INSERT INTO `d_sys_parameter` VALUES ('18', '用户注册送券', 'TICKET_REG', '1', 'XJ1705002309,XJ1703036715', null, null, '1', '用户注册送券', '46', 'yaocy', '1474094410', '14', 'jiangt', '1495445133');
+INSERT INTO `d_sys_parameter` VALUES ('19', '开通E账户', 'TICKET_ADDACT', '1', 'XJ1705002307,XJ1705002310', null, null, '1', '开通E账户,券编号集合，多张券以英文逗号分隔', '46', 'yaocy', '1474350457', '14', 'jiangt', '1495445187');
+INSERT INTO `d_sys_parameter` VALUES ('20', '首投送券', 'TICKET_ADDIVM', '1', 'XJ1705002309,XJ1705002310,XJ1705002311', null, null, '1', '首投送券,券编号集合，多张券以英文逗号分隔', '46', 'yaocy', '1474352795', '14', 'jiangt', '1495445537');
+INSERT INTO `d_sys_parameter` VALUES ('21', '邀请送券', 'TICKET_INVITE', '1', 'XJ1705003345', null, null, '1', '邀请送券', '14', 'jiangt', '1475994596', '44', 'liup', '1495777960');
+INSERT INTO `d_sys_parameter` VALUES ('22', '活动送券', 'TICKET_ACT_YEAR', '1', 'XJ1610033833_84,XJ1610033836_10,XJ1610033837_5,XJ1610033842_1', null, null, '1', '2016年国庆活动送券', '44', 'liup', '1477557575', '15', 'mbox', '1481686224');
+INSERT INTO `d_sys_parameter` VALUES ('23', '提前还款', 'PRE_PAY', '1', '1', null, null, '1', '是否允许提前还款：0是不允许 1 允许', '15', 'mbox', '1477896272', '14', 'jiangt', '1521774869');
+INSERT INTO `d_sys_parameter` VALUES ('24', '微信登录送券', 'TICKET_FLW', '1', 'XJ1610052736', null, null, '1', '微信注册流程优化需求', '15', 'mbox', '1479456808', '15', 'mbox', '1479456824');
+INSERT INTO `d_sys_parameter` VALUES ('25', '微信登录送券ID', 'TICKET_FLW_ID', '1', '55', null, null, '1', '微信注册流程优化需求 使用后可以删除', '15', 'mbox', '1479457695', null, null, null);
+INSERT INTO `d_sys_parameter` VALUES ('26', '登录送券（元宵节）', 'TICKET_ACT_LOGIN', '1', 'JX1801001232_0.5,JX1801001234_0.8,JX1801001235_1,XJ1801005397_20,XJ1801005398_100,XJ1801005399_500', null, null, '1', '登录送券（多张券以英文逗号分隔）', '14', 'jiangt', '1481262477', '14', 'jiangt', '1519951939');
+INSERT INTO `d_sys_parameter` VALUES ('27', '首充送券', 'TICKET_RECHARGE', '1', 'XJ1705002308,XJ1705002307,XJ1705002310', null, null, '1', '首充送券', '14', 'jiangt', '1495445455', '14', 'jiangt', '1495445471');
+INSERT INTO `d_sys_parameter` VALUES ('28', '公司内部邀请利率16%', 'INVITE_COMPANY_RATE', '1', '8', null, null, '1', '公司内部邀请利率16%； \n【2017/10/20 修改利率降低到8%】', '44', 'liup', '1495702606', '44', 'liup', '1508202171');
+INSERT INTO `d_sys_parameter` VALUES ('29', '用户邀请利率8%', 'INVITE_USER_RATE', '1', '8', null, null, '1', '用户邀请利率8%', '44', 'liup', '1495702630', null, null, null);
+INSERT INTO `d_sys_parameter` VALUES ('30', '是否风险评测', 'REVIEWS_EVAL', '1', '2', null, null, '1', '1 必须评测 2 不强制评测', '14', 'jiangt', '1511398651', null, null, null);
+INSERT INTO `d_sys_parameter` VALUES ('31', '投标是否默认勾选提示', 'REVIEWS_CHECK', '1', '2', null, null, '1', '1 默认勾选 2 默认不勾选', '14', 'jiangt', '1511398672', '14', 'jiangt', '1511751330');
+INSERT INTO `d_sys_parameter` VALUES ('32', '注册是否默认选中', 'REG_ISCHECK', '1', '2', null, null, '1', '1. 默认选中 2. 默认不选中', '14', 'jiangt', '1511398694', '14', 'jiangt', '1511751324');
+INSERT INTO `d_sys_parameter` VALUES ('33', '首页底部菜单和上面展示区域时间', 'INDEX_SKIN_TIME', '1', '2018-01-01,2018-01-03', null, null, '0', '首页底部菜单和上面展示区域时间', '14', 'jiangt', '1513301031', '14', 'jiangt', '1514736893');
+INSERT INTO `d_sys_parameter` VALUES ('34', '首页悬浮图片展示时间', 'INDEX_SUSPENSION_TIME', '1', '2017-12-24,2017-12-31', null, null, '0', '首页悬浮图片展示时间', '14', 'jiangt', '1513301052', '15', 'mbox', '1514737735');
+INSERT INTO `d_sys_parameter` VALUES ('35', '标加息图标活动时间', 'BORROW_ACT_TIME', '1', '感恩加息,2018-7-18,2018-7-20@加息,2018-7-25,2018-8-1@七夕加息,2018-8-17,2018-8-19', null, null, '0', '包含开始和结束日期。多个标签示例\n【端午加息,2018-6-18,2018-6-20@国庆加息,2018-6-18,2018-6-20】', '14', 'jiangt', '1513301073', '38', 'lxx', '1532498988');
+INSERT INTO `d_sys_parameter` VALUES ('36', '逾期预警', 'OVERDUE_LIMIT', '1', '3', null, null, '1', '逾期预警', '14', 'jiangt', '1520564180', null, null, null);

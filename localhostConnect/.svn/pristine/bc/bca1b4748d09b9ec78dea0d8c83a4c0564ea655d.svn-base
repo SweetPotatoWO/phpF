@@ -1,0 +1,772 @@
+<?php
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+namespace Service\User\Model;
+
+use Common\Common\CodeGenerator;
+use Common\Model\SlaveModel;
+use Think\Exception;
+
+class UserModel extends SlaveModel {
+
+    public $diploma = array(0 => '无', 1 => '小学', 2 => '初中', 3 => '高中/职专', 4 => '专科', 5 => '本科', 6 => '研究生', 7 => '硕士', 8 => '博士');
+    public $proseType = array(
+        1 => '色情，淫秽信息（包含言语和信息等）',
+        2 => '违法/政治敏感',
+        3 => '虚假个人信息（姓名/公司/职位冒用等）',
+        4 => '个人销售广告（微商类/理财类等）',
+        5 => '其它'
+    );
+    public $proseStatus = array(
+        1 => '待审核',
+        2 => '审核通过',
+        3 => '审核不通过',
+        4 => '忽略'
+    );
+
+    /**
+     * 用户检测邮箱 或者 电话 用户名
+     * Enter description here ...
+     * @param unknown_type $key
+     * @param unknown_type $type 1 用户名 2 邮箱 3 电话
+     */
+    public function userCheck($key, $type) {
+        if ($type == 1) {
+            $where['UPPER(userName)'] = $key;
+        } else if ($type == 2) {
+            $where['email'] = $key;
+        } else {
+            $where['phone'] = $key;
+        }
+        $result = $this->where($where)->count();
+        if ($result > 0) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * 紧急联系人添加或者删除
+     * @param type $userID
+     * @param type $data
+     * @param type $action 添加获取更新 默认更新
+     */
+    public function saveDear($userID, $data) {
+        if (empty($data)) {
+            return FALSE;
+        }
+        $addOrSaveData = array(
+            'dearName' => $data['dearName'],
+            'dearPhone' => $data['dearPhone'],
+            'dearBear' => $data['dearBear'],
+            'dearEmail' => $data['dearEmail'],
+        );
+        return M('UserInfo')->where(array('userID' => $userID))->data($addOrSaveData)->save();
+    }
+
+    /**
+     * 用户登录
+     * @param type $phone
+     * @param type $password
+     */
+    public function userLogin($phone, $password) {
+        $where['phone'] = $phone;
+        $where['password'] = $password;
+        $where['userStatus'] = 1;
+        $result = $this->field('userID,userType,phone,regDatetime')->where($where)->find();
+        if (is_array($result)) {
+            return $result;
+        }
+        return false;
+    }
+
+    /**
+     * 获取用户
+     * @param type $field
+     * @param type $where
+     * @return boolean
+     */
+    public function getUser($field, $where) {
+        $where['userStatus'] = 1;
+        $result = $this->field($field)->where($where)->find();
+        if (is_array($result)) {
+            return $result;
+        }
+        return false;
+    }
+
+    /**
+     * 获取用户
+     * @param type $field
+     * @param type $where
+     * @return boolean
+     */
+    public function getUserfo($field, $where) {
+        $result = $this->field($field)->where($where)->find();
+        if (is_array($result)) {
+            return $result;
+        }
+        return false;
+    }
+
+    /**
+     * 获取用户
+     * @param type $field
+     * @param type $where
+     * @return boolean
+     */
+    public function getUserMore($field, $where) {
+        $where['userStatus'] = 1;
+        $model = M("User");
+        $result = $model->field($field)->where($where)->select();
+        if (is_array($result)) {
+            return $result;
+        }
+        return false;
+    }
+
+    /**
+     * 修改用户数据
+     * @param array $data
+     * @param type $where
+     * @return type
+     */
+    public function editUser($data, $where) {
+        $model = M("User");
+        $where['userStatus'] = 1;
+        $data['editDatetime'] = time();
+        $result = $model->where($where)->data($data)->save();
+        return $result;
+    }
+
+    /**
+     * 用于验证用户输入的密码是否正确
+     * @param type $where
+     */
+    public function verifyLoginPassword($where) {
+        $model = M("User");
+        $result = $model->field("phone")->where($where)->find();
+        return $result;
+    }
+
+    /**
+     * 新增注册用户
+     * @param type $entity
+     */
+    public function addUser($entity) {
+        try {
+            if (is_array($entity)) {
+                $data['regDatetime'] = time();
+                $data['phone'] = $entity['phone'];
+                $data['regTerminal'] = $entity['terminal'];
+                $data['regIP'] = $entity['operateIP'];
+                $data['phoneHide'] = 1; //默认为仅自己可以看电话号码
+                $data['loginDatetime'] = time(); //登录时间
+                $data['openID'] = isset($entity['openID']) && $entity['openID'] != '' ? $entity['openID'] : '';
+                $model = M("User");
+                $result = $model->data($data)->add();
+                return $result;
+            }
+            return false;
+        } catch (Exception $ex) {
+            logger(__METHOD__, $ex->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * 用户信息查询
+     * @param type $where
+     * @param type $whereArr
+     * @param type $limit
+     */
+    public function getUserList($where, $whereArr, $limit) {
+        $sqlcount = "SELECT COUNT(1) AS count FROM d_user AS A 
+                 WHERE (1=1)" . $where . " ";
+        $total = $this->SlaveDB()->query($sqlcount, $whereArr);
+        $result["total"] = $total[0]["count"];
+        $sql = "SELECT A.userID,A.vip,A.jobAuth,A.userStatus,A.regDatetime,A.regTerminal,A.phone,A.nickname,
+                A.userType,C.companyName,A.isRecommend,C.job,C.group,D.userSex,D.workMajorName,D.cityName  
+                FROM d_user AS A  
+                LEFT JOIN d_user_company AS C ON A.userID=C.userID
+                LEFT  JOIN  d_user_info AS D ON A.userID=D.userID
+                WHERE (1=1)" . $where . " ORDER BY A.regDatetime DESC LIMIT %s;";
+        array_push($whereArr, $limit);
+        $result["rows"] = $this->SlaveDB()->query($sql, $whereArr);
+        return $result;
+    }
+
+    /**
+     * 用户名片
+     */
+    public function getUserCardList($where, $whereArr, $limit) {
+        $sqlcount = "select count(1) as count from d_user_card A
+                where(1=1) $where;";
+        $total = $this->SlaveDB()->query($sqlcount, $whereArr);
+        $result["total"] = $total[0]["count"];
+        $sql = "select A.userName,A.cardHeadUrl,A.cardImgUrl,A.cid,A.addDatetime,A.groupID
+                from d_user_card A
+                where(1=1) " . $where . " ORDER BY A.addDatetime LIMIT %s;";
+        array_push($whereArr, $limit);
+        $result["rows"] = $this->SlaveDB()->query($sql, $whereArr);
+        return $result;
+    }
+
+    /**
+     * 用户名片详情
+     */
+    public function getUserCardDetail($where) {
+        return $this->SlaveDB()->table('d_user_card')->where($where)->find();
+    }
+
+    /**
+     * 用户名片
+     */
+    public function getUserCardCount($where, $twhere, $whereArr, $limit) {
+        $sqlcount = "select count(1) as count from (SELECT A.userID,count(B.cid) as total FROM d_user A
+                LEFT JOIN d_user_card B ON A.userID=B.userID
+                where(1=1) " . $where . "  group by A.userID HAVING " . $twhere . ")T;";
+        $total = $this->SlaveDB()->query($sqlcount, $whereArr);
+        $result["total"] = $total[0]["count"];
+        $sql = "SELECT A.userID,A.nickname,A.phone,count(B.cid) as total FROM d_user A
+                LEFT JOIN d_user_card B ON A.userID=B.userID
+                where(1=1) " . $where . " group by A.userID HAVING " . $twhere . " order by total desc LIMIT %s;";
+        array_push($whereArr, $limit);
+        $result["rows"] = $this->SlaveDB()->query($sql, $whereArr);
+        return $result;
+    }
+
+    /**
+     * 用户通讯录统计
+     * @param $where
+     * @param $twhere
+     * @param $whereArr
+     * @param $limit
+     * @param int $order_type 排序类型：0 默认按数量倒序；1 按时间倒序
+     * @return mixed
+     */
+    public function getUserMailCount($where, $twhere, $whereArr, $limit,$order_type=0) {
+        $sqlcount = "select count(1) as count from (SELECT B.mailTotal as total
+                   FROM d_user A LEFT JOIN(SELECT userID,COUNT(mid) as mailTotal from d_user_maillist group by userID)B ON A.userID=B.userID
+                   LEFT JOIN d_user_invite C ON C.userID = B.userID and C.inviteType=1 where(1=1) " . $where . " group by A.userID HAVING " . $twhere . ")T;";
+        $total = $this->SlaveDB()->query($sqlcount, $whereArr);
+        $result["total"] = $total[0]["count"];
+        $order = 'total desc,addDatetime desc,userID desc';
+        switch ($order_type){
+            case 0:
+                break;
+            case 1:
+                $order = 'addDatetime desc,total desc,userID desc';
+                break;
+        }
+        $sql = "SELECT A.userID,A.nickname,A.phone,B.mailTotal as total,B.addDatetime,
+		count(inviteID) as inviteTotal,
+                count(case when C.status=1 then C.inviteID end) as invitingTotal,
+                count(case when C.status=2 then C.inviteID end) as inviteAndJoyin,
+                count(case when C.status=3 then C.inviteID end) as inviteFail 
+                FROM d_user A
+                LEFT JOIN( SELECT userID,COUNT(mid) as mailTotal,MAX(addDatetime) as addDatetime from d_user_maillist group by userID )B ON A.userID=B.userID
+                LEFT JOIN d_user_invite C ON C.userID = B.userID and C.inviteType=1
+                where(1=1) " . $where . " group by A.userID HAVING " . $twhere . " order by $order LIMIT %s;";
+        array_push($whereArr, $limit);
+        $result["rows"] = $this->SlaveDB()->query($sql, $whereArr);
+        return $result;
+    }
+
+    /**
+     * 用户通讯录列表
+     */
+    public function getUserMailList($where, $whereArr, $limit) {
+        $sqlcount = "select count(1) as count from d_user_maillist A
+                LEFT JOIN d_user B ON A.phone=B.phone
+                where(1=1) " . $where;
+        $total = $this->SlaveDB()->query($sqlcount, $whereArr);
+        $result["total"] = $total[0]["count"];
+        $sql = "select B.userID,A.userName,B.nickname,A.phone,A.group,A.remark,A.addDatetime,IF(B.userID IS NULL,0,1) as joyinStatus,IF(C.inviteID IS NULL,0,1) as status,B.regDatetime
+                from d_user_maillist A
+                LEFT JOIN d_user B ON A.phone=B.phone
+                LEFT JOIN d_user_invite C ON C.invitePhone=A.phone AND C.inviteType=1 AND C.userID=A.userID
+                where(1=1) " . $where . " ORDER BY  joyinStatus DESC,status DESC,A.addDatetime DESC LIMIT %s;";
+        array_push($whereArr, $limit);
+        $result["rows"] = $this->SlaveDB()->query($sql, $whereArr);
+        return $result;
+    }
+
+    /**
+     * 获取用户访客
+     */
+    public function getUserView($where, $twhere, $whereArr, $limit) {
+        $sqlcount = "select count(1) as count from (select count(B.id) as viewtotal from  d_user A LEFT JOIN d_user_visitor B on A.userID=B.userID
+                     where(1=1) " . $where . " group by A.userID HAVING " . $twhere . ") t";
+        $total = $this->SlaveDB()->query($sqlcount, $whereArr);
+        $result["total"] = $total[0]["count"];
+        $sql = "select A.userID,A.regDatetime,A.nickname,A.phone,count(B.id) as viewtotal,IFNULL(C.daytotal,0) as daytotal,MAX(B.addDatetime) as lastTime from  d_user A LEFT JOIN d_user_visitor B on A.userID=B.userID
+                LEFT JOIN (select userID,count(id) as daytotal from d_user_visitor where addDatetime>UNIX_TIMESTAMP(CAST(SYSDATE()AS DATE)) group by userID) C on C.userID=A.userID
+                where(1=1)" . $where . " group by A.userID HAVING " . $twhere . " order by viewTotal desc LIMIT %s;";
+        array_push($whereArr, $limit);
+        $result["rows"] = $this->SlaveDB()->query($sql, $whereArr);
+        return $result;
+    }
+
+    /**
+     * 获取用户好友统计
+     */
+    public function getUserFriendCount($where, $twhere, $whereArr, $limit) {
+        $sqlcount = "select count(userID) as count from(select A.userID,count(B.userID) as friendCount from d_user A
+                LEFT JOIN d_user_friend B ON B.userID=A.userID
+                where(1=1) " . $where . " group by A.userID HAVING " . $twhere . ")t";
+        $total = $this->SlaveDB()->query($sqlcount, $whereArr);
+        $result["total"] = $total[0]["count"];
+        $sql = 'select A.userID,A.nickname,A.phone,A.regDatetime,count(B.userID) as friendCount,
+                C.applyingTotal,C.applySuccTotal,C.applyIgnoreTotal,C.applyRefuseTotal, 
+                D.beApplyingTotal,D.beApplySuccTotal,D.beApplyIgnoreTotal,D.beApplyRefuseTotal
+                from d_user A 
+                LEFT JOIN d_user_friend B ON B.userID=A.userID
+                LEFT JOIN (
+                select userID,count(case status when 1 then status end) as applyingTotal,
+                count(case status when 2 then status end) as applySuccTotal,
+                count(case status when 3 then status end) as applyIgnoreTotal,
+                count(case status when 4 then status end) as applyRefuseTotal
+                from d_friend_apply group by userID ) C on C.userID=A.userID
+                LEFT JOIN(
+                select friendID as uid,count(case status when 1 then status end) as beApplyingTotal,
+                count(case status when 2 then status end) as beApplySuccTotal,
+                count(case status when 3 then status end) as beApplyIgnoreTotal,
+                count(case status when 4 then status end) as beApplyRefuseTotal
+                from d_friend_apply group by friendID
+                ) D on D.uid=A.userID
+                where(1=1) ' . $where . ' group by A.userID HAVING ' . $twhere . ' order by friendCount desc LIMIT %s';
+        array_push($whereArr, $limit);
+        $result["rows"] = $this->SlaveDB()->query($sql, $whereArr);
+        return $result;
+    }
+
+    /**
+     * 好友申请列表
+     */
+    public function getFriendApplyList($where, $whereArr, $limit) {
+        $sqlcount = "select count(1) as count from d_friend_apply A
+            inner join d_user B on A.userID=B.userID
+            inner join d_user C on C.userID=A.friendID
+            where(1=1) " . $where;
+        $total = $this->SlaveDB()->query($sqlcount, $whereArr);
+        $result["total"] = $total[0]["count"];
+        $sql = 'select B.nickname,B.phone,C.nickname as friendName,C.phone as friendPhone,A.status,A.addDatetime from d_friend_apply A
+            inner join d_user B on A.userID=B.userID
+            inner join d_user C on C.userID=A.friendID
+            where(1=1) ' . $where . ' order by A.addDatetime desc LIMIT %s';
+        array_push($whereArr, $limit);
+        $result["rows"] = $this->SlaveDB()->query($sql, $whereArr);
+        return $result;
+    }
+
+    /**
+     * 获取所有的部门类别
+     */
+    public function getAllGroup() {
+        return M('cardGroup')->select();
+    }
+
+    /*
+     * 获取企业用户
+     */
+
+    public function getCompanyList($where, $whereArr, $limit) {
+        $sqlcount = "SELECT COUNT(1) AS count FROM d_user AS A WHERE (1=1)" . $where;
+        $total = $this->SlaveDB()->query($sqlcount, $whereArr);
+        $result["total"] = $total[0]["count"];
+        $sql = "SELECT A.userID,A.userName,A.userStatus,A.realName,A.realStatus,A.regDatetime,A.regTerminal,A.phone,A.bankStatus FROM d_user AS A 
+                WHERE (1=1)" . $where . " ORDER BY A.regDatetime DESC LIMIT %s;";
+        array_push($whereArr, $limit);
+        $result["rows"] = $this->SlaveDB()->query($sql, $whereArr);
+        return $result;
+    }
+
+    /**
+     * 获取VIP等级列表
+     * @return type
+     */
+    public function getVipList() {
+        $sql = "SELECT levelName,level,rate,minAccount,maxAccount from d_user_level Order By level";
+        $result = $this->query($sql);
+        return $result;
+    }
+
+    /**
+     * 获取用户状态
+     * @param type $userID
+     */
+    public function getUserInfo($userID) {
+        $condition['u.userID'] = $userID; //用户id	
+        $condition['u.userStatus'] = 1;
+        $field = "u.`userID`,u.`userType`,u.`jobAuth`,u.`vip`,"
+                . " u.`phone`,u.`phoneHide` as isShowPhone,c.`companyID`,c.`job`,c.`group`,c.`companyName` ,u.`userKey`,u.`headUrl` as userHeadUrl,u.nickname as name";
+        $result = $this->alias("u")->field($field)->join('LEFT JOIN d_user_company as c ON c.userID=u.userID ')->where($condition)->find();
+        return $result;
+    }
+
+    /**
+     * 获取用户和公司信息
+     * @param type $userID
+     */
+    public function getUCompanyInfo($userID) {
+        $condition['u.userID'] = $userID; //用户id	
+        $condition['u.userStatus'] = 1;
+        $field = "u.`userID`,u.`headUrl`,u.realStatus,u.`realName`,u.`phone` ,c.cardID ,ci.companyName,ci.occcodeNO , u.userType  ";
+
+        $result = $this->alias("u")->field($field)->join(' LEFT JOIN d_user_info as c ON c.userID=u.userID LEFT JOIN d_company_info as ci ON ci.userID=u.userID ')->where($condition)->find();
+        return $result;
+    }
+
+    /**
+     * 获取VIP对应的范围
+     * @param type $where
+     * @param type $whereArr
+     */
+    public function getUserVipInfo($where) {
+        $result = $this->where($where)->field("viplevel")->select();
+        return $result;
+    }
+
+    /**
+     * 获取到紧急联系人
+     */
+    public function getUserDear($userID) {
+        $obj = M('UserInfo');
+        $fields = array('dearName', 'dearPhone', 'dearBear', 'dearEmail', 'userID');
+        return $obj->where(array('userID' => $userID))->field($fields)->find();
+    }
+
+    /**
+     * 获取总注册人数。
+     * @return type
+     */
+    public function getTotalUser() {
+        return $this->SlaveDB()->count('userID');
+    }
+
+    /**
+     * 查询用户和账户信息
+     * @param type $userID
+     * @return type
+     * 
+     */
+    public function getUserAccountInfo($userID) {
+        $condition['u.userID'] = $userID;
+        $field = "  u.userID , viplevel, u.phone, openID , availableMoney,totalMoney";
+        $result = $this->alias("u")->field($field)->join(' d_account a ON  a.userID = u.`userID`')->where($condition)->find();
+        return $result;
+    }
+
+    /**
+     * 查找是否绑定
+     */
+    public function bindExist($openID, $userID) {
+        $where['openID'] = $openID;
+        if (!empty($userID)) {
+            $where['userID'] = $userID;
+        }
+        $result = $this->field('userID,phone,openID,headUrl')->where($where)->find();
+        return $result;
+    }
+
+    /**
+     * 重置登录密码
+     * @param type $userName
+     * @param type $phone
+     * @param type $passWord
+     * @param type $terminal
+     */
+    public function forgotPassword($data, $where) {
+
+        $data["editDatetime"] = time();
+        $result = $this->where($where)->data($data)->save();
+        return $result;
+    }
+
+    /**
+     * 修改紧急联系人
+     * @param type $data
+     * @param type $where
+     */
+    public function editDear($data, $where) {
+        if (empty($where) || empty($data))
+            return false;
+        $model = M("UserInfo");
+        $result = $model->where($where)->data($data)->save();
+        return $result;
+    }
+
+    /**
+     * 获取紧急联系人
+     * @param type $where
+     */
+    public function getDear($where) {
+        if (empty($where))
+            return false;
+        $model = M("UserInfo");
+        $field = "dearName,dearPhone,dearBear,dearEmail";
+        $result = $model->where($where)->field($field)->find();
+        return $result;
+    }
+
+    /**
+     * 获取用户信息且获取到VIP等级
+     * @param type $userID
+     */
+    public function getUserLevel($where, $field) {
+        $result = $this->alias("u")->join('LEFT JOIN d_user_level as b ON u.viplevel=b.level ')->field($field)->where($where)->find();
+        return $result;
+    }
+
+    /**
+     * 获取用户生日
+     * @param type $where
+     */
+    public function getBirthday($where) {
+        $model = M("UserInfo");
+        $res = $model->where($where)->find();
+        return $res;
+    }
+
+    /**
+     * 修改状态
+     */
+    public function setShowPhoneStatus($userID, $status) {
+
+        return $this->where(array("userID" => $userID))->save(array("phoneHide" => $status));
+    }
+
+    /**
+     * 搜索用户
+     */
+    public function search($value) {
+        $sql = "select uc.companyName,uc.userHeadUrl,uc.name,uc.job,uc.group,uc.companyID,uc.userID,u.vip,u.jobAuth 
+               from d_user_company as uc inner join d_user as u on uc.userID = u.userID where  uc.searchCompanyValue like '%" . $value . "%'";
+        return $this->query($sql);
+    }
+
+    /**
+     * 获取到全行业的积分信息
+     * @param $userID
+     */
+    public function getAllScoreInfo($userID) {
+        $info['userinfo'] = M('user')->alias('u')->join("left join d_user_company as us on us.userID=u.userID")
+                ->join("left join d_user_info as ui on u.userID=ui.userID ")
+                ->where(array("u.userID" => $userID))
+                ->field(array("us.name", "ui.workMajorName as identy", "us.companyName", "us.job", "us.userHeadUrl", "ui.workCity", "ui.workMajorName"))
+                ->find();
+        $info['ed'] = M("UserEducational")->where(array("userID" => $userID))->find();
+        $info['work'] = M("UserWorkexperience")->where(array("userID" => $userID))->find();
+        return $info;
+    }
+
+    /**
+     * 获取到当前用户是否存在申请用户 且根据字符串为条件
+     * @param $str
+     * @param $useID
+     * @return bool|mixed
+     */
+    public function UserApplyInfo($str, $useID) {
+        if (empty($str) || empty($useID)) {
+            return false;
+        }
+        $sql = "SELECT UC.friendID FROM d_friend_apply as UC WHERE UC.friendID in (" . $str . ") and UC.status=1 and UC.userID= " . $useID;
+        return $this->query($sql);
+    }
+
+    /**
+     * 获取用户详细信息
+     */
+    public function getUserInfoDetail($userID) {
+        $sqlinfo = 'select A.nickname,A.jobAuth,A.vip,A.phoneHide,A.phone,A.headUrl,A.regDatetime,
+                    B.userSex,B.workMajorName,B.workCityID,B.workCity,B.provinceName,B.cityName,B.countyName,
+                    C.companyName,C.job,C.group,C.companyID
+                    from d_user A 
+                    LEFT JOIN d_user_info B ON A.userID=B.userID
+                    LEFT JOIN d_user_company C ON C.userID=A.userID  where A.userID=' . $userID;
+        $result['info'] = $this->query($sqlinfo); //基本信息
+        $sqledu = 'select A.diploma,A.schoolID,A.schoolName,A.major,A.startDatetime,A.endDatetime from d_user_educational A 
+                   INNER JOIN d_user B ON A.userID=B.userID where A.userID=' . $userID;
+        $result['education'] = $this->query($sqledu); //教育经历
+        $sqlwork = 'select A.companyID,A.companyName,A.job,A.group,A.startDatetime,A.endDatetime from d_user_workexperience A 
+                    INNER JOIN d_user B ON A.userID=B.userID where A.userID=' . $userID;
+        $result['work'] = $this->query($sqlwork); //工作经历
+        return $result;
+    }
+
+    /**
+     * 获取平台消息
+     */
+    public function getNewsList($where, $whereArr, $limit) {
+        $sqlcount = 'SELECT count(1) as total  FROM d_user_news A
+        INNER JOIN d_user B ON A.userID=B.userID
+        WHERE(1=1) ' . $where;
+        $total = $this->query($sqlcount, $whereArr);
+        $result['total'] = $total[0]['total'];
+        array_push($whereArr, $limit);
+        $sql = 'SELECT B.nickname,A.userID,B.phone,A.content,A.addDatetime,A.status,A.del,A.title  FROM d_user_news A
+        INNER JOIN d_user B ON A.userID=B.userID
+        WHERE(1=1) ' . $where . ' ORDER BY A.addDatetime DESC,A.status DESC limit %s';
+        $result['rows'] = $this->query($sql, $whereArr);
+        return $result;
+    }
+
+    /**
+     * 用户评论信息
+     */
+    public function getEvaluate($where, $whereArr, $limit) {
+        $sqlcount = 'SELECT count(A.evaluateID) as total
+            FROM d_user_evaluate A
+            INNER JOIN d_sys_evaluation B ON A.contentType = B.eID
+            LEFT JOIN d_user C ON C.userID=A.userID
+            WHERE(1=1) ' . $where;
+        $total = $this->query($sqlcount, $whereArr);
+        $result['total'] = $total[0]['total'];
+        array_push($whereArr, $limit);
+        $sql = 'SELECT A.userID,C.nickname,C.phone,A.evaPhone,B.content,
+            B.eValue,A.addDatetime
+            FROM d_user_evaluate A
+            INNER JOIN d_sys_evaluation B ON A.contentType = B.eID
+            LEFT JOIN d_user C ON C.userID=A.userID
+            WHERE(1=1) ' . $where . ' ORDER BY A.addDatetime DESC limit %s';
+        $result['rows'] = $this->query($sql, $whereArr);
+        return $result;
+    }
+
+    /**
+     * 用户评分
+     */
+    public function getEvaluateData($where, $whereArr, $limit) {
+        $sqlcount = 'select COUNT(DISTINCT evaPhone) as total  from d_user_evaluate A INNER JOIN d_sys_evaluation B ON A.contentType=B.eID
+                     LEFT JOIN d_user C ON C.phone=A.evaPhone where(1=1)' . $where;
+        $total = $this->query($sqlcount, $whereArr);
+        $result['total'] = $total[0]['total'];
+        array_push($whereArr, $limit);
+        $sql = 'select A.evaPhone,SUM(B.eValue) as totalValue,C.nickname,C.userID,C.regDatetime  from d_user_evaluate A INNER JOIN d_sys_evaluation B ON A.contentType=B.eID
+                LEFT JOIN d_user C ON C.phone=A.evaPhone where(1=1)' . $where . '  GROUP BY A.evaPhone ORDER BY totalValue DESC,C.userID DESC limit %s';
+        $result['rows'] = $this->query($sql, $whereArr);
+        return $result;
+    }
+
+    /**
+     * 根据userID获取到电话
+     * @param $userID
+     * @return mixed
+     */
+    public function getPhoneByUserID($userID) {
+        return $this->where(array('userID' => $userID))->getField('phone');
+    }
+
+    /**
+     * 模糊的值
+     * @param $value
+     * @return mixed
+     */
+    public function vague($value) {
+        return $this->where('nickname like "%' . $value . '%"')->field("headUrl as img,userID as ID,nickname as value, case userID  when true then 1 else 1 end as type")->select();
+    }
+
+    /**
+     * 获取到非系统用户的邀请记录
+     * @param $str
+     * @param $userID
+     * @return \Model|\Think\Model
+     */
+    public function getOtherIntiveInfo($str, $userID) {
+        if (empty($str) || empty($userID)) {
+            return false;
+        }
+        $sql = "SELECT oi.invitePhone FROM d_other_invite as oi WHERE oi.invitePhone in (" . $str . ") and  oi.userID= " . $userID;
+        return $this->query($sql);
+    }
+
+    /**
+     * 举报列表
+     */
+
+    /**
+     * 获取平台消息
+     */
+    public function getProseList($where, $whereArr, $limit) {
+        $sqlcount = 'SELECT count(1) as total  FROM d_user_prosecute A
+        INNER JOIN d_user B ON A.userID=B.userID
+        INNER JOIN d_user C ON C.userID=A.otherID
+        WHERE(1=1) ' . $where;
+        $total = $this->SlaveDB()->query($sqlcount, $whereArr);
+        $result['total'] = $total[0]['total'];
+        array_push($whereArr, $limit);
+        $sql = 'SELECT B.nickname as activeUser,B.phone as activePhone,C.nickname as passiveUser,C.phone as passivePhone,A.*
+        FROM d_user_prosecute A
+        INNER JOIN d_user B ON A.userID=B.userID
+        INNER JOIN d_user C ON C.userID=A.otherID
+        WHERE(1=1) ' . $where . ' ORDER BY A.addDatetime DESC,A.status ASC limit %s';
+        $result['rows'] = $this->SlaveDB()->query($sql, $whereArr);
+        return $result;
+    }
+
+    /**
+     * 获取到举报详情
+     * @param $key
+     * @return mixed
+     */
+    public function getProseInfo($key) {
+        return M('userProsecute')->where(['prosecuteID' => $key])->find();
+    }
+
+    /**
+     * 保存举报
+     * @param $data
+     * @param $where
+     * @return bool
+     */
+    public function saveProse($data, $where) {
+        try {
+            if (is_array($where) && count($where) > 0) {
+                $data ['editUserName'] = C('userName');
+                $data ['editDatetime'] = time();
+                return M('userProsecute')->where($where)->data($data)->save();
+            }
+            return false;
+        } catch (Exception $ex) {
+            logger(__METHOD__, $ex->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * 跟新推荐
+     * @param $status
+     * @param $phone
+     * @return bool
+     */
+    public function updateRecommend($status,$phone) {
+        return M("user")->where(array('phone'=>$phone))->save(array('isRecommend'=>$status));
+    }
+
+    /**
+     * 重置认证
+     * @param $userID
+     * @param $status
+     * @return bool
+     */
+    public function resetAuth($userID,$status) {
+        return $this->where(array('userID'=>$userID))->save(array('jobAuth'=>$status));
+    }
+
+
+    /**
+     *
+     * @param $userID
+     * @return bool
+     */
+    public function updateLoginTime($userID) {
+        return $this->where(array('userID'=>$userID))->save(array('loginDatetime'=>time()));
+    }
+
+}

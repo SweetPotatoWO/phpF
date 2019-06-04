@@ -1,0 +1,20 @@
+<?php
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+/**
+ * Description of alias
+ *
+ * @author Administrator
+ */
+if (!defined('THINK_PATH'))
+    exit();
+// 系统别名定义文件
+return array(
+        //  'PHPMailer' => WEB_ROOT . 'Common/Extend/PHPMailer/phpmailer.class.php',  
+);
+

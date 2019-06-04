@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <title><?php echo $apiDirName; ?> - 在线接口列表</title>
+        <link rel="stylesheet" href="{$Think.PUBLIC_DIR}mobileapi/style/semantic.min.css">
+        <link rel="stylesheet" href="{$Think.PUBLIC_DIR}mobileapi/style/table.min.css">
+        <link rel="stylesheet" href="{$Think.PUBLIC_DIR}mobileapi/style/container.min.css">
+        <link rel="stylesheet" href="{$Think.PUBLIC_DIR}mobileapi/style/message.min.css">
+    </head>
+    <body>
+        <br />
+        <div class="ui text container" style="max-width: none !important;">
+            <div class="ui floating message">
+                <h1 class="ui header">接口列表</h1>
+                <table class="ui green celled striped table">
+                    <thead>
+                        <tr>
+                            <th>#</th><th>接口服务</th><th>接口名称</th><th>更多说明</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    <volist  name="apilist" id="vo" key="k" >
+                        <tr><td>{$k}</td><td><a href="{$vo['url']}" target='_blank'>{$vo['service']}</a></td><td>{$vo['title']}</td><td>{$vo['desc']}</td></tr>
+                    </volist >
+                    </tbody>
+                </table>
+                <h1 class="ui header">Rec错误代码说明 Rec值为200表示请求成功</h1>
+                <table class="ui green celled striped table">
+                    <thead>
+                        <tr>
+                            <th>#</th><th>错误代码</th><th>说明</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>1</td>
+                            <td>4000</td>
+                            <td>缺少必要参数</td>
+                        </tr>
+                        <tr>
+                            <td>2</td>
+                            <td>4001</td>
+                            <td>参数值不符合最小值要求</td>
+                        </tr>
+                        <tr>
+                            <td>3</td>
+                            <td>4002</td>
+                            <td>参数值不符合最大值要求</td>
+                        </tr>
+                        <tr>
+                            <td>4</td>
+                            <td>4003</td>
+                            <td>参数值超出指定大小范围</td>
+                        </tr>
+                        <tr>
+                            <td>5</td>
+                            <td>4004</td>
+                            <td>参数值超出枚举值范围</td>
+                        </tr>
+                        <tr>
+                            <td>6</td>
+                            <td>4005</td>
+                            <td>参数值格式不正确</td>
+                        </tr>
+                        <tr>
+                            <td>7</td>
+                            <td>4006</td>
+                            <td>请求超时</td>
+                        </tr>
+                        <tr>
+                            <td>8</td>
+                            <td>4007</td>
+                            <td>签名不正确</td>
+                        </tr>
+                        <tr>
+                            <td>9</td>
+                            <td>4008</td>
+                            <td>用户需要登录</td>
+                        </tr>
+                        <tr>
+                            <td>10</td>
+                            <td>4009</td>
+                            <td>用户登录已过期</td>
+                        </tr>
+                        <tr>
+                            <td>11</td>
+                            <td>4010</td>
+                            <td>非法请求</td>
+                        </tr>
+                        <tr>
+                            <td>12</td>
+                            <td>4011</td>
+                            <td>请求的接口不存在</td>
+                        </tr>
+                        <tr>
+                            <td>12</td>
+                            <td>5000</td>
+                            <td>服务端运行错误</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <h1 class="ui header">系统弹出广告提示类型代码说明（登录送券等提示）</h1>
+                <table class="ui green celled striped table">
+                    <thead>
+                        <tr>
+                            <th>#</th><th>类型代码</th><th>说明</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>1</td>
+                            <td>9000</td>
+                            <td>首页活动弹出广告提示类型</td>
+                        </tr>
+                        <tr>
+                            <td>2</td>
+                            <td>9001</td>
+                            <td>登录成功送券弹出广告提示类型</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </body>
+</html>

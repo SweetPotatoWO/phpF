@@ -1,0 +1,225 @@
+<?php
+namespace MobileApi\Api;
+
+use MobileApi\Common\MobileApiBase;
+use Service\Integral\Logic\CardLogic;
+use Service\Spread\Logic\HomeBannerLogic;
+
+/**
+ * Description of ApiUser
+ *
+ * @author Administrator
+ */
+class ApiCard extends MobileApiBase {
+
+    private $return  = array("code"=>1,"msg"=>"","info"=>array());
+    public function getRules() {
+        return array(
+            'addgroup' => array(
+                "name"=>array('name' => 'name', 'type' => 'string', 'require' => false, 'desc' => '分组名称', 'default' => 0),
+                "groupID"=>array('name'=>'groupID','type'=>"int",'require'=>false,'desc'=>'分组的ID','default'=>0),
+            ),
+            'groupList'=>array(
+
+            ),
+            'getCardListByGroupID'=>array(
+                'groupID'=>array(
+                    "groupID"=>array('name'=>'groupID','type'=>"int",'require'=>false,'desc'=>'分组的ID 未分组的传递0','default'=>0),
+                ),
+            ),
+            "getCardList"=>array(
+                'pageindex' => array('name' => 'pageindex', 'type' => 'int', 'default' => 1, 'desc' => '页码'),
+                'pagesize' => array('name' => 'pagesize', 'type' => 'int', 'default' => 15, 'desc' => '每页显示数量')
+            ),
+            "cardInfoByID"=>array(
+                "cid"=>array('name'=>'cid','type'=>"int",'require'=>false,'desc'=>'名片的ID','default'=>0),
+            ),
+            "addOrSaveCardInfo"=>array(
+                'userName'=>array('name'=>'userName','type'=>"string",'require'=>false,'desc'=>'名片上的名字','default'=>0),
+                'phoneContent'=>array('name'=>'phoneContent','type'=>"string",'require'=>false,'desc'=>'电话内容 多个传递json值，统一格式为 [{key:"单位","value":13169601345}]','default'=>0),
+                'mailContent'=>array('name'=>'mailContent','type'=>"string",'require'=>false,'desc'=>'邮件内容 多个传递json值，统一格式为 [{key:"工作邮箱","value":768049839@qq.com}] ','default'=>0),
+                'companyContent'=>array('name'=>'companyContent','type'=>"string",'require'=>false,'desc'=>'公司内容  [{name=>"某某公司",group=>"组",job=>"产品经理"}]','default'=>0),
+                'websiteContent'=>array('name'=>'websiteContent','type'=>"string",'require'=>false,'desc'=>'主站 json 如上面','default'=>0),
+                'areaContent'=>array('name'=>'areaContent','type'=>"string",'require'=>false,'desc'=>'地区 json 如电话内容','default'=>0),
+                'cardHeadUrl'=>array('name'=>'cardHeadUrl','type'=>"string",'require'=>false,'desc'=>'头像 链接字符串','default'=>""),
+                'cardImgUrl'=>array('name'=>'cardImgUrl','type'=>"string",'require'=>false,'desc'=>'名片链接 链接字符串','default'=>""),
+                'nickname'=>array('name'=>'nickname','type'=>"string",'require'=>false,'desc'=>'昵称 字符串','default'=>""),
+                'socialConnectContent'=>array('name'=>'socialConnectContent','type'=>"string",'require'=>false,'desc'=>'社交账户 json 如电话内容','default'=>""),
+                "cid"=>array('name'=>'cid','type'=>"int",'require'=>false,'desc'=>'唯一主键 不传递为添加,传递为编辑','default'=>0),
+            ),
+            "delCard"=>array(
+                "cid"=>array('name'=>'cid','type'=>"int",'require'=>false,'desc'=>'名片的ID','default'=>0),
+            ),
+        );
+    }
+
+
+
+    /**
+     * 添加或者编辑分组
+     * @desc 添加或者编辑
+     * @return string msg 提示信息
+     * @return int code 成功0 失败1
+     */
+    public function addgroup() {
+        $this->userCheck();
+        $card = new CardLogic();
+        $data['groupName'] = $this->name;
+        $data['userID'] = $this->userID;
+        $data['groupID'] = $this->groupID;
+        $res = $card->addGroup($data);
+        if($res) {
+            $this->return['code'] =0;
+            $this->return['msg'] = "操作成功";
+        } else {
+            $this->return['code'] =1;
+            $this->return['msg'] = "操作失败";
+        }
+        return $this->return;
+    }
+
+
+    /**
+     * 分组的列表
+     * @desc 分组的列表
+     * @return string groupName 组别的名字
+     * @return int groupID 组别ID
+     * @return int sort 排序
+     */
+    public function groupList() {
+        $this->userCheck();
+        $card = new CardLogic();
+        $list = $card->groupList($this->userID);
+        if(empty($list)) {
+            $this->return['code'] =1;
+            $this->return['msg'] = "数据为空";
+        } else {
+            $this->return['code'] =0;
+            $this->return['msg'] = "操作成功";
+        }
+        return $this->return;
+    }
+
+
+
+
+
+    /**
+     * 获取到用户的名片列表
+     * @desc 名片列表
+     * @return string userName 用户的名字
+     * @return string phone] 电话
+     * @return string companyName 公司的名字
+     * @return string jobName] 职业
+     * @return string groupName] 分组
+     * @return string cardImgUrl 名片图片
+     * @return int cid ID
+     */
+    public function getCardList() {
+        $this->userCheck();
+        $card = new CardLogic();
+        $dataRes = $card->getUserCardList($this->userID);
+        if(empty($dataRes['list'])) {
+            $this->return['code'] =1;
+            $this->return['msg'] = "数据为空";
+        } else {
+            $this->return['code'] =0;
+            $this->return['info']['count'] = $dataRes['count'];
+            $this->return['info']['list'] = $dataRes['list'];
+            $this->return['msg'] = "数据为空";
+        }
+        return $this->return;
+    }
+
+
+    /**
+     * 获取到名片的详情
+     * @desc 名片的详情
+     * @return string userName 姓名
+     * @return array phoneContent 电话信息
+     * @return array mailContent  邮箱信息
+     * @return array companyContent 公司信息
+     * @return array websiteContent 网站信息
+     * @return array areaContent  地区信息
+     * @return string cardHeadUrl  头像
+     * @return string cardImgUrl  名片的头像
+     * @return int phone 电话
+     * @return string job 职位
+     * @return int cid  对应的ID
+     */
+    public function cardInfoByID() {
+        $this->userCheck();
+        $cardID = $this->cid;
+        $logic = new CardLogic();
+        $data = $logic->getCardInfo($cardID);
+        if(empty($data)) {
+            $this->return['code'] = 1;
+            $this->return['msg'] = "返回信息为空";
+        } else {
+            $this->return['code'] =0;
+            $this->return['info'] = $data;
+            $this->return['msg'] = "操作成功";
+        }
+        return $this->return;
+    }
+
+
+    /**
+     * 添加和编辑名片的详情
+     * @desc 名片的详情
+     * @return string msg 返回的错误信息
+     * @return string code 节点
+     */
+    public function  addOrSaveCardInfo() {
+        $this->userCheck();
+        if(!empty($this->userName))$data['userName'] = $this->userName;
+        if(!empty($this->phoneContent))$data['phoneContent']=CardJsonToString($this->phoneContent);
+        if(!empty($this->mailContent))$data['mailContent']=CardJsonToString($this->mailContent);
+        if(!empty($this->companyContent))$data['companyContent']=CardJsonToString($this->companyContent);
+        if(!empty($this->websiteContent))$data['websiteContent']=CardJsonToString($this->websiteContent);
+        if(!empty($this->areaContent))$data['areaContent']= CardJsonToString($this->areaContent);
+        if(!empty($this->cardHeadUrl))$data['cardHeadUrl']=$this->cardHeadUrl;
+        if(!empty($this->nickname)) $data['nickname']=$this->nickname;
+        if(!empty($this->socialConnectContent))$data['socialConnectContent']=CardJsonToString($this->socialConnectContent);
+        if(!empty($this->cid)) $data["cid"]=$this->cid;
+        if(!empty($this->cardImgUrl))$data['cardImgUrl']=$this->cardImgUrl;
+
+        $logic = new CardLogic();
+        $res = $logic->addOrSaveCard($data,$this->userID);
+        if($res) {
+            $this->return['code'] = 0;
+            $this->return['msg'] = "操作成功";
+        } else {
+            $this->return['code'] = 1;
+            $this->return['msg'] = "操作成功";
+        }
+        return $this->return;
+    }
+
+
+    /**
+     * 名片删除
+     * @desc 单个删除
+     * @return string msg 返回的错误信息
+     * @return string code 节点
+     */
+    public function delCard() {
+        $this->userCheck();
+        $card = new CardLogic();
+        $res = $card->delCard($this->cid,$this->userID);
+        if($res) {
+            $this->return['code'] = 0;
+            $this->return['msg'] = "操作成功";
+        } else {
+            $this->return['code'] = 1;
+            $this->return['msg'] = "操作失败";
+        }
+        return $this->return;
+    }
+
+
+
+
+
+
+}

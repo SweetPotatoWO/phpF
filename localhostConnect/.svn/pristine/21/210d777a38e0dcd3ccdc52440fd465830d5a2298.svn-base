@@ -1,0 +1,238 @@
+<?php
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+namespace Service\User\Model;
+
+use Common\Model\SlaveModel;
+
+/**
+ * Description of UserVisitorModel
+ *
+ * @author admin
+ */
+class UserFriendModel extends SlaveModel {
+
+    /**
+     * 好友申请列表
+     */
+    public function getApplyList($where, $whereArr, $limit) {
+        $sqlcount = "select count(1) as total from  d_friend_apply as A inner join d_user as B on A.userID = B.userID where (1=1) AND " . $where;
+        $total = $this->SlaveDB()->query($sqlcount, $whereArr);
+        $result["total"] = $total[0]["total"];
+        $sql = "select A.id as applyID,A.userID,C.name,C.job,C.userHeadUrl,B.vip,B.jobAuth,C.companyName,A.addDatetime from  d_friend_apply as A 
+                left join d_user_company as C on C.userID=A.userID inner join d_user as B on B.userID=A.userID
+                where (1=1) and  " . $where . " order by A.addDatetime desc limit %s";
+        array_push($whereArr, $limit);
+        $result["rows"] = $this->SlaveDB()->query($sql, $whereArr);
+        return $result;
+    }
+
+    /**
+     * 获取通讯录的人数
+     */
+    public function getMailUserTotal($userID) {
+        $sql = "SELECT count(mid) as total FROM d_user_maillist where userID=$userID
+                UNION ALL
+                SELECT count(mid) as total FROM d_user_maillist A
+                LEFT JOIN d_user C ON A.phone=C.phone
+                where A.userID=$userID and C.userID is not null";
+        return $this->SlaveDB()->query($sql);
+    }
+
+    /**
+     * 获取的通信录的 为好友的数量
+     */
+    public function getMailUserFriendTotal($userID) {
+        $sql = "SELECT count(mid) as total FROM d_user_maillist A
+                LEFT JOIN d_user C ON A.phone=C.phone
+                where A.userID=$userID and C.userID is not null";
+        return $this->SlaveDB()->query($sql);
+    }
+
+    /**
+     * 获取通讯录列表
+     */
+    public function getMailList($userID, $limit) {
+        $sqlCount = "SELECT count(mid) as total FROM d_user_maillist A
+                     LEFT JOIN d_user_invite B ON B.invitePhone=A.phone AND B.userID=A.userID
+                     LEFT JOIN d_user C ON A.phone=C.phone
+                     where A.userID=$userID and C.userID is null";
+        $total = $this->query($sqlCount);
+        $result['total'] = $total[0]['total'];
+        $sql = "SELECT A.userName,A.group,A.phone,A.mid,IF(B.addDatetime is NULL,0,B.addDatetime) as addDatetime,IFNULL(B.status,0) as status FROM d_user_maillist A
+                     LEFT JOIN d_user_invite B ON B.invitePhone=A.phone AND B.userID=A.userID
+                     LEFT JOIN d_user C ON A.phone=C.phone
+                     where A.userID=$userID and C.userID is null order by addDatetime desc, mid desc  limit " . $limit;
+        $result['rows'] = $this->query($sql);
+        return $result;
+    }
+
+    /**
+     * 获取通讯录中加入平台的好友列表
+     */
+    public function mailFriendList($userID, $limit) {
+        $sqlCount = "SELECT count(mid) as total FROM d_user_maillist as A INNER JOIN  d_user B ON B.phone=A.phone where A.userID=$userID";
+        $total = $this->query($sqlCount);
+        $result['total'] = $total[0]['total'];
+        $sql = "SELECT B.nickname as name,A.mid,B.userID,A.phone,IF(C.addDatetime is NULL,0,C.addDatetime) as addDatetime,D.job,B.userKey,B.vip,B.jobAuth,D.companyName,IFNULL(C.status,0) as status FROM d_user_maillist A 
+                INNER JOIN d_user B ON B.phone=A.phone 
+                LEFT JOIN d_friend_apply C ON C.friendID=B.userID AND C.userID=A.userID
+                LEFT JOIN d_user_company D ON D.userID=B.userID
+                where A.userID=$userID order by addDatetime desc,mid desc limit " . $limit;
+
+        $result['rows'] = $this->query($sql);
+        return $result;
+    }
+
+    /**
+     * 我的好友列表
+     */
+    public function getFriendList($userID, $limit) {
+        $sqlCount = "SELECT count(friendID) as total FROM d_user_friend where userID=$userID;";
+        $total = $this->query($sqlCount);
+        $result['total'] = $total[0]['total'];
+        $sql = "SELECT D.companyName,U.userID,U.vip,U.jobAuth,D.job,D.name,A.addDatetime,D.userHeadUrl FROM d_user_friend as A
+                INNER  JOIN d_user as U on U.userID = A.friendUserID
+                LEFT JOIN d_user_company as D ON D.userID=A.friendUserID
+                where A.userID=$userID order by A.addDatetime desc limit " . $limit;
+        $result['rows'] = $this->query($sql);
+        return $result;
+    }
+
+
+    /**
+     * 获取到好友的数量
+     */
+    public function getFriendCount($userID) {
+        return M('userFriend')->where(array('userID'=>$userID))->count();
+    }
+    
+    /**
+     * 获取用户好友列表
+     */
+    public function getUserFriendList($where, $whereArr, $limit) {
+        $sqlCount = "select count(1) as count
+            from d_user_friend A
+            inner join d_user B on A.friendUserID=B.userID
+            left join d_user_company C on C.userID=A.friendUserID
+            where(1=1) $where";
+        $total = $this->SlaveDB()->query($sqlCount, $whereArr);
+        $result["total"] = $total[0]["count"];
+        $sql = "select A.userID,A.friendUserID,B.nickname,B.phone,C.companyName,C.job,A.addDatetime
+            from d_user_friend A
+            inner join d_user B on A.friendUserID=B.userID
+            left join d_user_company C on C.userID=A.friendUserID
+            where(1=1) $where order by A.addDatetime desc  LIMIT %s";
+        array_push($whereArr, $limit);
+        $result["rows"] = $this->SlaveDB()->query($sql, $whereArr);
+        return $result;
+    }
+
+    /**
+     * 申请信息
+     */
+    public function getApplyInfo($where){
+        return M('FriendApply')->where($where)->find();
+    }
+    
+    /**
+     * 编辑好友申请
+     */
+    public function editFriendApply($where,$data){
+        $data["editDatetime"] = time();
+        $result = M("FriendApply")->where($where)->save($data);
+        return $result;
+    }
+    
+    /**
+     * 添加好友列表
+     */
+    public function addFriend($data){
+        return $this->addAll($data);
+    }
+
+
+    /**
+     * 获取到是否评价了的通讯录人员
+     */
+    public function getEvaMailUser($userID,$limit){
+        $sql = "SELECT A.userName,A.group,IF(B.evaPhone is NULL,0,1) as status,A.mid as atime, B.content , IF(B.addDatetime is NULL,0,B.addDatetime) as addDatetime, U.headUrl  ,A.phone FROM d_user_maillist A
+                     LEFT JOIN d_user_evaluate as B ON B.evaPhone=A.phone and B.userID=".$userID." LEFT JOIN d_user as U on A.phone=U.phone
+                     where A.userID=$userID  order by addDatetime desc,mid desc limit " . $limit;
+
+
+        $result = $this->query($sql);
+        foreach ($result as $k=>$v) {
+            $result[$k]['content'] = (empty($result[$k]['content']))? "": $result[$k]['content'];
+            $result[$k]['headUrl'] = (empty($result[$k]['headUrl']))? "": $result[$k]['headUrl'];
+            $result[$k]['group'] = (empty($result[$k]['group']))? "": $result[$k]['group'];
+            if(strlen($v['phone']) > 11) {
+                $tmp = explode(',',$v['phone']);
+                $result[$k]['phone'] = $tmp[0];
+            }
+        }
+        return $result;
+    }
+
+
+    /**
+     * 获取到朋友的信息
+     * @param $userID
+     */
+    public function getFriendInfo($userID,$field="") {
+        $model = $this->alias("uf")->join("d_user u")->where(array('uf.userID'=>$userID));
+        if(!empty($field)) {
+            $model = $model->field($field);
+        }
+        return $model->find();
+    }
+
+
+    /**
+     * 好友的数量
+     */
+    public function getFriendNum($userID) {
+
+        return $this->where(array('userID'=>$userID))->count();
+    }
+
+    /**
+     * 好友的数量
+     */
+    public function isFriend($userID,$friend) {
+
+        return  $this->where(array('userID'=>$userID,"friendUserID"=>$friend))->find();
+
+    }
+
+
+    /**
+     * 处理好友过期申请
+     */
+    public function dealApplyOuttime($outtime) {
+        $sql = "update d_friend_apply as fa set fa.status=5 where   fa.addDatetime <= ".$outtime." and fa.status=1";
+        return M('friendApply')->execute($sql);
+    }
+
+    /**
+     * 记录下用户是否已经导入过通讯录
+     */
+    public function addMailImportLog($userID) {
+        return M('mailImport')->add(array('userID'=>$userID,'status'=>1,'addDatetime'=>time()));
+    }
+
+    /**
+     * 获取到是否导入过通讯录的状态
+     */
+    public function  getMailImportStatus($userID) {
+        return M("mailImport")->where(array('userID'=>$userID,'status'=>1))->find();
+    }
+
+
+    
+}

@@ -1,0 +1,20 @@
+<?php
+
+namespace Service\Activity\Model;
+use Common\Model\SlaveModel;
+
+class ActivityLogModel extends SlaveModel {
+
+    public function getOne($id) {
+        return $this->where(array('userID'=>$id))->find();
+    }
+
+
+    public function addOne($userID) {
+        return $this->add(array('userID'=>$userID));
+    }
+
+
+
+
+}

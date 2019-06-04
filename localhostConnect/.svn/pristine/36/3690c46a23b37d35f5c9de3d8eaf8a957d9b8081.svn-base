@@ -1,0 +1,32 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: Administrator
+ * Date: 2018/9/14 0014
+ * Time: 18:20
+ */
+namespace Service\System\Model;
+
+use Common\Model\SlaveModel;
+
+class SysJobModel extends SlaveModel {
+
+    /**
+     * 根据名字获取到行业信息
+     */
+    public function getJobByName($name) {
+        return $this->where(array("jobName"=>$name))->find();
+    }
+
+
+    /**
+     * 添加公司
+     */
+    public function saveJob($jobName="") {
+        return $this->add(array("jobName"=>$jobName));
+    }
+
+    public function vague($value) {
+        return $this->where('jobName like "%'.$value.'%"') ->field("jobID as img,jobID as ID,jobName as value")->select();
+    }
+}

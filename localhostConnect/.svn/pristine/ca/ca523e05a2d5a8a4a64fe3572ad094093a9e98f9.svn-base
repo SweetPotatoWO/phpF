@@ -1,0 +1,65 @@
+<div id="sub-exchange-List">
+    <input type="hidden" name="hidrefurl" id="hidrefurl" value="{:U(ACTION_NAME, $_GET)}">
+    <h4 class="title">启币兑换</h4>
+    <form class="form-inline" id="query_exchange">      
+        <div class="form-group ">
+            <label class="control-label">基本信息:</label>
+            <input type="text" class="form-control ipt mr-10" value="{$Think.post.txtuserName}" name="txtuserName" placeholder="请输入用户名"> 
+            <input type="text" class="form-control ipt mr-10" value="{$Think.post.txtrealName}" name="txtrealName" placeholder="请输入姓名"> 
+            <input type="text" class="form-control ipt mr-10" value="{$Think.post.txtphone}" name="txtphone" placeholder="请输入电话"> 
+        </div>
+        <div class="form-group ">
+            <label class="control-label">兑换启币>=: </label>
+            <input type="text" class="form-control" value="{$Think.post.exchangeValue}" name="exchangeValue" placeholder="请输入总启币">      
+        </div>
+        <div class="form-group">
+            <a href="{:U(ACTION_NAME, $_GET)}"  onclick="$Util.openQuery(this, event, 'query_exchange')"  class="btn btn-info"><i class="icon-search"></i>查询</a>
+        </div>
+    </form>
+    <table class="table table-striped table-bordered">
+        <thead>
+            <tr>          
+                <th>用户名</th>
+                <th>姓名</th>
+                <th>电话号码</th>
+                <th>启币总额</th>
+                <th>可用启币总额</th>
+                <th>兑换启币</th>
+                <th>兑换的金额</th>
+                <th>对换类型</th>
+                <th>启币兑换说明</th>
+                <th>兑换时间</th>
+            </tr>
+        </thead>
+        <tbody>
+        <volist name="result" id="item">
+            <tr>         
+                <td>{$item.userName}</td>
+                <td>{$item.realName|aes='DECODE'}</td>
+                <td>{$item.phone}</td>
+                <td>{$item.integraltotal}</td>
+                <td>{$item.integralAvailable}</td>
+                <td>{$item.exchangeValue}</td>
+                <td>{$item.exchangeMoney|formatMoney}</td>
+                <td>
+                    <switch name="item.exchangeType">
+            <case value="1">兑换金额</case>
+            <case value="2">兑换活动</case>
+            <default/>未知
+            </switch>
+            </td>
+            <td style="text-align: left;">{$item.remark}</td>
+            <td>{$item.addDatetime|formatlongDate}</td>
+            </tr>
+        </volist>
+        </tbody>
+    </table>
+    <nav class=" pagination-centered">
+        <ul class="pagination">  
+            {$pageHtml}
+        </ul>
+    </nav>
+</div>
+
+
+

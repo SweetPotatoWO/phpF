@@ -1,0 +1,92 @@
+<?php
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+namespace Wechat\Controller;
+use Service\JavaService\Logic\SiteLogic;
+use Think\Controller;
+/**
+ * Description of UserController
+ *
+ * @author Administrator
+ */
+class CompanyController extends Controller {
+
+
+    private $companyID =324;
+    /**
+     * 股东高管
+     */
+    public function management() {
+        $companyID = 324;
+        $this->display('management');
+    }
+
+    private function  jsonSuccess($data) {
+        echo json_encode(array('code'=>0,'msg'=>'','data'=>$data));
+        exit;
+    }
+
+    private function jsonFail($mes) {
+        echo json_encode(array('code'=>0,'msg'=>$mes,'data'=>""));
+        exit;
+    }
+
+
+    /**
+     *获取到用户的列表
+     */
+    public function getPeople() {
+        $type = I("post");   //类型
+        $site = new SiteLogic();
+        if($type == 1) {   //高层为1
+            $info = $site->getManagers($this->companyID);
+        } else { //股东为2
+            $info = $site->getShareholder($this->companyID);
+        }
+        if(empty($info)) {
+            $this->jsonFail("没有数据");
+        }
+        $this->jsonSuccess($info);
+    }
+
+    /**
+     * 工商信息
+     */
+    public function businessInfo() {
+        $this->display('businessInfo');
+    }
+
+    /**
+     * 年报详情
+     */
+    public function reportDetail() {
+        $this->display('reportDetail');
+    }
+
+    /**
+     * 知识产权
+     */
+    public function property() {
+        $this->display('property');
+    }
+
+    /**
+     * 专利详情
+     */
+    public function patentDetail() {
+        $this->display('patentDetail');
+    }
+
+    /**
+     * 信用信息
+     */
+    public function creditInfo() {
+        $this->display('creditInfo');
+    }
+
+}

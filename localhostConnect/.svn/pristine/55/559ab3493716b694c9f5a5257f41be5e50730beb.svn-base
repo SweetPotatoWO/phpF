@@ -1,0 +1,45 @@
+/*
+Navicat MySQL Data Transfer
+
+Source Server         : 钱盒子测试
+Source Server Version : 50631
+Source Host           : 120.25.85.171:3306
+Source Database       : devmbox_hx
+
+Target Server Type    : MYSQL
+Target Server Version : 50631
+File Encoding         : 65001
+
+Date: 2018-08-08 11:15:12
+*/
+
+SET FOREIGN_KEY_CHECKS=0;
+
+-- ----------------------------
+-- Table structure for d_user_info
+-- ----------------------------
+DROP TABLE IF EXISTS `d_user_info`;
+CREATE TABLE `d_user_info` (
+  `userID` int(11) NOT NULL COMMENT '就是User表的UserID',
+  `cardType` tinyint(4) DEFAULT '1' COMMENT ' 证件类型 1 身份证',
+  `cardID` varchar(200) NOT NULL DEFAULT '' COMMENT '身份证号码',
+  `cardAddress` varchar(200) DEFAULT NULL,
+  `phone` varchar(50) DEFAULT '' COMMENT '华兴返回绑定的手机号',
+  `userAge` tinyint(4) DEFAULT NULL COMMENT '年龄',
+  `userSex` tinyint(4) DEFAULT '0' COMMENT '用户性别 1 男 2 女 0 未知',
+  `birthyear` int(11) DEFAULT NULL COMMENT '生日年份',
+  `birthday` varchar(10) DEFAULT NULL COMMENT '生日',
+  `dearName` varchar(50) DEFAULT '' COMMENT '紧急联系人姓名',
+  `dearPhone` varchar(50) DEFAULT '' COMMENT '紧急联系人电话',
+  `dearBear` varchar(50) DEFAULT '' COMMENT '紧急联系人和客户的关系',
+  `dearEmail` varchar(50) DEFAULT '' COMMENT '紧急联系人邮箱',
+  `userQQ` varchar(20) DEFAULT NULL,
+  `WeChat` varchar(50) DEFAULT NULL COMMENT '用户微信号',
+  `province` varchar(20) DEFAULT NULL COMMENT '省',
+  `city` varchar(20) DEFAULT NULL COMMENT '市',
+  `county` varchar(50) DEFAULT NULL COMMENT '县',
+  `editDatetime` int(11) DEFAULT NULL COMMENT '修改时间',
+  `remark` varchar(150) DEFAULT NULL COMMENT '用户备注',
+  PRIMARY KEY (`userID`),
+  KEY `info_userID` (`userID`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='用户信息表';

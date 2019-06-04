@@ -1,0 +1,95 @@
+<?php
+
+
+
+namespace Service\User\Model;
+
+use Common\Model\SlaveModel;
+
+/**
+ * Description of UserVisitorModel
+ *
+ * @author admin
+ */
+class ShieldMaillistModel extends SlaveModel {
+
+
+
+
+    /**
+     * 添加多条记录
+     */
+    public function addShieldRecord($data) {
+
+        return $this->addAll($data);
+    }
+
+    /**
+     * 移除一条屏蔽记录
+     * @param $phone
+     * @param $userID
+     * @return mixed
+     */
+    public function removeShieldRecord($phoneArr,$userID) {
+        return  $this->where(array('shieldPhone'=>array('in',$phoneArr),'userID'=>$userID))->delete();
+
+    }
+
+
+    /**
+     * 获取到我的屏蔽
+     */
+    public function getMyShieldMail($userID) {
+        $sql = "select sm.shieldPhone, sm.shieldUserName,u.headUrl from d_shield_maillist as sm LEFT JOIN d_user as u on sm.phone=u.phone";
+        $sql .= " where sm.userID = ".$userID;
+        $info =  $this->query($sql);
+        foreach ($info as $k=>$v) {
+            $info[$k]['hipShieldPhone'] = hidPhone($v['shieldPhone']);
+            $info[$k]['headUrl'] = (empty($v['headUrl']))? "":UPLOAD.$v['headUrl'];
+        }
+        return $info;
+    }
+
+    /**
+     * 获取到屏蔽的数目
+     */
+    public function getShieldNum($userID) {
+        return $this->where(array('userID'=>$userID))->count();
+    }
+
+
+    /**
+     * 获取到共同好友
+     */
+    public function getCommonFriend($userID,$friendUserID,$phone,$limit="0,10") {
+        $sql = "select uf.friendUserID as userID,u.phone,u.nickname as userName,uc.userHeadUrl as headUrl, uc.companyName,uc.job,uc.companyID from d_user_friend as uf 
+                INNER JOIN d_user as u ON uf.friendUserID=u.userID LEFT JOIN d_user_company as uc ON uc.userID=uf.friendUserID
+                where 
+                u.phone not in (select phone from d_shield_maillist where shieldPhone = '".$phone."' ) and 
+                u.phone not in (select shieldPhone from d_shield_maillist where phone='".$phone."') and u.phone!='".$phone."' and 
+                uf.userID in (select friendUserID from d_user_friend where userID=".$userID." and friendUserID=".$friendUserID." ) GROUP BY phone LIMIT ".$limit;
+
+        $list =  $this->query($sql);
+        foreach ($list as $key=>$value){
+            $list[$key]['headUrl']  = UPLOAD.$value['headUrl'];
+            $list[$key]['job']  = ($value['job'])? $value['job']:"";
+            $list[$key]['companyName']  = ($value['companyName'])? $value['companyName']:"";
+            $list[$key]['companyID']  = ($value['companyID'])? $value['companyID']:"";
+        }
+        return $list;
+    }
+
+    /**
+     * 获取到共同好友的数量
+     */
+    public function getComFriendNum($userID,$friendUserID,$phone) {
+        $sql = "select count(id) as num from ( select uf.friendUserID as id  from d_user_friend as uf 
+                INNER JOIN d_user as u ON uf.friendUserID=u.userID 
+                where 
+                u.phone not in (select phone from d_shield_maillist where shieldPhone = '".$phone."' ) and 
+                u.phone not in (select shieldPhone from d_shield_maillist where phone='".$phone."') and u.phone!='".$phone."' and
+                uf.userID in (select friendUserID from d_user_friend where userID=".$userID." and friendUserID=".$friendUserID." ) GROUP BY phone ) t";
+        $num = $this->query($sql);
+        return $num[0]['num'];
+    }
+}

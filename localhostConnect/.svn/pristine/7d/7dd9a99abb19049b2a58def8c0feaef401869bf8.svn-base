@@ -1,0 +1,75 @@
+<include file="Common:header" />
+<div class="creditInfo">
+	<div class="navigation text-center bg-white">
+        <ul class="nav nav-tabs bord-n clearfix" role="tablist">
+            <li role="presentation">
+                <a href="#punish" aria-controls="punish" role="tab" data-toggle="tab" class="active">行政处罚</a>
+            </li>
+            <li role="presentation" data="list">
+                <a href="#abnormal" aria-controls="abnormal" role="tab" data-toggle="tab">经营异常</a>
+            </li>
+        </ul>
+    </div>
+    
+    <div class="tab-content">
+    	<div id="punish" role="tabpanel" class="tab-pane active">
+    		<div class="list bg-white">
+    			<!--单条数据循环start-->
+    			<div class="bord-b">
+    				<h6 class="mb-15">决定文书号</h6>
+    				<table class="table fs-12 mb-0">
+    					<tr>
+    						<td class="color-deep">决定机关：</td>
+    						<td>XXX工商局</td>
+    					</tr>
+    					<tr>
+    						<td class="color-deep">违法行为类型：</td>
+    						<td>不正当行为</td>
+    					</tr>
+    					<tr>
+    						<td class="color-deep">行政处罚内容：</td>
+    						<td>未按照规定公布企业信息</td>
+    					</tr>
+    				</table>
+    			</div>
+    			<!--单条数据循环end-->
+    		</div>
+    		<!--暂无数据-->
+    		<div class="nodata text-center fs-13 color-deep pl-10">暂无数据~</div>
+    		<!--点击加载-->
+    		<div id="wxNo" class="wxLast text-center fs-13 color-deep">已经没有更多数据</div>
+            <div id="wxLoad" class="wxLast text-center fs-13 color-deep">正在努力加载...</div>
+            <div id="wxMore" class="wxLast text-center fs-13 color-deep">点击加载更多</div>
+    	</div>
+    	<div id="abnormal" role="tabpanel" class="tab-pane">
+    		<div class="list bg-white">
+    			<!--单条数据循环start-->
+    			<div class="bord-b">
+    				<table class="table fs-12 mb-0">
+    					<tr>
+    						<td width="35%" class="color-deep">异常日期：</td>
+    						<td>2018-12-12</td>
+    					</tr>
+    					<tr>
+    						<td class="color-deep">决定机关：</td>
+    						<td>XXX工商局</td>
+    					</tr>
+    					<tr>
+    						<td class="color-deep">异常原因：</td>
+    						<td>未按照规定公布企业信息</td>
+    					</tr>
+    				</table>
+    			</div>
+    			<!--单条数据循环end-->
+    		</div>    			
+    		<!--暂无数据-->
+    		<div class="nodata text-center fs-13 color-deep pl-10">暂无数据~</div>
+    		<!--点击加载-->
+    		<div id="wxNo" class="wxLast text-center fs-13 color-deep">已经没有更多数据</div>
+            <div id="wxLoad" class="wxLast text-center fs-13 color-deep">正在努力加载...</div>
+            <div id="wxMore" class="wxLast text-center fs-13 color-deep">点击加载更多</div>
+    	</div>
+    </div>
+</div>
+</body>
+</html>

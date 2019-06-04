@@ -1,0 +1,218 @@
+<?php
+
+namespace Service\Connect\Model;
+
+use GraphAware\Neo4j\OGM\Annotations as OGM;
+
+/**
+ *公司员工关系实体模型
+ * @OGM\RelationshipEntity(type="WORK_IN")
+ */
+class ConnectWorkModel extends BaseGraphModel
+{
+    /**
+     * 关系标签
+     * @var string
+     */
+    public $typeRelation = 'WORK_IN';
+    //region property
+    /**
+     * @var int
+     *
+     * @OGM\GraphId()
+     */
+    protected $id;
+    /**
+     * 来源节点-员工
+     * @OGM\StartNode(targetEntity="PersonModel")
+     * @var PersonModel
+     */
+    protected $staff = null;
+    /**
+     * 目标节点-公司
+     * @OGM\EndNode(targetEntity="CompanyModel")
+     * @var CompanyModel
+     */
+    protected $company = null;
+    /**
+     * 所属部门
+     * @OGM\Property(type="string")
+     * @var null
+     */
+    protected $department = null;
+    /**
+     * 职务
+     * @OGM\Property(type="string")
+     * @var null
+     */
+    protected $jobtitle = null;
+    /**
+     * 进入公司时间
+     * @OGM\Property(type="int")
+     * @var int
+     */
+    protected $start_time = 0;
+    /**
+     * 离开公司时间
+     * @OGM\Property(type="int")
+     * @var int
+     */
+    protected $end_time = 0;
+
+    public function __construct(PersonModel $staff, CompanyModel $company)
+    {
+        $this->staff = $staff;
+        $this->company = $company;
+    }
+
+    /**
+     * @return int
+     */
+    public function getId()
+    {
+        return $this->id;
+    }
+
+    /**
+     * @return PersonModel
+     */
+    public function getStaff()
+    {
+        return $this->staff;
+    }
+
+    /**
+     * @return CompanyModel
+     */
+    public function getCompany()
+    {
+        return $this->company;
+    }
+
+    /**
+     * @return null
+     */
+    public function getDepartment()
+    {
+        return $this->department;
+    }
+
+    /**
+     * @param null $department
+     * @return ConnectWorkModel
+     */
+    public function setDepartment($department)
+    {
+        $this->department = $department;
+        return $this;
+    }
+
+    /**
+     * @return null
+     */
+    public function getJobtitle()
+    {
+        return $this->jobtitle;
+    }
+
+    /**
+     * @param null $jobtitle
+     * @return ConnectWorkModel
+     */
+    public function setJobtitle($jobtitle)
+    {
+        $this->jobtitle = $jobtitle;
+        return $this;
+    }
+
+    /**
+     * @return int
+     */
+    public function getStarttime()
+    {
+        return $this->start_time;
+    }
+
+    /**
+     * @param int $start_time
+     * @return ConnectWorkModel
+     */
+    public function setStarttime($start_time)
+    {
+        $this->start_time = $start_time;
+        return $this;
+    }
+
+    /**
+     * @return int
+     */
+    public function getEndTime()
+    {
+        return $this->end_time;
+    }
+
+    /**
+     * @param int $end_time
+     * @return ConnectWorkModel
+     */
+    public function setEndTime($end_time)
+    {
+        $this->end_time = $end_time;
+        return $this;
+    }
+    //endregion
+
+
+    //region function
+    /**
+     * 获取实体编辑参数串和参数
+     * @param string $alias
+     * @param array $ignore 不需要获取的字段（一般指查询字段）
+     * @return array
+     */
+    public function getEditParam($alias='r',$ignore=[])
+    {
+        return $this->getSetArray('department,jobtitle,start_time,end_time',$alias,$ignore);
+    }
+
+    /**
+     * @return array
+     */
+    public function getUpsertQuery()
+    {
+        $from = $this->getStaff();
+        $to = $this->getCompany();
+        $dir_1='-';
+        $dir_2='->';
+        $param = [];
+        $q = "MERGE (n:Person{user_id:".$from->getUserId()."})";
+        $param_from = $from->getEditParam();
+        if($param_from){
+            $q .="
+            ON CREATE SET ".$param_from['query']."
+            ON MATCH SET ".$param_from['query'];
+            $param = array_merge($param,$param_from['param']);
+        }
+        $q .= "MERGE (m:Company{company_id:".$to->getCompanyId()."})";
+        $param_to = $to->getEditParam('m');
+        if($param_to){
+            $q .="
+            ON CREATE SET ".$param_to['query']."
+            ON MATCH SET ".$param_to['query'];
+            $param = array_merge($param,$param_to['param']);
+        }
+        $q .= "MERGE (n)".$dir_1."[r:".$this->typeRelation."]$dir_2(m)";
+        $param_conn = $this->getEditParam();
+        if($param_conn) {
+            $q .= "
+            ON CREATE SET " . $param_conn['query'] . "
+            ON MATCH SET " . $param_conn['query'];
+            $param = array_merge($param,$param_conn['param']);
+        }
+        return [
+            'query'=>$q,
+            'param'=>$param
+        ];
+    }
+    //endregion
+}

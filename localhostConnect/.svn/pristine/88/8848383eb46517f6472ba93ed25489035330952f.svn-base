@@ -1,0 +1,116 @@
+<?php
+namespace Service\User\Logic;
+
+use Service\Connect\Logic\ConnectRelationLogic;
+use Service\Connect\Logic\OperationLogic;
+use Service\Tag\Logic\TagLogic;
+use Service\User\Model\UserModel;
+use Service\UserCenter\Model\companyModel;
+use Service\UserCenter\Model\UserCompanyModel;
+
+class IndexLogic {
+
+
+
+    /**
+     * 搜索人
+     */
+    public function searchPeople($value) {
+        $logic = new UserModel();
+        $info = $logic->search($value);
+        $logic = new UserFriendLogic();
+        $info = $logic->getUserListLabel($info);
+        return $info;
+    }
+
+    /**
+     * 搜索公司
+     */
+    public function searchCompany($value) {
+        $model = new companyModel();
+        return $model->searchCompany($value);
+    }
+
+
+    /**
+     * 判断用户是否存在好友申请
+     * @param $list
+     * @param $str
+     * @param $userID
+     * @return 包含对应信息的用户列表数据
+     */
+    public function getUserIndex($list,$str,$userID) {
+        $logic = new UserFriendLogic();
+        $info = $logic->getUserListLabel($list);
+        $logic = new userModel();
+        $applyUserID = $logic->UserApplyInfo($str,$userID);
+        $applyUserID = array_column($applyUserID,'friendID');
+        foreach ($info as $k=>$v) {
+            if(empty($info[$k]['userID'])) {
+                $info[$k]['status'] = 3;  //假的状态
+            } else {
+                $info[$k]['status'] = (in_array($info[$k]['userID'],$applyUserID))?1:0;  //获取到好友状态
+            }
+        }
+        return $info;
+    }
+
+
+    /**
+     * 判断名片用户是否已经邀请
+     * @param $list
+     * @param $str
+     * @param $userID
+     */
+    public function cardUserApplyInfo($list,$str,$userID) {
+        $logic = new UserModel();
+        $inviteInfo = $logic->getOtherIntiveInfo($str,$userID);
+        $inviteInfo = array_column($inviteInfo,'invitePhone');
+        foreach ($list as $k=>$value) {
+            if(!empty($list[$k]['userID'])) {
+                $list[$k]['inviteStatus'] = 2;  //非名片用户无需处理 为2
+            } else {
+                $list[$k]['inviteStatus'] = (in_array($list[$k]['phone'],$inviteInfo))?1:0;  //名片用户才需处理 1 邀请过 0没有邀请过
+            }
+        }
+        return $list;
+    }
+
+
+    /**
+     * 推荐的标签
+     * @param $index
+     */
+    public function getRecommendTag($index,$userID) {
+        $tagLogic = new TagLogic();
+        $num = $tagLogic->getTagNum($userID);
+        $userNum = $num[0]['num'];
+        $wantNum = $num[1]['num'];
+
+        if($userNum ==0 && $wantNum ==0) {
+            if($index%2==0) {
+                $return['list'] = $tagLogic->getRecommendTag($userID);
+                $return['title'] = "选择我熟悉的领域，被更多人认识。";
+                $return['titleType'] = 1;
+            } else {
+                $return['list'] =  $tagLogic->getRecommendWantTag($userID);
+                $return['title'] = "选择我想认识的人，精准人脉推荐。";
+                $return['titleType'] = 2;
+            }
+        } else if($wantNum ==0) {
+            $return['list'] =  $tagLogic->getRecommendWantTag($userID);
+            $return['title'] = "选择我想认识的人，精准人脉推荐。";
+            $return['titleType'] = 2;
+        } else if($userNum == 0) {
+            $return['list'] =  $tagLogic->getRecommendTag($userID);
+            $return['title'] = "选择我熟悉的领域，被更多人认识。";
+            $return['titleType'] = 1;
+        } else {
+            return false;
+        }
+        return $return;
+    }
+
+
+
+}

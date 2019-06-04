@@ -1,0 +1,38 @@
+/*
+Navicat MySQL Data Transfer
+
+Source Server         : 钱盒子测试
+Source Server Version : 50631
+Source Host           : 120.25.85.171:3306
+Source Database       : devmbox_hx
+
+Target Server Type    : MYSQL
+Target Server Version : 50631
+File Encoding         : 65001
+
+Date: 2018-08-08 10:19:41
+*/
+
+SET FOREIGN_KEY_CHECKS=0;
+
+-- ----------------------------
+-- Table structure for d_sms_verify
+-- ----------------------------
+DROP TABLE IF EXISTS `d_sms_verify`;
+CREATE TABLE `d_sms_verify` (
+  `verifyID` int(11) NOT NULL AUTO_INCREMENT,
+  `receiveID` int(11) DEFAULT NULL COMMENT '接收人ID',
+  `receiveName` varchar(50) DEFAULT NULL COMMENT '接收用户名',
+  `stutas` tinyint(4) DEFAULT '0',
+  `receivePhone` varchar(50) DEFAULT NULL COMMENT '接收号码',
+  `verifyCode` varchar(20) DEFAULT NULL COMMENT '验证码',
+  `sendContent` varchar(200) DEFAULT NULL COMMENT '发送内容',
+  `sendInterface` varchar(50) DEFAULT NULL,
+  `overdueTime` int(11) DEFAULT NULL COMMENT '过期时间',
+  `operateIP` varchar(50) DEFAULT NULL COMMENT '操作IP',
+  `terminal` tinyint(4) DEFAULT '1' COMMENT '操作终端 1 PC 2 安卓 3 IOS 4 微信',
+  `addDatetime` int(11) DEFAULT NULL COMMENT '创建时间',
+  `remark` varchar(50) DEFAULT '' COMMENT '备注',
+  PRIMARY KEY (`verifyID`),
+  KEY `index_name` (`receivePhone`)
+) ENGINE=InnoDB AUTO_INCREMENT=300613 DEFAULT CHARSET=utf8 COMMENT='短信验证码';

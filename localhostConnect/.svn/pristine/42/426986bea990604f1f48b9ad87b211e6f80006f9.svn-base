@@ -1,0 +1,129 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: zhoull
+ * Date: 2018/8/15
+ * Time: 10:38
+ */
+
+namespace Service\Connect\Logic;
+
+use Common\Common\GraphDbHelper;
+use Common\Common\Redis;
+
+class DataCleanLogic
+{
+    private $db_handler=null;
+    function __construct()
+    {
+        $this->db_handler=GraphDbHelper::getInstance();
+    }
+    #region 调试用
+    /**
+     * 同步字符串信息对应的ID 如城市编号、行业编号
+     */
+    public function str2ID()
+    {
+        $db = M();
+        //城市
+        $list = $this->db_handler->query("match (n:Person) return distinct n.city as city;");
+        $citys=[];
+        foreach ($list as $item) {
+            $citys[] = $item['city'];
+        }
+        unset($list);
+        $q = "match (n:Person{city:'%s'}) set n.city_id=%d;";
+        $list = $db->query("select regionID,name from d_sys_region where name in('".implode("','",$citys)."')");
+        foreach ($list as $item) {
+            $this->db_handler->execute(sprintf($q,$item['name'],$item['regionID']));
+        }
+        //籍贯
+        $list = $this->db_handler->query("match (n:Person) return distinct n.city_born as city;");
+        $citys=[];
+        foreach ($list as $item) {
+            $citys[] = $item['city'];
+        }
+        unset($list);
+        $q = "match (n:Person{city_born:'%s'}) set n.city_born_id=%d;";
+        $list = $db->query("select regionID,name from d_sys_region where name in('".implode("','",$citys)."')");
+        foreach ($list as $item) {
+            $this->db_handler->execute(sprintf($q,$item['name'],$item['regionID']));
+        }
+        //行业
+        $list = $this->db_handler->query("match (n:Person) return distinct n.industry as industry;");
+        $indus=[];
+        foreach ($list as $item) {
+            $indus[] = $item['industry'];
+        }
+        unset($list);
+        $q = "match (n:Person{industry:'%s'}) set n.industry_id=%d;";
+        $list = $db->query("select majobID,jobname from d_sys_majob where jobname in('".implode("','",$indus)."')");
+        foreach ($list as $item) {
+            $this->db_handler->execute(sprintf($q,$item['jobname'],$item['majobID']));
+        }
+    }
+
+    /**
+     * 同步关系数据库和图数据库的通讯录好友
+     * @param $user_id
+     */
+    public function synMaillist($user_id){
+        $db = M();
+        $lst_mail = $db->query("select userName,'group',phone from d_user_maillist WHERE userID=$user_id");
+        $lst_graph = $this->db_handler->query("match (n:Person{user_id:$user_id})-[r:CONTACT]->(m:Person) return m.mobile as phone;");
+        $lst_mail2 = array_column($lst_mail,'phone');
+        $lst_graph2 = array_column($lst_graph,'phone');
+        $lst_add = array_diff($lst_mail2,$lst_graph2);
+        $lst_del = array_diff($lst_graph2,$lst_mail2);
+        /*echo '<h1>新增号码：</h1>';
+        var_dump($lst_add);
+        echo '<h1>减少号码：</h1>';
+        var_dump($lst_del);*/
+
+        foreach ($lst_add as $item) {
+            $this->db_handler->query("merge (n:Person{user_id:$user_id}),(m:Person{mobile:'$item'})
+            merge (n)-[r:CONTACT]->(m);");
+        }
+        foreach ($lst_del as $item) {
+            $this->db_handler->query("match (n:Person{user_id:$user_id})-[r:CONTACT]->(m:Person{mobile:'$item'})
+            where m.user_id is null
+            optional match p=(()--(m))
+            with r,m,count(p) as c
+            with r,case when c>1 then null else m end as m
+            delete r,m;");
+        }
+    }
+    #endregion
+
+    #region 正式用
+    /**
+     * 同步活跃度
+     * @return bool
+     */
+    public function synActive()
+    {
+        $Redis = Redis::GetInstance();
+        $Redis->select(1);
+        $key_prev = "activity_";
+        $keys = $Redis->getKeys($key_prev);
+        $list = [];
+        logger_task('DataCleanLogic/synActive', json_encode($keys), '');
+        if($keys){
+            foreach ($keys as $key) {
+                $arr = explode('_',$key);
+                $user_id = $arr[count($arr)-1];
+                if($user_id){
+                    $val = $Redis->get($key);
+                    if(!$val)continue;
+                    $info['user_id']=$user_id;
+                    $info['active']=$val;
+                    $list[] = $info;
+                    $Redis->del($key);
+                }
+            }
+        }
+        $logic = new ConnectRelationLogic();
+        return $logic->batchUpsertActive($list);
+    }
+    #endregion
+}

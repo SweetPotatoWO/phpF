@@ -1,0 +1,53 @@
+<include file="Common:header" />
+<style>
+	.patentDetail .top {padding: 1.07rem 0 1.07rem 1.21rem;}
+	.patentDetail .bottom {padding: 1.428rem 1.21rem;min-height: 42rem;}
+	.patentDetail .bottom table td {border: none;padding: 0;padding-bottom: 1.285rem;}
+</style>
+<div class="patentDetail">
+	<div class="bg-white top mt-10">
+		<h6>专利名称</h6>
+		<div class="clearfix fs-12">
+			<div class="fl pr-25">
+				<p class="mb-5"><font class="color-deep">申请号：</font>{$data.appNO}</p>
+				<p class="mb-0"><font class="color-deep">申请公布号：</font>{$data.pubNO}</p>
+			</div>
+			<div class="fl">
+				<p class="mb-5"><font class="color-deep">申请日：</font>{$data.appDate}</p>
+				<p class="mb-0"><font class="color-deep">申请公布日：</font>{$data.pubDate}</p>
+			</div>
+		</div>
+	</div>
+	
+	<div class="bg-white bottom mt-10">
+		<table class="table mb-0">
+			<tr>
+				<td width="26.5%" class="color-deep">申请人：</td>
+				<td>{$data.assignee}</td>
+			</tr>
+			<tr>
+				<td class="color-deep">发明人：</td>
+				<td>{$inventroName}</td>
+			</tr>
+			<tr>
+				<td class="color-deep">代理人：</td>
+				<td>{$agentName}</td>
+			</tr>
+			<tr>
+				<td class="color-deep">代理机构：</td>
+				<td>{$data.agencyName}</td>
+			</tr>
+			<tr>
+				<td class="color-deep">分类号：</td>
+				<td>{$ipc}</td>
+			</tr>
+
+			<tr>
+				<td class="color-deep">摘要：</td>
+				<td>{$data.abs}</td>
+			</tr>
+		</table>
+	</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,109 @@
+<div class="modal-body">
+    <script type="text/javascript" charset="utf-8" src="{$Think.BPATH}js/uploader/webuploader.min.js"></script>
+    <script type="text/javascript" charset="utf-8" src="{$Think.BPATH}js/uploader/uploader.js"></script>
+    <input  type="hidden" name="hidAction" id="hidAction" value="view" >
+    <form class="form-horizontal" id="form-Type">       
+        <input type="hidden" name='labelID' id='labelID' value="{$data.labelID}"/>
+        <input type="hidden" id="hidUpURL" value="{$Think.UPLOAD}">
+        <div class="form-group has-info">
+            <label class="control-label col-sm-2" for="inputInfo">标签标识：</label>
+            <div class=" col-sm-7">
+                <input type="text" id="labelCode" name="labelCode" value="{$data.labelCode}" class="form-control" <notempty name='data.labelCode'>readonly</notempty>>          
+            </div>
+        </div>
+        <div class="form-group has-info">
+            <label class="control-label col-sm-2" for="inputInfo">标签描述：</label>
+            <div class=" col-sm-7">
+                <input type="text" id="labelDesc" name="labelDesc" value="{$data.labelDesc}" class="form-control" >         
+            </div>
+        </div>
+        <div class="form-group has-info">
+            <label class="control-label col-sm-2" for="inputInfo">是否使用：</label>
+            <div class="col-sm-7">
+                <label class="checkbox checkbox-inline" style="padding-left: 10px;">
+                    启用 <input type="checkbox" name="status" id="status" value='1' <eq name="data.status"  value="1">checked</eq>>
+                    <span class="lbl"> </span>      
+                </label>
+            </div>
+        </div>
+        <div  class="form-group has-info">
+            <label class="control-label col-sm-2" for="inputInfo">LOGO：</label>
+            <div class="uppic col-sm-7">
+                <if condition="strlen($data['labelLogo']) gt 0">
+                    <img src='{$Think.UPLOAD}{$data.labelLogo}' id='bannerUrl1'  style="width: 240px;height: 180px;display: block;margin-bottom: 15px;" />
+                    <else/>
+                    <img src='/Public/backend/images/graybox.jpg' id='bannerUrl1' style="width: 240px;height: 180px;display: block;margin-bottom: 15px;" />
+                </if>
+                <div class="upfilebox">
+                    <label class="upload-box upload-img">上传LOGO</label>  
+                </div>
+            </div>
+        </div>
+        <input type="hidden" id="bannerUrl" name="bannerUrl" value="{$data.labelLogo}" class="form-control" disabled="disabled">
+        </div>
+    </form>
+</div>
+<div class="modal-footer">
+    <button type="button" id="butCancel" class="btn btn-default" data-dismiss="modal">关闭</button>
+    <button type="button" id="butSaveType" class="btn btn-primary" >保存</button>
+</div>  
+<script type="text/javascript" >
+    $(function ($) {
+        $(".upload-img").InitUploader({
+            filesize: 3,
+            sendurl: "/Backend/System/saveLogo",
+            inputID: "bannerUrl",
+            browseID: "bannerUrl1",
+            sef: "{$think.BPATH}js/uploader/uploader.swf",
+            filetypes: "jpg,jpge,png,gif",
+        });
+        formDataValid();
+        $("#butSaveType").click(function () {
+            var isOK = $("#form-Type").valid();
+            if (isOK) {
+                saveData();
+            }
+        });
+    });
+    function saveData() {
+        var data = $Util.getData($("#form-Type"));
+        $.ajax({
+            type: "post",
+            url: "/Backend/System/saveLabelType",
+            data: {'par': data},
+            dataType: "json",
+            beforeSend: function (XMLHttpRequest) {
+                $(".sub-content").showLoading();
+            },
+            success: function (data, textStatus) {
+                $(".sub-content").hideLoading();
+                if (data.status == 1) {
+                    $("#hidAction").val("edit");
+                    $win.confirm(data.msg + ",是否关闭窗口？").on(function () {
+                        $('#butCancel').trigger("click");
+                    });
+                } else {
+                    $win.warn(data.msg);
+                }
+            },
+            complete: function (XMLHttpRequest, textStatus) {
+                $(".sub-content").hideLoading();
+            },
+            error: function () {
+                $(".sub-content").hideLoading();
+            }
+        });
+    }
+    function formDataValid() {
+        $("#form-Type").validate({
+            rules: {
+                labelCode: {required: true, maxlength: 30},
+                labelDesc: {required: true}
+            },
+            messages: {
+                labelCode: {required: "标识不能为空!", maxlength: "最大长度30个字符"},
+                labelDesc: {required: "描述不能为空!"}
+            }
+        });
+    }
+</script>

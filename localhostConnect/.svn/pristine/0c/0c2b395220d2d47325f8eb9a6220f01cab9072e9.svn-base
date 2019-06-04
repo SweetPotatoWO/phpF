@@ -1,0 +1,165 @@
+<script type="text/javascript" src="{$Think.BPATH}js/article/ueditor.config.js?version={$Think.BNO}" ></script>    
+<script type="text/javascript" charset="utf-8" src="{$Think.BPATH}js/uploader/webuploader.min.js"></script>
+<script type="text/javascript" charset="utf-8" src="{$Think.BPATH}js/uploader/uploader.js"></script>
+<div id="sub-share-edit" class="modal-body">
+    <form class="form-horizontal" id="form-wxMenu">
+        <input type="hidden" id="menuID" name="menuID" value="{$data.menuID}">
+        <div id="myTabContent" class="tab-content">
+            <div class="tab-pane fade in active" id="home" style="position: relative;">
+                <div class="form-group pt-10">
+                    <label class="col-sm-2 control-label" >一级菜单：</label>
+                    <div class="col-sm-4">
+                        <select id="parentID" name="parentID" class="form-control">
+                            <option value="0">&nbsp;&nbsp;--无--</option>
+                            <volist name="menu" id="vo">
+                                <option value="{$vo.menuID}" <if condition="$vo.menuID eq $data['parentID']">selected</if>>{$vo.menuName}</option>
+                            </volist>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group has-info">
+                    <label class="col-sm-2 control-label" for="inputInfo">菜单名称：</label>
+                    <div class="col-sm-4">
+                        <input type="text" id="menuName" name="menuName" value="{$data.menuName}" placeholder="菜单名称" class="form-control"> <span style="color:#ff0000;">可创建最多 3 个一级菜单，每个一级菜单下可创建最多 5 个二级菜单</span>        
+                    </div>
+                </div>
+                <div class="form-group pt-10">
+                    <label class="col-sm-2 control-label" >菜单类型：</label>
+                    <div class="col-sm-4">
+                        <select id="menuType" name="menuType" class="form-control">
+                            <foreach name="menuTypes" item="vo" >
+                                <option value="{$key}" <eq name="data.menuType" value="$key">selected="selected"</eq>>{$vo}</otption>
+                            </foreach>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group has-info" id="menuActionDiv">
+                    <label class="col-sm-2 control-label" for="menuAction" id="menuActionLbl">关联关键词：</label>
+                    <div class="col-sm-4">
+                        <input type="text" id="menuAction" name="menuAction" value="{$data.menuAction}" placeholder="关联关键词" class="form-control">
+                    </div>
+                </div>
+                <div class="form-group" id="isAuthorizeDiv">
+                    <label class="col-sm-2 control-label" for="isAuthorize">URL授权：</label>
+                    <div class="col-sm-4">
+                        <select id="isAuthorize" name="isAuthorize" value="{$data.isAuthorize}" class="form-control">   
+                            <option value='0' <eq name="data.isAuthorize" value="0">selected</eq>>不授权</option>
+                            <option value='1' <eq name="data.isAuthorize" value="1">selected</eq>>授权</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-2 control-label" for="inputInfo">排序：</label>
+                    <div class="col-sm-4">
+                        <input type="text" id="sort" name="sort" value="{$data.sort|intval}" placeholder="排序" class="form-control">        
+                    </div>
+                </div>
+            </div>
+        </div> 
+    </form>
+</div>
+<div class="modal-footer">
+    <button type="button" id="butReturn" class="btn btn-default butReturn" data-dismiss="modal">关闭</button>
+    <button type="button" id="butSaveShare" class="btn btn-primary butSaveShare" >保存</button>
+</div> 
+<script type="text/javascript" >
+    $(function () {
+        init();
+        $(".butSaveShare").click(function () {
+            var isOK = $("#form-wxMenu").valid();
+            if (isOK) {
+                saveMenu();
+            }
+        });
+
+    });
+
+    function init() {
+        $(".upload-img").InitUploader({
+            filesize: "3",
+            sendurl: "/Backend/Spread/saveShareImg",
+            inputID: "imgUrl", //路径控件ID
+            browseID: "shareImg1", //浏览ID
+            swf: "{$Think.BPATH}js/uploader/uploader.swf",
+            filetypes: "jpg,jpge,png,gif",
+        });
+        $(".butReturn").click(function () {
+            $Util.returnRefresh();
+        });
+        initMenuType();
+        $("#menuType").change(function () {
+            initMenuType();
+        });
+    }
+
+    function initMenuType() {
+        $("#form-wxMenu").validate({
+            rules: {
+                menuName: {required: true}
+            },
+            messages: {
+                menuName: {required: "菜单名称不能为空!"}
+            }
+        });
+        var menutype = $("#menuType").val();
+        if (menutype == "view" || menutype == "click") {
+            var title = menutype == "view" ? "关联URL" : "关联关键词 ";
+            $("#menuAction").removeAttr("disabled");
+            $("#menuActionDiv").show();
+            $("#menuActionLbl").text(title);
+            $("#menuAction").attr("placeholder", title);
+            if (menutype == "view") {
+                $("#menuAction").rules("add", {required: true, url: true,
+                    messages: {
+                        required: "请输入" + title,
+                        url: "请输入正确的URL"
+                    }
+                });
+                $("#isAuthorizeDiv").show();
+            } else {
+                $("#menuAction").rules("remove");
+                $("#menuAction").rules("add", {required: true,
+                    messages: {
+                        required: "请输入" + title
+                    }
+                });
+                $("#isAuthorizeDiv").hide();
+            }
+        } else {
+            $("#menuAction").attr("disabled", "disabled");
+            $("#menuActionDiv").hide();
+            $("#isAuthorizeDiv").hide();
+            $("#menuAction").rules("remove");
+        }
+    }
+
+    function saveMenu() {
+        var data = $Util.getData($("#form-wxMenu"));
+        $.ajax({
+            type: "post",
+            url: "/Backend/Spread/saveWxMenu",
+            data: {'par': data},
+            dataType: "json",
+            beforeSend: function () {
+                $(".sub-content").showLoading();
+            },
+            success: function (data) {
+                $(".sub-content").hideLoading();
+                if (data.status == 1) {
+                    $win.confirm(data.msg + ",是否关闭窗口？").on(function () {
+                        $('.butReturn').trigger("click");
+                    });
+                } else {
+                    $win.warn(data.msg);
+                }
+            },
+            complete: function () {
+                $(".sub-content").hideLoading();
+            },
+            error: function () {
+                $(".sub-content").hideLoading();
+            }
+        });
+    }
+
+</script>

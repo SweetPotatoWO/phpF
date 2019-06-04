@@ -1,0 +1,169 @@
+<include file="Common:header" />
+<div class="report pb-10">
+	<!--基本信息-->
+	<div class="box bg-white pl-20 mt-10">
+		<h6 class="hd transform pt-15 pb-15 mb-0 bord-b relative">基本信息<span></span></h6>
+		<div class="bd fs-12 pad-15 pl-0">
+			<div class="content clearfix">
+				<h6 class="fs-12 fl color-deep">注册号</h6>
+				<div class="fr">123569879797</div>
+			</div>
+			<div class="content clearfix">
+				<h6 class="fs-12 fl color-deep">企业名称</h6>
+				<div class="fr">深圳市合伙人科技有限公司</div>
+			</div>
+			<div class="content clearfix">
+				<h6 class="fs-12 fl color-deep">经营状态</h6>
+				<div class="fr">存续</div>
+			</div>
+			<div class="content clearfix">
+				<h6 class="fs-12 fl color-deep">从业人数</h6>
+				<div class="fr">企业选择不公示</div>
+			</div>
+			<div class="content clearfix">
+				<h6 class="fs-12 fl color-deep">本年度是否发生股东股权转让</h6>
+				<div class="fr">否</div>
+			</div>
+			<div class="content clearfix">
+				<h6 class="fs-12 fl color-deep">企业是否有投资信息或购买其他公司股权号</h6>
+				<div class="fr">否</div>
+			</div>
+		</div>
+	</div>
+	<!--联系方式-->
+	<div class="box bg-white pl-20 mt-10">
+		<h6 class="hd pt-15 pb-15 mb-0 bord-b relative">联系方式<span></span></h6>
+		<div class="bd fs-12 pad-15 pl-0 none">
+			<div class="content clearfix">
+				<h6 class="fs-12 fl color-deep">企业联系电话</h6>
+				<div class="fr">123569879797</div>
+			</div>
+			<div class="content clearfix">
+				<h6 class="fs-12 fl color-deep">企业地址</h6>
+				<div class="fr">深圳市南山区高新科技一路创新大厦3102号</div>
+			</div>
+			<div class="content clearfix">
+				<h6 class="fs-12 fl color-deep">电子邮箱</h6>
+				<div class="fr">qimai123@hehuoren.cn</div>
+			</div>			
+		</div>
+	</div>
+	<!--股东及出资信息-->
+	<div class="box bg-white pl-20 mt-10">
+		<h6 class="hd pt-15 pb-15 mb-0 bord-b relative">股东及出资信息<span></span></h6>
+		<div class="bd fs-12 pad-15 pl-0 none">
+			<div class="content">
+				<h6 class="fs-12">百米生活有限公司</h6>
+			</div>
+			<div class="content clearfix">
+				<h6 class="fs-12 fl color-deep">认缴出资额</h6>
+				<div class="fr">1235万人民币</div>
+			</div>
+			<div class="content clearfix">
+				<h6 class="fs-12 fl color-deep">认缴时间</h6>
+				<div class="fr">2018-12-10</div>
+			</div>
+			<div class="content clearfix">
+				<h6 class="fs-12 fl color-deep">认缴出资额</h6>
+				<div class="fr">1235万人民币</div>
+			</div>
+			<div class="content clearfix">
+				<h6 class="fs-12 fl color-deep">认缴时间</h6>
+				<div class="fr">2018-12-10</div>
+			</div>
+		</div>
+	</div>
+	<!--网站/网店信息-->
+	<div class="box bg-white pl-20 mt-10">
+		<h6 class="hd pt-15 pb-15 mb-0 bord-b relative">网站/网店信息<span></span></h6>
+		<div class="bd fs-12 pad-15 pl-0 none">
+			<div class="content">
+				<h6 class="fs-12">百米生活有限公司</h6>
+				<div class="color-deep">www.qianhezi.cn</div>
+			</div>
+		</div>
+	</div>
+	<!--对外投资信息-->
+	<div class="box bg-white pl-20 mt-10">
+		<h6 class="hd pt-15 pb-15 mb-0 bord-b relative">对外投资信息<span></span></h6>
+		<div class="bd fs-12 pad-15 pl-0 none">
+			<div class="content">
+				<h6 class="fs-12">深圳市沃德宝科技有限公司</h6>
+			</div>
+			<div class="content clearfix">
+				<h6 class="fs-12 fl color-deep">注册号</h6>
+				<div class="fr">4421021562456</div>
+			</div>
+		</div>
+	</div>
+	<!--企业资产状况信息-->
+	<div class="box bg-white pl-20 mt-10">
+		<h6 class="hd pt-15 pb-15 mb-0 bord-b relative">企业资产状况信息<span></span></h6>
+		<div class="bd fs-12 pad-15 pl-0 none">
+			<div class="content clearfix">
+				<h6 class="fs-12 fl color-deep">资产总额</h6>
+				<div class="fr">企业选择不公示</div>
+			</div>
+			<div class="content clearfix">
+				<h6 class="fs-12 fl color-deep">所有者权益合计</h6>
+				<div class="fr">企业选择不公示</div>
+			</div>
+			<div class="content clearfix">
+				<h6 class="fs-12 fl color-deep">营业总收入</h6>
+				<div class="fr">企业选择不公示</div>
+			</div>
+			<div class="content clearfix">
+				<h6 class="fs-12 fl color-deep">利润总额</h6>
+				<div class="fr">企业选择不公示</div>
+			</div>
+			<div class="content clearfix">
+				<h6 class="fs-12 fl color-deep">主营业务收入</h6>
+				<div class="fr">企业选择不公示</div>
+			</div>
+			<div class="content clearfix">
+				<h6 class="fs-12 fl color-deep">净利润</h6>
+				<div class="fr">企业选择不公示</div>
+			</div>
+			<div class="content clearfix">
+				<h6 class="fs-12 fl color-deep">纳税总额</h6>
+				<div class="fr">企业选择不公示</div>
+			</div>
+			<div class="content clearfix">
+				<h6 class="fs-12 fl color-deep">负债总额</h6>
+				<div class="fr">企业选择不公示</div>
+			</div>
+		</div>
+	</div>
+	<!--股权变更信息-->
+	<div class="box bg-white pl-20 mt-10">
+		<h6 class="hd pt-15 pb-15 mb-0 bord-b relative">股权变更信息<span></span></h6>
+		<div class="bd fs-12 pad-15 pl-0 none">
+			<div class="content clearfix">
+				<h6 class="fs-12 fl color-deep">股东名称</h6>
+				<div class="fr">王小明</div>
+			</div>
+			<div class="content clearfix">
+				<h6 class="fs-12 fl color-deep">变更日期</h6>
+				<div class="fr">2015-12-11</div>
+			</div>
+			<div class="content clearfix">
+				<h6 class="fs-12 fl color-deep">变更前</h6>
+				<div class="fr">45.66</div>
+			</div>
+			<div class="content clearfix">
+				<h6 class="fs-12 fl color-deep">变更后</h6>
+				<div class="fr">45.99</div>
+			</div>
+			<!--暂无内容-->
+			<div class="color-deep text-center">暂无内容</div>
+		</div>
+	</div>
+</div>
+<script>
+	$(".box").click(function(){
+		$(this).find(".hd").toggleClass("transform");
+		$(this).find(".bd").slideToggle();
+	})
+</script>
+</body>
+</html>

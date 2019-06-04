@@ -1,0 +1,22 @@
+<?php
+namespace Service\User\Model;
+
+
+use Common\Model\SlaveModel;
+use Think\Exception;
+
+class UserEvaluateModel extends SlaveModel {
+
+    /**
+     * 添加评论
+     */
+    public function addEvaData($data) {
+        return $this->add($data);
+    }
+
+
+    public function getOneEva($userID,$evaphone) {
+
+        return $this->where(array("userID"=>$userID,"evaPhone"=>$evaphone))->find();
+    }
+}

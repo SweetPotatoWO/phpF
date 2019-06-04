@@ -1,0 +1,202 @@
+<?php
+
+namespace Service\Integral\Model;
+use Common\Model\SlaveModel;
+use Service\JavaService\Logic\SiteLogic;
+
+class UserCardModel extends SlaveModel {
+
+
+    public function getList($where="",$field=""){
+        if(empty($where)) {
+            return false;
+        }
+        $model = $this->where($where);
+        if(!empty($field)) {
+            $model = $model->field($field);
+        }
+        return  $model->select();
+    }
+
+
+    public function getUserCardByCid($cardID) {
+         return  $this->where(array('cid'=>$cardID))->find();
+    }
+
+
+    public function addOne($data) {
+        return $this->add($data);
+    }
+
+    public function saveOne($cid,$data) {
+        return $this->where(array('cid'=>$cid))->save($data);
+    }
+
+
+    /**
+     * 获取到名片的数量
+     */
+    public function getCardNum($userID) {
+        return $this->where(array('userID'=>$userID))->count('cid');
+    }
+
+
+    /**
+     * 根据电话号码获取到名片的基本提取信息
+     * @param $phone
+     * @return bool|mixed
+     */
+    public function getInfoByPhone($phone) {
+        $field = array('userName','companyName','companyGroup','job');
+        $info =  $this->where(array('phoneOne'=>$phone))->field($field)->find();
+        if(empty($info)) {
+            $info =  $this->where(array('phoneTwo'=>$phone))->field($field)->find();
+        }
+        if(empty($info)) {
+            return false;
+        } else {
+            return $info;
+        }
+    }
+
+
+    /**
+     * 根据ID获取到基本的信息
+     */
+    public function getOneBaseInfoById($ID) {
+        $field = array('phoneOne','phoneTwo','companyName','companyGroup','job','mail');
+        return M("userCard")->where(array('cid'=>$ID))->field($field)->find();
+    }
+
+    /**
+     * 获取到用户今天使用名片的一条记录
+     * @param $userID
+     * @return mixed
+     */
+    public function getTodayOne($userID) {
+        return M("userCard")
+                ->where(
+                    array(
+                        'userID'=>$userID,
+                        'addDatetime'=>array('egt',strtotime(date('Y-m-d')))
+                    )
+                )
+               ->find();
+    }
+
+
+    /**
+     * 保存到真实的名片中
+     */
+    public function saveCardClear($data,$userID) {
+
+        $nicknameCCID = M("cardClear")->where(array('realname'=>$data['realname'],'companyName'=>$data['companyName']))->getField("ccID");
+        $phoneCCID = M("cardClear")->where(array('phoneOne'=>$data['phoneOne']))->getField("ccID");
+
+        if(!empty($nicknameCCID)) {    //谁先有谁就执行更新谁的操作
+            $id = $nicknameCCID;
+        } else if(!empty($phoneCCID)) {
+            $id = $phoneCCID;
+        }
+        $Site = new SiteLogic();
+        $list  = $Site->SearchAccCompany($userID,$data['companyName']);
+        $companyInfo = $list['list'][0];
+        $data['companyID'] = "";   //无论更新和新增都为初始值空
+        if(!empty($companyInfo)) {
+            $data['companyID'] = $companyInfo['companyID'];
+            $data['companyName'] = $companyInfo['companyName'];
+        }
+        if(empty($id)) {
+            return M("cardClear")->add($data);
+        } else {
+            unset($data['cardKey']);
+            unset($data['addDatetime']);
+            $data['editDatetime'] = time();
+            M("cardClear")->where(array('ccID'=>$id))->save($data);
+            return $id;
+        }
+    }
+
+
+    /**
+     * 删除真实名片的表
+     */
+    public function delClearCard($phone) {
+        $ccID = M("cardClear")->where(array('phoneOne'=>$phone))->getField("ccID");
+
+        if(!empty($ccID)) {
+            return M("cardClear")->where(array('ccID'=>$ccID))->delete();
+        }
+    }
+
+    /**
+     * 获取名片列表
+     * @param array $where
+     * @param string $field
+     * @param string $limit
+     * @param string $orderBy
+     * @return bool|mixed
+     */
+    public function getCardList($where=[], $field="", $limit="0,100", $orderBy = ''){
+        if(empty($where)) {
+            return false;
+        }
+        $model = $this->where($where);
+        if(!empty($field)) {
+            $model = $model->field($field);
+        }
+        if (!empty($orderBy)) {
+            $model = $model->order($orderBy);
+        }
+        return  $model->limit($limit)->select();
+    }
+
+
+    /**
+     * 获取到清洗过的名片列表
+     * @param string $limit
+     * @return mixed
+     */
+    public function getClearList($where,$limit = "0,15") {
+        $field = "realname,phoneOne,companyName,job,companyGroup,isRecommend";
+
+        return M("cardClear")->where($where)->field($field)->limit($limit)->select();
+    }
+
+
+    /**
+     * 获取到全部清洗名片的数量
+     * @param string $limit
+     * @return mixed
+     */
+    public function getClearNum($where) {
+
+        return M("cardClear")->where($where)->count();
+    }
+
+
+    /**
+     * 修改推荐
+     * @param $status
+     * @param $phone
+     */
+    public function updateRecommend($status,$phone) {
+
+        return M("cardClear")->where(array('phoneOne'=>$phone))->save(array('isRecommend'=>$status));
+
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+}

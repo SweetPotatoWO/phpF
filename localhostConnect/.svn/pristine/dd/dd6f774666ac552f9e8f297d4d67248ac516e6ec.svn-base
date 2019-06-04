@@ -1,0 +1,82 @@
+<div id="sub-User-list">
+    <script type="text/javascript" src="{$Think.BPATH}js/datejs/WdatePicker.js"></script> 
+    <input type="hidden" name="hidrefurl" id="hidrefurl" value="{:U(ACTION_NAME, $_GET)}">
+    <h4 class="title">好友申请列表 <span class="titleqit"></span></h4>
+    <form class="form-inline" id="query_User"> 
+        <div class="form-group ">
+            <label class="control-label">用户信息:</label>
+            <input type="text" class="form-control ipt mr-10" value="{$Think.post.txtphone}" name="txtphone" id="txtphone" placeholder="手机号"> 
+            <input type="text" class="form-control ipt mr-10" value="{$Think.post.txtrealName}" name="txtrealName" id="txtrealName" placeholder="姓名">
+        </div>
+        <div class="form-group ">
+            <label class="control-label">好友信息:</label>
+            <input type="text" class="form-control ipt mr-10" value="{$Think.post.txtfphone}" name="txtfphone" id="txtfphone" placeholder="被添加用户手机号"> 
+            <input type="text" class="form-control ipt mr-10" value="{$Think.post.txtfname}" name="txtfname" id="txtfname" placeholder="被添加用户姓名">
+        </div>
+        <div class="form-group mr-10">
+            <label class="control-label">类别:</label>
+            <select class="form-control mr-10" name="status" id="status" style="width: 100px">
+                <option value="">所有</option>
+                <option value="1">申请中</option>
+                 <option value="2">申请成功</option>
+                 <option value="3">申请忽略</option>
+                 <option value="4">申请拒绝</option>\
+                 <option value="5">失效</option>
+            </select>  
+        </div>
+        <div class="form-group mr-10">
+            <label class="control-label">申请时间:</label>
+            <input type="text" class="form-control mr-5" onclick="WdatePicker({isShowClear: true, readOnly: true, maxDate: '%y-%M-%d'})" value="{$Think.post.txtDateStart}" id="txtDateStart" name="txtDateStart" placeholder="开始日期">     
+            <label class="control-label">～</label>
+            <input type="text" class="form-control mr-5" onclick="WdatePicker({isShowClear: true, readOnly: true, maxDate: '%y-%M-%d'})" value="{$Think.post.txtDateEnd}" id="txtDateEnd" name="txtDateEnd" placeholder="结束日期">   
+        </div> 
+
+        <div class="form-group">
+            <a href="{:U(ACTION_NAME, $_GET)}"  onclick="$Util.openQuery(this, event, 'query_User')"  class="btn btn-info"><i class="icon-search"></i>查询</a> 
+        </div>
+    </form>
+    <table class="table table-striped table-bordered">
+        <thead>
+            <tr> 
+                <th>用户名</th>
+                <th>手机</th>
+                <th>被添加好友名</th>
+                <th>被添加好友手机</th>
+                <th>状态</th>
+                <th>添加时间</th>
+            </tr>
+        </thead>
+        <tbody>
+        <volist name="result" id="vo">
+            <tr>  
+                <td>{$vo.nickname}</td>
+                 <td>{$vo.phone}</td>
+                  <td>{$vo.friendName}</td>
+                   <td>{$vo.friendPhone}</td>
+                <td><switch name="vo.status">
+            <case value="1"><span class='text-info'>申请中</span></case>
+            <case value="2"><span class='text-success'>成功</span></case>
+            <case value="3"><span class='text-danger'>忽略</span></case>
+            <case value="4"><span class='text-warning'>拒绝</span></case>
+            <case value="5"><span class='text-muted'>失效</span></case>
+            <default />未知
+            </switch></td>
+                <td>{$vo.addDatetime|formatlongDate}</td>
+            </tr>
+        </volist>
+        </tbody>
+    </table>
+<nav class=" pagination-centered">
+    <ul class="pagination">
+        {$page}
+    </ul>
+</nav>
+<script type="text/javascript" >
+    $(function($) {
+        $("#status").val("{$Think.post.status}");
+    });
+</script>
+</div>
+
+
+

@@ -1,0 +1,9 @@
+#!/bin/bash
+
+sudo rm -rf /data001/data/websites/Connect/App/Runtime/*
+#ssh 10.25.211.137 "sudo rm -rf /data001/data/mbox/App/Runtime/*"
+sleep 1
+sudo chown www:www /data001/data/websites/Connect/App/Runtime/ -R
+chmod 775 /data001/data/websites/Connect/App/Runtime/ -R
+#ssh 10.25.211.137 "sudo chown www:www /data001/data/mbox/App/Runtime/ -R"
+#ssh 10.25.211.137 "sudo chmod 775 /data001/data/mbox/App/Runtime/ -R"

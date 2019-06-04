@@ -1,0 +1,508 @@
+<?php
+
+namespace MobileApi\Api;
+
+use MobileApi\Common\MobileApiBase;
+use Service\Connect\Logic\ConnectRelationLogic;
+use Service\Connect\Logic\OperationLogic;
+use Service\Connect\Model\ConnectWorkModel;
+use Service\System\Logic\SysMajobLogic;
+use Service\System\Logic\SysRegionLogic;
+use Service\User\Logic\UserFriendLogic;
+use Service\User\Logic\UserLogic;
+use Service\UserCenter\Logic\UserCenterLogic;
+
+class ApiUserCenter extends MobileApiBase {
+
+    private $return = array("code" => 1, "msg" => "", "info" => array());
+
+    public function getRules() {
+        return array(
+            "indexInfo" => array(
+                "ID" => array('name' => 'ID', 'type' => 'int', 'require' => false, 'desc' => '用户的ID', 'default' => 0)
+            ),
+            "setShowPhoneStatus" => array(
+                "type" => array('name' => 'type', 'type' => 'string', 'require' => false, 'desc' => '修改的类型 传递的值为 all 所有人 only 仅自己 friend 仅好友', 'default' => "only")
+            ),
+            "editBaseInfo" => array(
+                "name" => array('name' => 'name', 'type' => 'string', 'require' => false, 'desc' => '用户的名字', 'default' => ""),
+                "companyName" => array('name' => 'companyName', 'type' => 'string', 'require' => false, 'desc' => '公司的名字', 'default' => ""),
+                "group" => array('name' => 'group', 'type' => 'string', 'require' => false, 'desc' => '部门', 'default' => ""),
+                "job" => array('name' => 'job', 'type' => 'string', 'require' => false, 'desc' => '用户的职位', 'default' => ""),
+                "companyID" => array('name' => 'companyID', 'type' => 'string', 'require' => false, 'desc' => '公司的唯一ID', 'default' => ""),
+            ),
+            "vague" => array(
+                "type" => array('name' => 'type', 'type' => 'string', 'require' => false, 'desc' => '模糊查询的类型 查询公司为1 查询 职位为2 3为学校 4为大学专业 5搜索', 'default' => 1),
+                "value" => array('name' => 'value', 'type' => 'string', 'require' => true, 'desc' => '模糊查询的值', 'default' => ""),
+            ),
+            "addOrEditWorkExp" => array(
+                "companyName" => array('name' => 'companyName', 'type' => 'string', 'require' => true, 'desc' => '公司的名字', 'default' => ""),
+                "group" => array('name' => 'group', 'type' => 'string', 'require' => false, 'desc' => '部门', 'default' => ""),
+                "job" => array('name' => 'job', 'type' => 'string', 'require' => false, 'desc' => '用户的职位', 'default' => ""),
+                "startDatetime" => array('name' => 'startDatetime', 'type' => 'string', 'require' => false, 'desc' => '开始的时间', 'default' => ""),
+                "endDatetime" => array('name' => 'endDatetime', 'type' => 'string', 'require' => false, 'desc' => '结束的时间', 'default' => ""),
+                "userWorkExID" => array('name' => 'userWorkExID', 'type' => 'int', 'require' => false, 'desc' => '记录的ID', 'default' => 0),
+                "companyID"=>array("name"=>'companyID','type'=>'string','require'=>false,'desc'=>'公司的ID 传递表示修改或者添加公司')
+            ),
+            "delWorkExp" => array(
+                "userWorkExID" => array('name' => 'userWorkExID', 'type' => 'int', 'require' => true, 'desc' => '记录的ID', 'default' => 0),
+            ),
+            "addOrEditEd" => array(
+                "diploma" => array('name' => 'diploma', 'type' => 'int', 'require' => true, 'desc' => '文凭 0 表示无 1 小学 2 初中 3 高中/职专 4专科 5本科 6研究生 7硕士 8博士', 'default' => ""),
+                "schoolName" => array('name' => 'schoolName', 'type' => 'string', 'require' => false, 'desc' => '学习的名字', 'default' => ""),
+                "major" => array('name' => 'major', 'type' => 'string', 'require' => false, 'desc' => '专业', 'default' => ""),
+                "startDatetime" => array('name' => 'startDatetime', 'type' => 'string', 'require' => false, 'desc' => '开始的时间', 'default' => ""),
+                "endDatetime" => array('name' => 'endDatetime', 'type' => 'string', 'require' => false, 'desc' => '结束的时间', 'default' => ""),
+                "userEdExID" => array('name' => 'userEdExID', 'type' => 'int', 'require' => false, 'desc' => '记录的ID', 'default' => 0),
+            ),
+            "delEd" => array(
+                "userEdExID" => array('name' => 'userEdExID', 'type' => 'int', 'require' => true, 'desc' => '记录的ID', 'default' => 0),
+            ),
+            "saveMore" => array(
+                "userSex" => array('name' => 'userSex', 'type' => 'int', 'require' => true, 'desc' => '性别', 'default' => "用户性别 1 男 2 女 0 未知"),
+                "workMajorID" => array('name' => 'workMajorID', 'type' => 'int', 'require' => true, 'desc' => '所选择的行业ID', 'default' => ""),
+                "workCityID" => array('name' => 'workCityID', 'type' => 'int', 'require' => true, 'desc' => '工作的城市', 'default' => ""),
+                "province" => array('name' => 'province', 'type' => 'int', 'require' => true, 'desc' => '籍贯的省份ID', 'default' => ""),
+                "city" => array('name' => 'city', 'type' => 'int', 'require' => true, 'desc' => '籍贯的城市ID', 'default' => ""),
+                "county" => array('name' => 'county', 'type' => 'int', 'require' => false, 'desc' => '籍贯的县城ID', 'default' => 0),
+            ),
+            "isFillInformation" => array(
+            )
+        );
+    }
+
+    /**
+     * 个人主页
+     * @desc  自己的个人主页无需传递ID 其他的需要
+     * @return 数组 info 用户信息对象
+     * @return string info.userCompany["name"] 用户的名字
+     * @return string info.userCompany["isFriend"] 是否为朋友1是 0不是 2申请中
+     * @return string info.userCompany["phone"] 用户的电话
+     * @return string info.userCompany[isPhoneShow"] 是否显示电话 1仅自己可见 2好友可见 3所有人可见
+     * @return string info.userCompany["job"] 用户的职业,
+     * @return string info.userCompany["group"] 部门,
+     * @return string info.userCompany["userKey"] 聊天的消息,
+     * @return string info.userCompany["companylogo"] 图标
+     * @return string info.userCompany["companyName"] 公司名字,
+     * @return string info.userCompany["regCapital"] 公司的注册资金,
+     * @return string info.userCompany["regDatetime"]  公司的注册时间
+     * @return string info.workexperience["companyName"]  工作经历-公司名字
+     * @return string info.workexperience["companyID"]  公司的ID
+     * @return string info.workexperience["userWorkExID"] 工作经历-该记录ID
+     * @return string info.workexperience["job"] 工作经历-职业
+     * @return string info.workexperience["group"] 工作经历-部门
+     * @return string info.workexperience["startDatetime"] 工作经历-开始时间
+     * @return string info.workexperience["endDatetime"] 工作经历-结束时间
+     * @return string info.userEd["userEdExID"]  改记录的唯一标识
+     * @return string info.userEd["diploma"] 学历
+     * @return string info.userEd["schoolName"] 学习的名字
+     * @return string info.userEd["major"] 专业
+     * @return string info.userEd["startDatetime"] 开始时间
+     * @return string info.userEd["endDatetime"] 结束时间
+     * @return string info.more["userSex"] 性别 用户性别 1 男 2 女 0 未知
+     * @return string info.more["workMajorName"] 行业的名字
+     * @return string info.more["workCity"] 所在城市
+     * @return string info.more["provinceName"] 省份的名字
+     * @return string info.more["cityName"] 城市的名字
+     * @return string info.more["countyName"] 县城的名字
+     * @return string info.label["labelCode"] 对应的标签名字
+     * @return string info.label["labelLogo"] 对应的logo
+     * @return string info.label["labelDesc"] 对应的描述
+     */
+    public function indexInfo() {
+        $this->userCheck();
+        $tmpID = $this->userID;  //保存最开始的USERID  相当于当前调用的接口的用户
+        $this->userID = (!empty($this->ID)) ? $this->ID : $this->userID;
+
+        $ceterlogic = new UserCenterLogic();
+        $isFriend = $ceterlogic->isFriend($tmpID, $this->userID);   //是否为朋友
+        $userCompanyInfo = $ceterlogic->getUserCompanyInfo($this->userID);  //公司用户的基本信息
+
+        switch ($userCompanyInfo['isShowPhone']) {
+            case 1:    //仅自己可见
+                $userCompanyInfo['phone'] = ($tmpID == $this->userID) ? $userCompanyInfo['phone'] : "保密";
+                break;
+            case 2:   //仅好友可见
+                $userCompanyInfo['phone'] = ( $isFriend || $tmpID == $this->userID ) ? $userCompanyInfo['phone'] : "保密";
+                break;
+            default:
+                break;
+        }
+
+        $info['userCompany'] = $userCompanyInfo;
+
+        $workexperience = $ceterlogic->getUserEx($this->userID);   //获取到用户的工作经验
+        $info['workexperience'] = (empty($workexperience)) ? array() : $workexperience;
+        $userEd = $ceterlogic->getUserEducational($this->userID);   //获取到用户的教育经历
+        $info['userEd'] = (empty($userEd)) ? array() : $userEd;
+        $info['isFriend'] = (!empty($this->ID) && $isFriend ) ? 1 : 0;   //是否为朋友 1是 0否
+
+        if(!empty($this->ID)) {   //当前是查看别人的信息  判断好友状态是否为好友或者申请中
+            $apply = new UserFriendLogic();
+            $res = $apply->getFailOneApply($tmpID,$this->userID);
+            if($res && $isFriend==0) {     //当他不是好友确存在申请记录的时候 为申请中
+                $info['isFriend']  = 2;  //申请中
+            }
+        }
+
+        $more = $ceterlogic->getMoreInfo($this->userID); //获取到用户的更多的信息
+        $ass = array("userSex" => "", "workMajorName" => "", "workCity" => "", "provinceName" => "", "cityName" => "", "countyName" => "");
+        $info["more"] = (empty($more)) ? $ass : $more;
+        $label = $ceterlogic->getUserLabel($this->userID); //获取到用户的标签
+        if (!empty($this->ID) && $tmpID!=$this->ID) $ceterlogic->addVisitor($this->ID, $tmpID);  //添加访问记录  自己的不保存
+        $info['label'] = (empty($label)) ? array() : $label;
+        $this->return['code'] = 0;
+        $this->return["msg"] = "";
+        $this->return['info'] = $info;
+        return $this->return;
+    }
+
+    /**
+     * 设置手机可见状态
+     * @desc  手机可见状态
+     * @return int code 操作码，0表示成功， 1表示失败
+     * @return string msg 提示信息
+     */
+    public function setShowPhoneStatus() {
+        $this->userCheck();
+        switch (strtolower($this->type)) {
+            case "all": //所有人可见
+                $status = 3;
+                break;
+            case "friend": //朋友可见
+                $status = 2;
+                break;
+            default:   //自己可见
+                $status = 1;
+                break;
+        }
+        $ceterlogic = new UserCenterLogic();
+        $res = $ceterlogic->setShowPhoneStatus($this->userID, $status);
+        $this->return['code'] = 0;
+        $this->return['msg'] = "修改成功";
+        return $this->return;
+    }
+
+    /**
+     * 编辑个人信息
+     * @desc  保存个人的信息
+     * @return int code 操作码，0表示成功， 1表示失败
+     * @return string msg 提示信息
+     */
+    public function editBaseInfo() {
+        $this->userCheck();
+        $ceterlogic = new UserCenterLogic();
+        $jobInfo = $ceterlogic->getJobByName($this->job);
+        if (empty($jobInfo)) {   //没有就添加下咯
+            $ceterlogic->saveJob($this->job);
+        }
+
+        if(!empty($this->companyName)) $data["companyName"] = $this->companyName;
+        if(!empty($this->companyID)) $data["companyID"] = $this->companyID;
+        if(strlen($this->companyID) <10 ) {
+            $this->return['code'] = 1;
+            $this->return['msg'] = "非法的数据";
+            return $this->return;
+        }
+        if(!empty($this->name)) {
+            if(!isChinese($this->name) && $this->name) {  //是否为中文
+                $this->return['code'] = 1;
+                $this->return['msg'] = "姓名有误";
+                return $this->return;
+            }
+            $data["name"] = $this->name;
+        }
+        if(!empty($this->group)) $data["group"] = $this->group;
+        if(!empty($this->job)) $data["job"] = $this->job;
+        $data["userID"] = $this->userID;
+        $data["addDatetime"] = time();
+
+        $res = $ceterlogic->saveUserCompany($data, $this->userID);
+
+        if ($res) {
+            //成功的时候向图数据写入数据
+            $op = new OperationLogic();
+            $person = $op->getPersonModel($data);
+            $companyData['companyID'] = $data['companyID'];
+            $companyData['companyName'] = $data['companyName'];
+            $company = $op->getCompanyModel($companyData);
+            $connect = new ConnectWorkModel($person,$company);
+
+            $caa = new ConnectRelationLogic();
+            $caa->upsertCompany($connect);    //建立关系
+            $this->return['code'] = 0;
+            $this->return['msg'] = "修改成功";
+        } else {
+            $this->return['code'] = 1;
+            $this->return['msg'] = "数据未改变操作失败";
+        }
+
+        return $this->return;
+    }
+
+    /**
+     * 模糊查询
+     * @desc  用户填写公司或者职位的时候需要用到
+     * @return int code 操作码，0表示成功， 1表示失败
+     * @return string info.value 值
+     * @return string info.type 1 是人 2是公司
+     * @return int info.ID  各种类型的ID
+     * @return string info.img 图片
+     * @return string msg 提示信息
+     */
+    public function vague() {
+        $ceterlogic = new UserCenterLogic();
+        $info = $ceterlogic->vague($this->type, $this->value);
+        if (empty($info)) {
+            $this->return['msg'] = "为空";
+        } else {
+            $this->return['code'] = 0;
+            $this->return['info'] = $info;
+        }
+        return $this->return;
+    }
+
+    /**
+     * 添加和编辑工作经历
+     * @desc 根据是否传递记录的ID 来判断是否为编辑或者增加
+     * @return int code 操作码，0表示成功， 1表示失败
+     * @return string msg 提示信息
+     */
+    public function addOrEditWorkExp() {
+        $this->userCheck();
+        $ceterlogic = new UserCenterLogic();
+        if (!empty($this->companyID)) {      //传递了companyID 表示修改了
+            $companyID = $this->companyID;
+            $data['companyID'] = $companyID;
+            $info = $ceterlogic->getUserCompanyEd($this->userID, $companyID, array('companyID'));
+            if (!empty($info) && empty($this->userWorkExID)) {
+                $this->return['msg'] = "存在相同的公司工作经历";
+                return $this->return;
+            }
+        }
+        if (!empty($this->companyName))
+            $data['companyName'] = $this->companyName;
+        if (!empty($this->group))
+            $data['group'] = $this->group;
+        if (!empty($this->job))
+            $data['job'] = $this->job;
+        if (!empty($this->startDatetime))
+            $data['startDatetime'] = strtotime($this->startDatetime);
+        if (!empty($this->endDatetime))
+            $data['endDatetime'] = strtotime($this->endDatetime);
+        if (!empty($this->userWorkExID)) {   //如果存在就代表更新不然就是新增
+            $data['userWorkExID'] = $this->userWorkExID;
+            $userWorkOneInfo = $ceterlogic->getWorkOneByID($this->userWorkExID, array('companyID', 'userID'));
+            if ($userWorkOneInfo['userID'] != $this->userID) {   //本人只能操作自己的数据
+                $this->return['code'] = 1;
+                $this->return['msg'] = "操作失败";
+                return $this->return;
+            }
+        }
+        $data['userID'] = $this->userID;
+        $res = $ceterlogic->workExpOp($data);
+        if ($res) {
+            $operation = new OperationLogic();
+            $saveWorkData['startDatetime'] = ($data['startDatetime']) ? $data['startDatetime'] : 0;   //添加工作经历的数据
+            $saveWorkData['endDatetime'] = ($data['endDatetime']) ? $data['endDatetime'] : 0;
+            $saveWorkData['group'] = ($data['group']) ? $data['group'] : 0;
+            $saveWorkData['job'] = ($data['job']) ? $data['job'] : "";
+            $operation->addWorkModel($saveWorkData, $this->userID, $companyID);   //图数据添加工作经历
+            $this->return['code'] = 0;
+            $this->return['msg'] = "操作成功";
+        } else {
+            $this->return['msg'] = "操作失败";
+        }
+        return $this->return;
+    }
+
+    /**
+     * 删除工作经验
+     * @desc 根据ID 删除工作经验
+     * @return int code 操作码，0表示成功， 1表示失败
+     * @return string msg 提示信息
+     */
+    public function delWorkExp() {
+        $this->userCheck();
+        $ceterlogic = new UserCenterLogic();
+        $data = $ceterlogic->getWorkOneByID($this->userWorkExID, array('userID', 'companyID', 'startDatetime', 'endDatetime', 'group', 'job'));
+        if (empty($data) || $data['userID'] != $this->userID) {  //空数据或者为不为本人的数据的时候 为失败
+            $this->return['msg'] = "操作失败";
+            $this->return['code'] = 1;
+            return $this->return;
+        }
+        $res = $ceterlogic->delExp($this->userWorkExID);
+        if ($res) {
+            $operation = new OperationLogic();
+            $operation->delWorkModel($data, $this->userID);   //图数据删除教育经历
+            $this->return['code'] = 0;
+            $this->return['msg'] = "操作成功";
+        } else {
+            $this->return['msg'] = "操作失败";
+        }
+        return $this->return;
+    }
+
+    /**
+     * 添加和编辑教育经历
+     * @desc 根据是否传递记录的ID 来判断是否为编辑或者增加
+     * @return int code 操作码，0表示成功， 1表示失败
+     * @return string msg 提示信息
+     */
+    public function addOrEditEd() {
+        $this->userCheck();
+        $ceterlogic = new UserCenterLogic();
+        if (!empty($this->diploma)) $data['diploma'] = $this->diploma;
+        if (!empty($this->schoolName)) {
+            $data['schoolName'] = $this->schoolName;
+            $schoolInfo = $ceterlogic->getSchoolInfoByName($this->schoolName);
+            if (empty($schoolInfo)) {
+                $schoolID = $ceterlogic->saveSchool($this->schoolName);
+            } else {
+                $schoolID = $schoolInfo['schoolID'];
+            }
+            $data["schoolID"] = $schoolID;
+            $info = $ceterlogic->getUserSchoolEd($this->userID, $schoolID, array('schoolID'));
+            if (!empty($info) && empty($this->userEdExID)) {   //当存在相同的学校的时候 且 此时不为编辑状态时
+                $this->return['msg'] = "存在相同的学校教育经历";
+                return $this->return;
+            }
+        }
+        if (!empty($this->major))
+            $data['major'] = $this->major;
+        if (!empty($this->startDatetime))
+            $data['startDatetime'] = strtotime($this->startDatetime);
+        if (!empty($this->endDatetime))
+            $data['endDatetime'] = strtotime($this->endDatetime);
+        if (!empty($this->userEdExID)) {   //存在代表为更新状态
+            $data['userEdExID'] = $this->userEdExID;
+            $userOneEdInfo = $ceterlogic->getEdOneByID($this->userEdExID, array('schoolID', 'userID'));  //同编辑工作经历一样
+            if ($userOneEdInfo['userID'] != $this->userID) {
+                $this->return['msg'] = "操作失败";
+                $this->return['code'] = 1;
+                return $this->return;
+            }
+            $schoolID = (empty($schoolID)) ? $userOneEdInfo['schoolID'] : $schoolID;   //如果存在companID 代表更新了公司或者添加了公司
+            //没有就代表公司没有操作 上报图数据的时候 还是以之前的为标准
+        }
+        $data['userID'] = $this->userID;
+        $res = $ceterlogic->EdOp($data);
+        if ($res) {
+            $operation = new OperationLogic();
+            $saveWorkData['startDatetime'] = $data['startDatetime'];   //图数据库添加教育经历
+            $saveWorkData['endDatetime'] = $data['endDatetime'];
+            $saveWorkData['major'] = $data['major'];
+            $operation->addStudyConnect($saveWorkData, $data['userID'], $schoolID);   //图数据添加教育
+            $this->return['code'] = 0;
+            $this->return['msg'] = "操作成功";
+        } else {
+            $this->return['msg'] = "操作失败";
+        }
+        return $this->return;
+    }
+
+    /**
+     * 删除教育经验
+     * @desc 根据ID 删除工作经验
+     * @return int code 操作码，0表示成功， 1表示失败
+     * @return string msg 提示信息
+     */
+    public function delEd() {
+        $this->userCheck();
+        $ceterlogic = new UserCenterLogic();
+        $data = $ceterlogic->getEdOneByID($this->userEdExID, array('userID', 'schoolID', 'major', 'startDatetime', 'endDatetime'));   //先获取到图数据库的数据
+        if (empty($data) || $data['userID'] != $this->userID) {   //非本人的数据
+            $this->return['msg'] = "操作失败";
+            $this->return['code'] = 1;
+            return $this->return;
+        }
+        $res = $ceterlogic->delEd($this->userEdExID);
+        if ($res) {
+            $operation = new OperationLogic();
+            $operation->delStudyConnect($data, $this->userID);   //图数据删除教育经历
+            $this->return['code'] = 0;
+            $this->return['msg'] = "操作成功";
+        } else {
+            $this->return['msg'] = "操作失败";
+        }
+        return $this->return;
+    }
+
+    /**
+     * 填写用户个人主页更多的信息
+     * @desc 填写更多的信息
+     * @return int code 操作码，0表示成功， 1表示失败
+     * @return string msg 提示信息
+     */
+    public function saveMore() {
+        $this->userCheck();
+        if (!empty($this->userSex))
+            $data['userSex'] = $this->userSex;
+        $cityborn = "";
+        if (!empty($this->workMajorID)) {
+            $majobLogin = new SysMajobLogic();
+            $data['workMajorID'] = $this->workMajorID;
+            $data['workMajorName'] = $majobLogin->getAllName($this->workMajorID);
+        }
+        $majobLogin = new SysRegionLogic();
+        if (!empty($this->workCityID)) {
+            $data['workCityID'] = $this->workCityID;
+            $data['workCity'] = $majobLogin->getRegionName($this->workCityID);
+        }
+        if (!empty($this->province)) {
+            $data['province'] = $this->province;
+            $data['provinceName'] = $majobLogin->getRegionName($this->province);
+            $cityborn .= $data['provinceName'] . '-';
+        }
+        if (!empty($this->city)) {
+            $data['city'] = $this->city;
+            $data['cityName'] = $majobLogin->getRegionName($this->city);
+            $cityborn .= $data['cityName'] . '-';
+        }
+        if (!empty($this->county)) {
+            $data['county'] = $this->county;
+            $data['countyName'] = $majobLogin->getRegionName($this->county);
+            $cityborn .= $data['countyName'] . '-';
+        }
+        $data['userID'] = $this->userID;
+        $data['phone'] = $this->userPhone;
+        $ceterlogic = new UserCenterLogic();
+        $res = $ceterlogic->saveMore($data);
+        if ($res) {
+            //更新图数据库
+            if (!empty($cityborn))
+                $data['cityBorn'] = trim($cityborn, '-');
+            $op = new OperationLogic();
+            $op->savePersonNeo4j($data);
+            $this->return['code'] = 0;
+            $this->return['msg'] = "操作成功";
+        } else {
+            $this->return['code'] = 1;
+            $this->return['msg'] = "操作失败";
+        }
+        return $this->return;
+    }
+
+    /**
+     * 是否完善了信息
+     * @desc 是否完善了信息
+     * @return int info.isFill 1为已经完善了 0为没完善
+     * @return int info.score 完善度分数
+     * @return int code 操作码，0表示成功， 1表示失败
+     * @return string info.score         积分
+     * @return string info.isFill         是否完善了信息 0否 1是
+     * @return string isCompany 是否填写了公司
+     * @return string isCity 是否填写了城市
+     * @return string isEd 是否填写了教育
+     * @return string isIdenty 是否填写了行业
+     * @return string msg 提示信息
+     */
+    public function isFillInformation() {
+        $this->userCheck();
+        $userLogic = new UserLogic();
+        $this->return['info'] = $userLogic->getInformationScore($this->userID);
+        $this->return['code'] = 0;
+        return $this->return;
+    }
+
+}

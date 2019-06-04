@@ -1,0 +1,147 @@
+<div class="modal-body">
+    <input  type="hidden" name="hidAction" id="hidAction" value="view" >
+    <form class="form-horizontal" id="form-Audit">       
+        <input type="hidden" name='authID' id='authID' value="{$data.authID}"/>
+        <div class="form-group has-success">
+            <label class="control-label col-sm-2" for="inputInfo">认证公司：</label>
+            <label class="control-label" for="inputInfo"> {$data.companyName}</label>
+        </div>
+
+        <div class="form-group has-info">
+            <label class="control-label col-sm-2" for="inputInfo">认证职位：</label>
+            <label class="control-label" for="inputInfo"> {$data.job}</label>
+        </div>       
+        <div class="form-group has-info">
+            <label class="control-label col-sm-2" for="inputInfo">拒绝原因：</label>
+            <select class="form-control" name="examReason" id="reason" style="width: 180px">
+                <option value=""></option>
+                <foreach name="reason" item="vo" key="k">
+                    <option value="{$vo.key}">{$vo.value}</option>
+                </foreach>
+            </select>     
+        </div>
+
+        <div class="form-group has-info">
+            <label class="control-label col-sm-2" for="inputInfo">备注：</label>
+            <textarea rows="5" cols="61" style="resize: none;" id="remark" name="examRemark"></textarea>
+        </div>
+        <div class="form-group has-info">
+            <label class="control-label col-sm-2" for="inputInfo">在职证明：</label>
+            <a class="image_gall" title="浏览" href="{$data.certificate}"><img src="{$data.certificate}" style="width: 50px;height: 50px;"/></a>
+        </div>
+        <div class="form-group has-info">
+            <label class="control-label col-sm-2" for="inputInfo">邮箱：</label>
+            <a class="image_gall" title="浏览" href="{$data.mailBox}"><img src="{$data.mailBox}" style="width: 50px;height: 50px;"/></a>
+        </div>
+        <div class="form-group has-info">
+            <label class="control-label col-sm-2" for="inputInfo">工牌：</label>
+            <a class="image_gall" title="浏览" href="{$data.workCard}"><img src="{$data.workCard}" style="width: 50px;height: 50px;"/></a>
+        </div>
+    </form>
+</div>
+<div class="modal-footer">
+    <button type="button" id="butCancel" class="btn btn-primary recommend" >认证成功</button>
+    <button type="button" id="butSaveUser" class="btn btn-primary norecommend"  >认证失败</button>
+    <button type="button" id="ce" class="btn btn-default" data-dismiss="modal">取消</button>
+    <!--data-dismiss="modal"-->
+</div>  
+<script type="text/javascript" >
+
+    //图片效果
+    $(function () {
+        $(".image_gall").popImage();
+        $("[data-toggle='popover']").popover().on("mouseenter", function() {
+            var _this = this;
+            $(this).popover("show");
+            $(this).siblings(".popover").on("mouseleave", function() {
+                $(_this).popover('hide');
+            });
+        }).on("mouseleave", function() {
+            var _this = this;
+            setTimeout(function() {
+                if (!$(".popover:hover").length) {
+                    $(_this).popover("hide");
+                }
+            }, 100);
+        });
+    });
+
+    $(".recommend").click(function () {
+        var id = $("#authID").val();
+        var reason = $("#reason").val();
+        var remark = $("#remark").val();
+
+        if(reason != "") {
+            $win.warn("通过无需选择原因");
+            return;
+        }
+
+        $.ajax({
+            type: "post",
+            url: "/Backend/User/ajaxAuthHanld",
+            data: {"id": id,"status":1,"reason":reason,"remark":remark},
+            dataType: "json",
+            beforeSend: function () {
+                $(".sub-content").showLoading();
+            },
+            success: function (data) {
+                $(".sub-content").hideLoading();
+                if (data.code == 1) {
+                    $win.warn(data.msg).on(function() {
+                        $('#ce').trigger("click");
+                    });
+                } else {
+                    $("#hidAction").val("edit");
+                    $win.message(data.msg).on(function () {
+                        $('#ce').trigger("click");
+                    });
+                }
+            },
+            complete: function () {
+                $(".sub-content").hideLoading();
+            },
+            error: function () {
+                $(".sub-content").hideLoading();
+            }
+        });
+    });
+
+
+    $(".norecommend").click(function () {
+        var id = $("#authID").val();
+        var reason = $("#reason").val();
+        var remark = $("#remark").val();
+        if(reason == "") {
+            $win.warn("必须选择拒绝原因");
+            return;
+        }
+        $.ajax({
+            type: "post",
+            url: "/Backend/User/ajaxAuthHanld",
+            data: {"id": id,"status":2,"reason":reason,"remark":remark},
+            dataType: "json",
+            beforeSend: function () {
+                $(".sub-content").showLoading();
+            },
+            success: function (data) {
+                $(".sub-content").hideLoading();
+                if (data.code == 1) {
+                    $win.warn(data.msg).on(function () {
+                        $('#ce').trigger("click");
+                    });
+                } else {
+                    $("#hidAction").val("edit");
+                    $win.message(data.msg).on(function () {
+                        $('#ce').trigger("click");
+                    });
+                }
+            },
+            complete: function () {
+                $(".sub-content").hideLoading();
+            },
+            error: function () {
+                $(".sub-content").hideLoading();
+            }
+        });
+    });
+</script>

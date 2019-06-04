@@ -1,0 +1,93 @@
+<?php
+
+namespace Service\Integral\Model;
+use Common\Model\SlaveModel;
+
+class UserCardModel extends SlaveModel {
+
+
+    public function getList($where="",$field="",$limit="0,100"){
+        if(empty($where)) {
+            return false;
+        }
+        $model = $this->where($where);
+        if(!empty($field)) {
+            $model = $model->field($field);
+        }
+        return  $model->limit($limit)->select();
+    }
+
+
+    public function getUserCardByCid($cardID) {
+         return  $this->where(array('cid'=>$cardID))->find();
+    }
+
+
+    public function addOne($data) {
+        return $this->add($data);
+    }
+
+    public function saveOne($cid,$data) {
+        return $this->where(array('cid'=>$cid))->save($data);
+    }
+
+
+    /**
+     * 获取到名片的数量
+     */
+    public function getCardNum($userID) {
+        return $this->where(array('userID'=>$userID))->count('cid');
+    }
+
+
+    /**
+     * 根据电话号码获取到名片的基本提取信息
+     * @param $phone
+     * @return bool|mixed
+     */
+    public function getInfoByPhone($phone) {
+        $field = array('userName','companyName','companyGroup','job');
+        $info =  $this->where(array('phoneOne'=>$phone))->field($field)->find();
+        if(empty($info)) {
+            $info =  $this->where(array('phoneTwo'=>$phone))->field($field)->find();
+        }
+        if(empty($info)) {
+            return false;
+        } else {
+            return $info;
+        }
+    }
+
+
+    /**
+     * 根据ID获取到基本的信息
+     */
+    public function getOneBaseInfoById($ID) {
+        $field = array('phoneOne','phoneTwo','companyName','companyGroup','job','mail');
+        return M("userCard")->where(array('cid'=>$ID))->field($field)->find();
+    }
+
+    /**
+     * 获取到用户今天使用名片的一条记录
+     * @param $userID
+     * @return mixed
+     */
+    public function getTodayOne($userID) {
+        return M("userCard")
+                ->where(
+                    array(
+                        'userID'=>$userID,
+                        'addDatetime'=>array('egt',strtotime(date('Y-m-d')))
+                    )
+                )
+               ->find();
+    }
+
+
+
+
+
+
+
+
+}

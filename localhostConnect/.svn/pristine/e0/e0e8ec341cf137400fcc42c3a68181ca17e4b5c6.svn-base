@@ -1,0 +1,65 @@
+<div id="sub-User-list">
+    <script type="text/javascript" src="{$Think.BPATH}js/datejs/WdatePicker.js"></script> 
+    <input type="hidden" name="hidrefurl" id="hidrefurl" value="{:U(ACTION_NAME, $_GET)}">
+    <h4 class="title">{$companyInfo.companyName}<span class='titleqit'>企业专利信息</span></h4>
+    <table class="table table-striped table-bordered">
+        <thead>
+            <tr> 
+                <th>专利名称</th>
+                <th>申请号</th>
+                <th>申请公布日</th>
+                <th>公开公告号</th>
+                <th>发明人</th>
+                <th>申请日</th>
+                <th>分类号</th>
+                <th>代理机构</th>
+                <th>代理人</th>
+                <th>摘要</th>
+                <th>最后同步时间</th>
+            </tr>
+        </thead>
+        <tbody>
+        <volist name="result" id="vo">
+            <tr>  
+                <td><a href="#"   data-toggle="popover" data-placement="bottom" data-content="{$vo.title}" title="" data-original-title="提示">{$vo.title|sub_str=0,6,'...'}</a></td>
+                <td><a href="#"   data-toggle="popover" data-placement="bottom" data-content="{$vo.appNO}" title="" data-original-title="提示">{$vo.appNO|sub_str=0,6,'...'}</a></td>
+                <td>{$vo.pubDate}</td>
+                <td><a href="#"   data-toggle="popover" data-placement="bottom" data-content="{$vo.pubNO}" title="" data-original-title="提示">{$vo.pubNO|sub_str=0,6,'...'}</a></td>
+                <td><a href="#"   data-toggle="popover" data-placement="bottom" data-content="{$vo.inventroName}" title="" data-original-title="提示">{$vo.inventroName|sub_str=0,6,'...'}</a></td>
+                <td>{$vo.appDate}</td>
+                <td><a href="#"   data-toggle="popover" data-placement="bottom" data-content="{$vo.ipc}" title="" data-original-title="提示">{$vo.ipc|sub_str=0,6,'...'}</a></td>
+                <td><a href="#"   data-toggle="popover" data-placement="bottom" data-content="{$vo.agencyName}" title="" data-original-title="提示">{$vo.agencyName|sub_str=0,6,'...'}</a></td>
+                <td>{$vo.agentName}</td>
+                <td><a href="#"   data-toggle="popover" data-placement="bottom" data-content="{$vo.abs}" title="" data-original-title="提示">{$vo.abs|sub_str=0,6,'...'}</a></td>
+                <td>{$vo.lastSyncTime}</td>
+            </tr>
+        </volist>
+        </tbody>
+    </table>
+    <nav class=" pagination-centered">
+        <ul class="pagination">
+            {$page}
+        </ul>
+    </nav>
+    <script type="text/javascript" >
+        $(function ($) {
+            $("[data-toggle='popover']").popover().on("mouseenter", function () {
+                var _this = this;
+                $(this).popover("show");
+                $(this).siblings(".popover").on("mouseleave", function () {
+                    $(_this).popover('hide');
+                });
+            }).on("mouseleave", function () {
+                var _this = this;
+                setTimeout(function () {
+                    if (!$(".popover:hover").length) {
+                        $(_this).popover("hide")
+                    }
+                }, 100);
+            });
+        });
+    </script>
+</div>
+
+
+

@@ -1,0 +1,55 @@
+<div id="sub-User-list">
+    <script type="text/javascript" src="{$Think.BPATH}js/datejs/WdatePicker.js"></script> 
+    <input type="hidden" name="hidrefurl" id="hidrefurl" value="{:U(ACTION_NAME, $_GET)}">
+    <h4 class="title">{$companyInfo.companyName}<span class='titleqit'>企业商标信息</span></h4>
+    <table class="table table-striped table-bordered">
+        <thead>
+            <tr> 
+                <th>商标名称</th>
+                <th>类别</th>
+                <th>注册号</th>
+                <th>申请日</th>
+                <th>状态</th>
+                <th>最后一次同步时间</th>
+            </tr>
+        </thead>
+        <tbody>
+        <volist name="result" id="vo">
+            <tr>  
+                <td>{$vo.tmName}</td>
+                <td>{$vo.tmType}</td>
+                <td>{$vo.regNo}</td>
+                <td>{$vo.appDate}</td>
+                <td>{$vo.tmStatus}</td>
+                <td>{$vo.lastSyncTime}</td>
+            </tr>
+        </volist>
+        </tbody>
+    </table>
+    <nav class=" pagination-centered">
+        <ul class="pagination">
+            {$page}
+        </ul>
+    </nav>
+    <script type="text/javascript" >
+        $(function ($) {
+            $("[data-toggle='popover']").popover().on("mouseenter", function () {
+                var _this = this;
+                $(this).popover("show");
+                $(this).siblings(".popover").on("mouseleave", function () {
+                    $(_this).popover('hide');
+                });
+            }).on("mouseleave", function () {
+                var _this = this;
+                setTimeout(function () {
+                    if (!$(".popover:hover").length) {
+                        $(_this).popover("hide")
+                    }
+                }, 100);
+            });
+        });
+    </script>
+</div>
+
+
+

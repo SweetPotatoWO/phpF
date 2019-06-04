@@ -1,0 +1,84 @@
+<?php
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+namespace Service\News\Model;
+
+use Common\Model\SlaveModel;
+
+
+class RefuseNewModel extends SlaveModel {
+
+    /**
+     * 获取到对应的一条拒绝记录
+     * @param $userID
+     * @param $otherID
+     * @return mixed
+     */
+    public function getOne($userID,$otherID) {
+        return $this->where(array('userID'=>$userID,'otherID'=>$otherID))->find();
+    }
+
+
+    /**
+     * 添加一条记录
+     * @param $userID
+     * @param $otherID
+     * @return mixed
+     */
+    public function addOne($userID,$otherID) {
+        $data = array(
+            'userID'=>$userID,
+            'otherID'=>$otherID,
+            'addDatetime'=>time(),
+        );
+        return $this->add($data);
+    }
+
+    /**
+     * 删除一条记录
+     * @param $userID
+     * @param $otherID
+     * @return mixed
+     */
+    public function delOne($userID,$otherID) {
+        return $this->where(array('userID'=>$userID,'otherID'=>$otherID))->delete();
+    }
+
+
+    /**
+     * 判断是否存在拒收设置
+     * @param $userID
+     * @param $otherID
+     * @return bool
+     */
+    public function isRefuse($userID,$otherID) {
+        $info1 = $this->where(array('userID'=>$userID,'otherID'=>$otherID))->find();
+        $info2 = $this->where(array('userID'=>$otherID,'otherID'=>$userID))->find();
+        if(empty($info1) && empty($info2)) {
+            return 0;  //表示不存在拒收状态
+        } else if($info2)  {
+            return 2;   //表示对方拒收了你
+        } else if($info1) {
+            return 1;  //表示我拒收对方
+        }
+    }
+
+
+    /**
+     * 获取到拒收的列表
+     * @param $userID
+     * @return mixed
+     */
+    public function getRefuseList($userID) {
+        $sql = "select u.userID,uc.userHeadUrl,u.phone,uc.companyName,uc.name,uc.job,uc.group,uc.companyID 
+                from d_refuse_new as rn 
+                inner join d_user as u on rn.otherID=u.userID 
+                left join d_user_company as uc on rn.otherID=uc.userID where rn.userID=".$userID;
+        return $this->query($sql);
+    }
+}

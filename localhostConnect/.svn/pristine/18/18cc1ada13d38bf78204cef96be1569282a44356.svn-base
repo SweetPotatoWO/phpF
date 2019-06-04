@@ -1,0 +1,178 @@
+;
+!function(win, undefined) {
+    var weui = {
+        loading: false,
+        load: function() {
+            $.showLoading("加载中...");
+        },
+        hideload: function() {
+            $.hideLoading();
+            $(".weui-toast").remove();
+
+        },
+        scrollLoad: function(obj, distance, callback) {
+            //weui.loading = false; //状态标记
+            distance = distance ? distance : 50; //距离底部50px，开始加载
+            obj = obj ? obj : document;
+            var lastHeight = $(obj.body).scrollTop();
+            var nextHeight = lastHeight;
+            $(obj.body).infinite(distance).on("infinite", function() {
+                if (weui.loading)
+                    return;
+                lastHeight = $(obj.body).scrollTop();
+                setTimeout(function() {
+                    if (typeof callback == "function") {
+                        nextHeight = $(obj.body).scrollTop();
+                        callback.call(null, nextHeight - lastHeight);
+                    }
+
+                }, 1000); //模拟延迟
+                weui.loading = false;
+            });
+        },
+        /**
+         * 封装请求的数据
+         * */
+        getAjaxData: function(postUrl, data, nodeId) {
+            if (weui.loading)
+                return;
+            $.ajax({
+                async: true,
+                url: postUrl,
+                type: 'post',
+                dataType: 'json',
+                data: data,
+                beforeSend: function(XMLHttpRequest) {
+                    weui.loading = true;
+                    weui.load();
+                },
+                success: function(json) {
+                    weui.hideload();
+                    if (json.status * 1 > 0) {
+                        weui.addData(json.data, nodeId);
+                    } else {
+                        if (json.msg) {
+                            $.alert(json.msg);
+                            return false;
+                        }
+                        $("#wxMore").hide();
+                        $("#wxLoad").hide();
+                        if (json.data.pageIndex == 1) {
+                            $("#nodata").show();
+                        } else {
+                            $("#wxNo").show();
+                        }
+                    }
+                },
+                complete: function(XMLHttpRequest, textStatus) {
+                    weui.hideload();
+                },
+                error: function(xhr) {
+                    weui.loading = false;
+                    $.alert("请检查网络连接！");
+                    weui.hideload();
+                }
+            });
+
+        },
+        addData: function(jsonData, nodeId) {
+            if (!jsonData.data || jsonData.data == null) {
+                $("#wxNo").show();
+                $("#wxMore").hide();
+                $("#wxLoad").hide();
+                return;
+            }
+            if (jsonData.dataSize < jsonData.pageSize) {
+                $("#wxMore").hide();
+                $("#wxLoad").hide();
+                $("#wxNo").show();
+            } else {
+                $("#wxMore").show();
+                $("#wxNo").hide();
+                $("#wxLoad").hide();
+            }
+            if (jsonData.pageIndex > 2) {
+                $("#" + nodeId).append(jsonData.data);
+            } else {
+                $("#" + nodeId).html(jsonData.data);
+            }
+            $("#pageIndex").val(jsonData.pageIndex * 1);
+            if (jsonData.dataSize < jsonData.pageSize) {
+                 weui.loading = true;
+            } else {
+                weui.loading = false;
+            }
+        },
+        ajax: function(postUrl, jsonData, callBack) {
+            $.ajax({
+                url: postUrl,
+                type: 'post',
+                data: {"par": jsonData},
+                dataType: "json",
+                beforeSend: function() {
+                    weui.load();
+                },
+                success: function(data) {
+                    weui.hideload();
+                    if (typeof callBack === "function") {
+                        callBack.call(null, data);
+                    }
+                },
+                complete: function() {
+                    weui.hideload();
+                },
+                error: function() {
+                    weui.hideload();
+                }
+
+            });
+        },
+        message: function(message) {  //直接提示没有按钮确定
+            var time = 2000;
+            $.toast(message);
+            setTimeout(function() {
+                $(".weui-toast").hide();
+            }, time);
+        },
+        showTime: function(time_distance, obj) {
+            var timer = obj;
+            var sytime = time_distance - 1000;
+            if (isNaN(time_distance)) {
+                time_distance = timer.attr("distance");
+            }
+            distance = time_distance || 0;
+            var str_time;
+            var int_day, int_hour, int_minute, int_second;
+            var distance = distance;
+            distance = distance - 1000;
+            if (sytime > 0) {
+                int_day = Math.floor(distance / 86400000);
+                distance -= int_day * 86400000;
+                int_hour = Math.floor(distance / 3600000);
+                distance -= int_hour * 3600000;
+                int_minute = Math.floor(distance / 60000);
+                distance -= int_minute * 60000;
+                int_second = Math.floor(distance / 1000);
+                if (int_hour < 10)
+                    int_hour = "0" + int_hour;
+                if (int_minute < 10)
+                    int_minute = "0" + int_minute;
+                if (int_second < 10)
+                    int_second = "0" + int_second;
+                str_time = int_day + "天" + int_hour + "小时" + int_minute + "分钟" + int_second + "秒";
+                timer.text(str_time);
+                setTimeout(function() {
+                    weui.showTime(sytime, obj);
+                }, 1000);
+            } else if (distance == -1000) {
+                timer.text("项目未开始");
+                return;
+            } else {
+                timer.text("项目已结束");
+                return;
+            }
+        }
+
+    };
+    window.weui = weui;
+}(window);

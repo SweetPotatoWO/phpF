@@ -1,0 +1,57 @@
+<?php
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+namespace Service\User\Logic;
+
+use Service\User\Model\UserVisitorModel;
+use Think\Upload;
+
+/**
+ * Description of UserVisitor
+ *
+ * @author admin
+ */
+class UserVisitorLogic {
+
+    /**
+     * 获取访客列表
+     */
+    public function getVisitorList($userID, $limit) {
+        $result = array('totalVisitor' => 0, 'todayVisitor' => 0, 'list' => array());
+        $model = new UserVisitorModel();
+        $total = $model->getTotalVisitor($userID);
+        if ($total[0]['total'] == 0) {//总访问人数为零
+            return false;
+        }
+        $result['totalVisitor'] = $total[0]['total'];
+        $result['todayVisitor'] = $total[1]['total'];
+        $data = $model->getVisitorList($userID, $limit);
+        $UF = new UserFriendLogic();
+        $data['rows'] = $UF->handleVisitorData($data['rows']);
+        $result['list'] = $data['rows'];
+        return $result;
+    }
+
+
+    /**
+     * 获取看了当前用户的其他人
+     * @param $userID
+     * @param string $limit
+     * @return mixed
+     */
+    public function getOtherVisitUser($userID,$limit="0,15") {
+        $model = new UserVisitorModel();
+        $list =  $model->getOtherVisitUser($userID,$limit);
+        foreach ($list as $key=>$value) {
+            $list[$key]['visitDatetime'] = timeFormat($value['visitDatetime']);
+            $list[$key]['userHeadUrl'] = (empty($value['userHeadUrl']))?"":UPLOAD.$value['userHeadUrl'];
+        }
+        return $list;
+    }
+
+}

@@ -1,0 +1,254 @@
+<?php
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+namespace SmallApi\Controller;
+
+use Service\Spread\Logic\AppInfoLogic;
+use Service\Integral\Logic\CardLogic;
+use Service\User\Model\UserMiniProgramModel;
+
+/**
+ * Description of UserController
+ *
+ * @author Administrator
+ */
+class UserController extends BaseMobileController {
+
+    private $return = array('status' => 0, 'msg' => '', 'data' => '');
+    protected $appId = 'wx05c94c3c847272d8';
+    protected $appSecret = '2b189c9d66f13f71fb70a9ccbed59603';
+
+    /**
+     * 用户信息反馈
+     * @return string
+     */
+    public function addFeback() {
+        $par = I('post.');
+        $where = array();
+        $userID = C('userID');
+        $where["terminal"] = 4;
+        $where["versions"] = '小程序1.0';
+        $where["febackInfo"] = $par['febackInfo'];
+        $where["phone"] = $par['phone'];
+        $where["userID"] = $userID;
+        $where["equipmentID"] = strtolower($par['deviceID']);
+        $where["addDatetime"] = time();
+        $logic = new AppInfoLogic();
+        $countInfo = $logic->getDayFeback($where["equipmentID"]);
+        if ($countInfo >= 3) {
+            $this->return["msg"] = "每天只能反馈3次";
+            return $this->return;
+        }
+        if (empty($where["phone"])) {
+            $where["phone"] = C('phone');
+        } else if (!verify_phone($where["phone"])) {
+            $this->return["msg"] = "请输入正确的手机号码！";
+            return $this->return;
+        }
+        $where["feback_type"] = 0;
+        $res = $logic->addFeback($where);
+        if (empty($res)) {
+            $this->return["msg"] = "反馈信息失败";
+            return $this->return;
+        }
+        $newlogic = new NewsLogic();
+        $newlogic->sendSystemME($userID, -1, 'feedBack');   //我方发送系统的信息
+        $this->return["status"] = 1;
+        $this->return['msg'] = '提交成功！';
+        return $this->return;
+    }
+
+    /**
+     * 名片列表
+     */
+    public function userCardList() {
+        $card = new CardLogic();
+        $userID = C('userID');
+        $dataRes = $card->getUserCardList($userID);
+        if(empty($dataRes['list'])) {
+            $this->return['msg'] = "数据为空";
+        } else {
+            $this->return['status'] =1;
+            $this->return['data']['count'] = $dataRes['count'];
+            $this->return['data']['list'] = $dataRes['list'];
+        }
+        return $this->return;
+    }
+    /**
+     * 名片详情
+     */
+    public function cardInfoByID() {
+        $par = I('post.');
+        $cardID = $par['cid'];
+        $logic = new CardLogic();
+        $data = $logic->getCardInfo($cardID);
+        if(empty($data)) {
+            $this->return['msg'] = "返回信息为空";
+        } else {
+            $this->return['status'] =1;
+            $this->return['data'] = $data;
+            $this->return['msg'] = "操作成功";
+        }
+        return $this->return;
+    }
+
+    /**
+     * 小程序，获取openId及用户信息
+     */
+    public function getOpenId()
+    {
+        $return = ['status' => 0, 'msg' => '', 'data' => ''];
+        $code = I('post.code');
+        $nickName = I('post.nickName');
+        $avatar = I('post.avatar');
+        #todo 为方便调试，appId和appSecret用前端传过来
+        $appId = I('post.appId');
+        $appSecret = I('post.appSecret');
+        if (empty($code)) {
+            $return['status'] = 1001;
+            $return['msg'] = '参数错误';
+        } else {
+            try {
+                $result = $this->getAppletOpenidAndSessionKey($code, $appId, $appSecret);
+                $openId = json_decode($result,true)['openid'];
+                $return['data']['openId'] = $openId;
+                $userMiniProgramModel = new UserMiniProgramModel();
+                $userMiniInfo = $userMiniProgramModel->getUserByOpenId('userId', ['openId' => $openId]);
+                if (empty($userMiniInfo)) {
+                    $data = ['nickname'=>$nickName,'headUrl'=>$avatar,'openId'=>$openId];
+                    $userMiniProgramModel->add($data);
+                } else {
+                    $userInfo = $userMiniProgramModel->getUserInfo($userMiniInfo['userId']);
+                    $userInfo['openId'] = $openId;
+                    $userInfo['nickname'] = $nickName;
+                    $userInfo['avatar'] = $avatar;
+                    $userInfo['headUrl'] = UPLOAD.$userInfo['userHeadUrl'];
+                    $return['data'] = $userInfo;
+                }
+            } catch (\Exception $exc) {
+                $return['status'] = 1000;
+                $return['msg'] = '获取openId失败'.$exc->getMessage();
+            }
+        }
+        echo json_encode($return);
+    }
+
+    /**
+     * 文件上传
+     * @return array
+     */
+    public function upload()
+    {
+        $res = array('code' => 1, 'msg' => '上传图片失败！', 'info' => array());
+        $delPath = "";
+        logger('bbb', json_encode($res));
+        $appUploadData = $this->uploadImg("QIMAIFILE", "", $delPath);
+        logger('ccc', json_encode($res));
+        $status = $appUploadData["status"];
+        if (!empty($status)) {
+            $path = $appUploadData["file"]["path"];
+            $res["info"]['Url'] = UPLOAD.$path;
+            $res["code"] = 0;
+        }
+        $res["msg"] = !empty($status) ? "上传图片成功" : $appUploadData["msg"];
+        logger('aaa', json_encode($res));
+        echo json_encode($res);
+    }
+
+    /**
+     * 名片识别
+     */
+    public function checkCard()
+    {
+//        $fileInfo = pathinfo($file);
+        $fileUrl = I('post.fileUrl');
+        $fileUrl = 'http://res.test.51heho.com/upload/QIMAIFILE/201810/201810195bc9840db942d.jpg';
+
+        $appid = '1257593105';
+        $bucket = "tencentyun";
+        $secret_id = "AKIDUtMkEYtBWgM7DO4aeGwdXKEgyX2RgFQP";
+        $secret_key = "tpfYN1Wr1z0shOu2FMI3iDZ7JOHzY0UT";
+        $expired = time() + 2592000;
+        $current = time();
+        $rdm = rand();
+        $srcStr = 'a='.$appid.'&b='.$bucket.'&k='.$secret_id.'&e='.$expired.'&t='.$current.'&r='.$rdm.'&f=';
+        $signStr = base64_encode(hash_hmac('SHA1', $srcStr, $secret_key, true).$srcStr);
+        $requestUrl = 'http://recognition.image.myqcloud.com/ocr/businesscard';
+
+        $requestUrl = 'http://qianhezi.org/Test/test';
+        $param = ['upload' => file_get_contents($fileUrl), 'appid' => $appid, 'bucket' => $bucket];
+        $re = $this->putPart($requestUrl, $param, $signStr);
+
+//        $postData = ['appid'=>$appid,'url_list'=>[$fileUrl],'bucket'=>$bucket];
+//        $header[] = 'host:recognition.image.myqcloud.com';
+//        $header[] = 'content-type:application/json';
+//        $header[] = 'authorization:'.$signStr;
+//        $result = $this->httpPost($requestUrl, json_encode($postData), $header);
+
+
+//        $fileScream = file_get_contents($fileUrl);
+//        $postData = ['appid'=>$appid,'image'=>['filename'=>'mingpian.jpg',$fileScream],'bucket'=>$bucket];
+//        $postData = ['appid'=>$appid, 'bucket'=>$bucket];
+//        $header[] = 'host:recognition.image.myqcloud.com';
+//        $header[] = 'content-type:multipart/form-data';
+//        $header[] = 'authorization:'.$signStr;
+//
+//        $data = uniqid() . "\r\n"
+//            . 'Content-Disposition: form-data; name="image"; filename="mingpian.jpg"' . "\r\n"
+//            . 'Content-Type:application/octet-stream'."\r\n\r\n";
+//        $data .= $fileScream . "\r\n";
+//        $data .= "--" . uniqid() . "--\r\n";
+//        $postData[] = $data;
+    }
+
+    /**
+     * 调微信接口，获取openId
+     * @param $code
+     * @return type
+     * @throws \Exception
+     */
+    private function getAppletOpenidAndSessionKey($code, $appId, $appSecret) {
+        /*$url = 'https://api.weixin.qq.com/sns/jscode2session?appid=' . $this->appId . '&secret=' . $this->appSecret .
+            '&js_code=' . $code . '&grant_type=authorization_code';*/
+        $url = 'https://api.weixin.qq.com/sns/jscode2session?appid=' . $appId . '&secret=' . $appSecret .
+            '&js_code=' . $code . '&grant_type=authorization_code';
+        $data = $this->httpGet($url);
+
+        if ($data == false) {
+            throw new \Exception('get wechat applet openid an session_key fail',4001);
+        }
+        return $data;
+    }
+
+    /**
+     * 保存图片
+     * @param type $rootPath
+     * @param type $subPath
+     * @param type $del
+     * @return type
+     */
+    private function uploadImg($rootPath, $subPath = "", $del = "") {
+        $imgInfo = explode(UPLOAD, $del);
+        $del = is_array($imgInfo) && !empty($imgInfo) ? $imgInfo[1] : ""; // 1)用户上传新头像将删除之前的头像
+        $file = $_FILES["Filedata"];
+        $client = new \Common\Plugins\UploadClient();
+        $result = $client->upLoadSingle($rootPath, $file, $subPath, $del);
+
+        if (is_array($result)) {
+            $msg["status"] = true;
+            $msg["file"] = $result;
+        } else {
+            $msg["status"] = false;
+            $msg["msg"] = $result;
+        }
+        return $msg;
+    }
+
+
+
+}

@@ -1,0 +1,61 @@
+<?php
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+namespace Wechat\Controller;
+use Think\Controller;
+/**
+ * Description of UserController
+ *
+ * @author Administrator
+ */
+class CompanyController extends Controller {
+
+    /**
+     * 股东高管
+     */
+    public function management() {
+
+        $this->display('management');
+    }
+
+    /**
+     * 工商信息
+     */
+    public function businessInfo() {
+        $this->display('businessInfo');
+    }
+
+    /**
+     * 年报详情
+     */
+    public function reportDetail() {
+        $this->display('reportDetail');
+    }
+
+    /**
+     * 知识产权
+     */
+    public function property() {
+        $this->display('property');
+    }
+
+    /**
+     * 专利详情
+     */
+    public function patentDetail() {
+        $this->display('patentDetail');
+    }
+
+    /**
+     * 信用信息
+     */
+    public function creditInfo() {
+        $this->display('creditInfo');
+    }
+
+}

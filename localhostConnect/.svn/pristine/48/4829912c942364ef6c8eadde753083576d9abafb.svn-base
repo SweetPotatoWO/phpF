@@ -1,0 +1,122 @@
+<?php
+
+
+
+namespace Service\Tag\Logic;
+
+use Service\Tag\Model\UserTagModel;
+use Service\Tag\Model\UserWanttagModel;
+
+class TagLogic {
+
+    /**
+     * 获取到用户的标签
+     * @param $userID
+     * @return mixed
+     */
+    public function getUserTag($userID) {
+        $model = new UserTagModel();
+        return $model->getUserTag($userID);
+    }
+
+
+    /**
+     * 获取到推荐的标签
+     * @param $userID
+     * @return mixed
+     */
+    public function getRecommendTag($userID,$limit=10) {
+        $model = new UserTagModel();
+        return $model->getRecommendTag($userID,$limit);
+    }
+
+
+    /**
+     * 批量添加标签
+     * @param $data
+     * @return bool|string
+     */
+    public function addMore($data) {
+        $model = new UserTagModel();
+        return $model->addMore($data);
+    }
+
+    /**
+     * 根据条件删除用户的标签
+     * @param $userID
+     * @param string $where
+     * @return mixed
+     */
+    public function delUserTag($where="") {
+        $model = new UserTagModel();
+        return $model->delUserTag($where);
+    }
+
+
+
+    /**
+     * 获取到用户想要的标签
+     * @param $userID
+     * @return mixed
+     */
+    public function getUserWantTag($userID) {
+        $model = new UserWanttagModel();
+        return $model->getUserTag($userID);
+    }
+
+
+    /**
+     * 获取到推荐的标签
+     * @param $userID
+     * @return mixed
+     */
+    public function getRecommendWantTag($userID,$limit) {
+        $model = new UserWanttagModel();
+        return $model->getRecommendTag($userID,$limit);
+    }
+
+
+    /**
+     * 批量添加标签
+     * @param $data
+     * @return bool|string
+     */
+    public function addWantMore($data) {
+        $model = new UserWanttagModel();
+        return $model->addMore($data);
+    }
+
+
+    /**
+     * 根据条件删除用户的标签
+     * @param $userID
+     * @param string $where
+     * @return mixed
+     */
+    public function delUserWantTag($where="") {
+        $model = new UserWanttagModel();
+        return $model->delUserTag($where);
+    }
+
+
+    /**
+     * 更新热度
+     * @param $idArr
+     * @return bool
+     */
+    public function updateHot($idArr) {
+        $model = new UserTagModel();
+        return $model->updateHot($idArr);
+    }
+
+
+    /**
+     * 获取到标签的数字
+     * @param $userID
+     */
+    public function getTagNum($userID) {
+        $model = new UserTagModel();
+        return $model->getTagNum($userID);
+    }
+
+}

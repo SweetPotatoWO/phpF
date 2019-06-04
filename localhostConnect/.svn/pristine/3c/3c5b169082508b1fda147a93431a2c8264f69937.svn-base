@@ -1,0 +1,49 @@
+/*
+Navicat MySQL Data Transfer
+
+Source Server         : 钱盒子测试
+Source Server Version : 50631
+Source Host           : 120.25.85.171:3306
+Source Database       : devmbox_hx
+
+Target Server Type    : MYSQL
+Target Server Version : 50631
+File Encoding         : 65001
+
+Date: 2018-08-08 14:34:31
+*/
+
+SET FOREIGN_KEY_CHECKS=0;
+
+-- ----------------------------
+-- Table structure for d_home_article
+-- ----------------------------
+DROP TABLE IF EXISTS `d_home_article`;
+CREATE TABLE `d_home_article` (
+  `articleID` int(11) NOT NULL AUTO_INCREMENT COMMENT '文章ＩＤ',
+  `typeID` int(11) NOT NULL COMMENT '文章分类ID',
+  `typeName` varchar(50) DEFAULT NULL COMMENT '类型名称',
+  `articleTitle` varchar(200) DEFAULT NULL COMMENT '文章标题',
+  `articlePhoto` varchar(200) DEFAULT NULL COMMENT '文章图片',
+  `articleUrl` varchar(100) DEFAULT NULL COMMENT '文章外部链接',
+  `abstract` varchar(200) DEFAULT NULL COMMENT '文章摘要',
+  `articleContent` mediumtext NOT NULL COMMENT '文章内容',
+  `seoTitle` varchar(200) DEFAULT NULL COMMENT 'SEOTitle',
+  `seoKeys` varchar(200) DEFAULT NULL COMMENT 'SEOkeys',
+  `seoDescription` varchar(500) DEFAULT NULL COMMENT 'SEO描述',
+  `articleSort` tinyint(4) DEFAULT '0' COMMENT '文章排序',
+  `recommend` tinyint(1) DEFAULT '0' COMMENT '文章推荐，默认0 不推荐',
+  `status` tinyint(1) DEFAULT '1' COMMENT '文章状态， 0为删除 默认1 未发布 2 发布中',
+  `usefulCount` int(11) unsigned NOT NULL DEFAULT '0' COMMENT '有用统计',
+  `nouseCount` int(11) unsigned NOT NULL DEFAULT '0' COMMENT '无用统计',
+  `viewCount` int(11) unsigned NOT NULL DEFAULT '0' COMMENT '浏览次数统计',
+  `remark` varchar(200) DEFAULT NULL COMMENT '备注',
+  `addUserID` int(11) NOT NULL COMMENT '创建人ID',
+  `addUserName` varchar(50) DEFAULT NULL COMMENT '创建人',
+  `addDatetime` int(11) NOT NULL COMMENT '创建时间',
+  `editUserID` int(11) DEFAULT NULL COMMENT '修改人ID',
+  `editUserName` varchar(50) DEFAULT NULL COMMENT '修改人',
+  `editDatetime` int(11) DEFAULT NULL COMMENT '修改时间',
+  `operateIP` varchar(50) DEFAULT NULL COMMENT '操作IP',
+  PRIMARY KEY (`articleID`)
+) ENGINE=InnoDB AUTO_INCREMENT=5511 DEFAULT CHARSET=utf8 COMMENT='文章表';

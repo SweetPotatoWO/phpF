@@ -1,0 +1,83 @@
+<?php
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+namespace Frontend\Controller;
+
+use Service\Connect\Logic\DataCleanLogic;
+use Service\User\Logic\UserFriendLogic;
+use Think\Controller;
+use Common\Common\Redis;
+use Service\System\Logic\SysParameterLogic;
+
+/**
+ * Description of TaskController
+ *
+ * @author Administrator
+ */
+class TaskController extends Controller {
+
+    public function _initialize() {
+        $this->getSystemPar();
+    }
+
+    /**
+     * 获取系统参数。
+     */
+    private function getSystemPar() {
+        $par = new SysParameterLogic();
+        $config = $par->getConfig();
+        C($config);
+    }
+
+    /**
+     * 更新过期的好友申请状态 每小时执行1次
+     * @param type $mask
+     * @return boolean
+     */
+    public function upFriendApply($mask) {
+        $ip = get_client_ip();
+        if ($mask == "mboxd5b7bb20ad654748c04892be29b67212" || $ip == "127.0.0.1") {
+            $logic = new UserFriendLogic();
+            $logic->dealApplyOuttime();
+            return true;
+        }
+        logger_task('TaskController/upFriendApply', '请求异常', '');
+        return false;
+    }
+
+    /**
+     * 同步活跃度 每1分钟执行1次
+     * @param type $mask
+     * @return boolean
+     */
+    public function synActive($mask) {
+        $ip = get_client_ip();
+        if ($mask == "mboxd5b7bb20ad654748c04892be29b67212" || $ip == "127.0.0.1") {
+            $logic = new DataCleanLogic();
+            $logic->synActive();
+            return true;
+        }
+        logger_task('TaskController/synActive', '请求异常', '');
+        return false;
+    }
+
+    /**
+     * 清洗图 每天凌晨2点执行
+     * @param type $mask
+     * @return boolean
+     */
+    public function cleanGraph($mask) {
+        $ip = get_client_ip();
+        if ($mask == "mboxd5b7bb20ad654748c04892be29b67212" || $ip == "127.0.0.1") {
+            return true;
+        }
+        logger_task('', '', '');
+        return false;
+    }
+
+}

@@ -1,0 +1,275 @@
+<div class="modal-body">
+    <script type="text/javascript" charset="utf-8" src="{$Think.BPATH}js/uploader/webuploader.min.js"></script>
+    <style>
+        .upload-img {
+            color: #FFF;
+            position: absolute;
+            display: inline-block;
+            width: 100px;
+            height: 35px;
+            line-height: 29px;
+            text-align: center;
+            top: 107px;
+            left: 600px;
+            border-radius: 2px;
+            background-color: #66D491;
+        }
+        .upfilebox label{
+            left: 500px;
+        }
+    </style>
+    <input  type="hidden" name="hidAction" id="hidAction" value="view" >
+    <form class="form-horizontal" id="form-Integral">       
+        <input type="hidden" name='integralID' id='integralID' value="{$data.integralID}"/>
+        <input type="hidden" name='userID' id='userID' value="{$data.userID}"/>
+        <input type="hidden" name='isBatch' id='isBatch' value="{$isBatch}"/>
+        <empty name="isBatch">
+            <div class="form-group ">
+                <label class="col-sm-1 control-label" >用户名：</label>
+                <div class="col-sm-4">
+                    <input class="form-control" type="text" id="userName"  name="userName" value=" {$data.nickname}"  disabled="disabled" >
+                </div>
+            </div>
+        </empty>
+
+        <div class="form-group has-info">
+            <label class="col-sm-1 control-label" >发送方式：</label>
+            <div class="col-sm-4">
+                <select name="sendInteg" id="sendInteg" class="form-control">
+                    <option value="1">按照指定用户发送</option>
+                    <option  value="2">导入excel发送</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-group " id="pont">
+            <label class="col-sm-1 control-label" >电话号码：</label>
+            <div class="col-sm-4">
+                <input class="form-control" type="text" id="articleTitle"  name="articleTitle" value="{$data.phone}"  disabled="disabled" placeholder="批量发放以英文逗号(,)做间隔">
+            </div>
+        </div> 
+        <div class="form-group  fileAdrs" style="display: none;">
+            <label class="col-sm-1 control-label" >文件名：</label>
+            <div class="col-sm-4">
+                <input type="text" class="form-control"  value="" name="fileAdrs" id="fileAdrs" disabled="disabled"  >
+            </div>
+            <div class="upfilebox">
+                <label class="upload-box upload-img" id="uploadFiless">上传</label>
+            </div>
+        </div> 
+        <empty name="isBatch">
+            <div class="form-group ">
+                <label class="col-sm-1 control-label" >总积分：</label>
+                <div class="col-sm-4">
+                    <input class="form-control" type="text" id="totalInteg"  name="totalInteg" value=" {$data.totalIntegral}"  disabled="disabled" >
+                </div>
+            </div>  
+            <div class="form-group ">
+                <label class="col-sm-1 control-label" >可用积分：</label>
+                <div class="col-sm-4">
+                    <input class="form-control" type="text" id="availableInteg"  name="availableInteg" value=" {$data.availableIntegral}"  disabled="disabled" >
+                </div>
+            </div>  
+            <div class="form-group ">
+                <label class="col-sm-1 control-label" >已使用积分：</label>
+                <div class="col-sm-4">
+                    <input class="form-control" type="text" id="useIntegral"  name="useIntegral" value=" {$data.useIntegral}"  disabled="disabled" >
+                </div>
+            </div>
+             <div class="form-group ">
+                <label class="col-sm-1 control-label" >冻结积分：</label>
+                <div class="col-sm-4">
+                    <input class="form-control" type="text" id="frozenIntegral"  name="frozenIntegral" value=" {$data.frozenIntegral}"  disabled="disabled" >
+                </div>
+            </div>  
+            <div class="form-group ">
+                <label class="col-sm-1 control-label" >私信余额：</label>
+                <div class="col-sm-4">
+                    <input class="form-control" type="text" id="letterBalance"  name="letterBalance" value=" {$data.letterBalance}"  disabled="disabled" >
+                </div>
+            </div>  
+            <div class="form-group ">
+                <label class="col-sm-1 control-label" >朋友余额：</label>
+                <div class="col-sm-4">
+                    <input class="form-control" type="text" id="applyBalance"  name="applyBalance" value=" {$data.applyBalance}"  disabled="disabled" >
+                </div>
+            </div>  
+        </empty>
+        <div class="form-group has-info ">
+            <label class="col-sm-1 control-label" >类型：</label>
+            <div class="col-sm-4">
+                <select  name="type" id="type" class="form-control">
+                    <option value="">---请选择----</option>
+                    <volist name="integralType" id="vo">
+                        <option  value="{$vo.typeWeight}" data="{$vo.typeValue}" >{$vo.typeName}-送[{$vo.typeValue}]积分</option> 
+                    </volist>
+                </select>
+            </div>
+        </div>   
+        <div id="integralInfo">
+            <div class="form-group has-info   ">
+                <label class="col-sm-1 control-label" >积分值：</label>
+                <div class="col-sm-4">
+                    <input class="form-control" type="text" id="intVal"  name="intVal"  >
+                </div>
+            </div>  
+            <div class="form-group has-info ">
+                <label class="col-sm-1 control-label" >积分说明：</label>
+                <div class="col-sm-4">
+                    <input class="form-control" type="text" id="remark"  name="remark"  >
+                </div>
+            </div>   
+        </div>
+    </form>
+</div>
+<div class="modal-footer">
+    <button type="button" id="butCancel" class="btn btn-default" data-dismiss="modal">关闭</button>
+    <button type="button" id="butSaveIntegral" class="btn btn-primary" >保存</button>
+</div>  
+<script type="text/javascript" >
+    var isBatch = $("#isBatch").val();
+    var excelData = {};
+    $(function($) {
+        if (isBatch == 1) {
+            $("#articleTitle").attr("disabled", false);
+        }
+        $("#integralInfo").hide();
+        saveIntegralvalid();
+        $("#butSaveIntegral").click(function() {
+            var isOK = $("#form-Integral").valid();
+            if (isOK) {
+                saveIntegral();
+            }
+        });
+        $("#type").change(function() {
+            var typeVal = $(this).find("option:selected").attr("data");
+            if (typeVal == "0.00") {
+                $("#integralInfo").show();
+            } else {
+                $("#integralInfo").hide();
+            }
+        });
+
+        $("#sendInteg").change(function() {
+            var val = $(this).val();
+            if (val == 1) {
+                $("#pont").show();
+                $("#pontUp").hide();
+                $(".fileAdrs").hide();
+            } else if (val == 2) {
+                $("#pont").hide();
+                $("#pontUp").show();
+                $(".fileAdrs").show();
+            } else {
+                $("#pont").show();
+                $("#pontUp").hide();
+                $(".fileAdrs").hide();
+            }
+        });
+
+        var uploader = WebUploader.create({
+            multiple: false,
+            water: false,
+            thumbnail: false,
+            swf: '{$think.BPATH}js/uploader/uploader.swf',
+            server: '/Backend/Integral/saveFile',
+            pick: '#uploadFiless',
+            duplicate: false,
+            resize: false,
+            auto: true,
+            fileNumLimit: 5,
+            fileSingleSizeLimit: 5242880,
+            accept: {
+                extensions: 'xls,xlsx,csv'
+            }
+        });
+        uploader.on('error', function(type) {
+            switch (type) {
+                case 'Q_EXCEED_NUM_LIMIT':
+                    $win.warn("错误：上传文件数量过多！");
+                    break;
+                case 'Q_EXCEED_SIZE_LIMIT':
+                    $win.warn("错误：文件总大小超出限制！");
+                    break;
+                case 'F_EXCEED_SIZE':
+                    $win.warn("错误：文件大小超出限制！");
+                    break;
+                case 'Q_TYPE_DENIED':
+                    $win.warn("错误：禁止上传该类型文件！");
+                    break;
+                case 'F_DUPLICATE':
+                    $win.warn("错误：请勿重复上传该文件！");
+                    break;
+                default:
+                    $win.warn('错误代码：' + type);
+                    break;
+            }
+        });
+        //当有文件添加进来的时候
+        uploader.on('fileQueued', function() {
+            $(".sub-content").showLoading();
+        });
+        //当文件上传成功时触发
+        uploader.on('uploadSuccess', function(file, data) {
+            if (data.status == '0') {
+                $win.warn(data.msg);
+            }
+            if (data.status == '1') {
+                $(".sub-content").hideLoading();
+                excelData = data.data;
+                $("#fileAdrs").val(data.msg);
+                $(".fileAdrs").show();
+                $win.message("上传成功！");
+            }
+        });
+        uploader.on('uploadComplete', function(file) {
+            $(".sub-content").hideLoading();
+        });
+    });
+
+    function saveIntegral() {
+        var data = $Util.getData($("#form-Integral"));
+        data.isBatch = isBatch;
+        data.excelInfo = excelData
+        $.ajax({
+            type: "post",
+            url: "/Backend/Integral/saveIntegral",
+            data: {'par': data},
+            dataType: "json",
+            beforeSend: function(XMLHttpRequest) {
+                $(".sub-content").showLoading();
+            },
+            success: function(data, textStatus) {
+                $(".sub-content").hideLoading();
+                if (data.status == 1) {
+                    $("#integralTypeID").val(data.data);
+                    $("#hidAction").val("edit");
+                    $win.confirm(data.msg + ",是否关闭窗口？").on(function() {
+                        $('#butCancel').trigger("click");
+                    });
+                } else {
+                    $win.warn(data.msg);
+                }
+            },
+            complete: function(XMLHttpRequest, textStatus) {
+                $(".sub-content").hideLoading();
+            },
+            error: function() {
+                $(".sub-content").hideLoading();
+            }
+        });
+    }
+    function saveIntegralvalid() {
+        $("#form-Integral").validate({
+            rules: {
+                type: {required: true},
+                intVal: {required: true, number: true},
+                remark: {required: true}
+            },
+            messages: {
+                type: {required: "积分类型不能为空!"},
+                intVal: {required: "积分值不能为空!", number: "积分值必须为数字!"},
+                remark: {required: "积分说明不能为空!"}
+            }
+        });
+    }
+</script>

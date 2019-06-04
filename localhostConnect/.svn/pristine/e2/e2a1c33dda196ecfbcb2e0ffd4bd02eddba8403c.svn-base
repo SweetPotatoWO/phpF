@@ -1,0 +1,87 @@
+<?php
+
+/**
+ * 人脉关系枚举
+ * Created by PhpStorm.
+ * User: zhoull
+ * Date: 2018/8/15
+ * Time: 9:52
+ */
+namespace Service\Connect\Model;
+class ConnectTypeEnum
+{
+    /**
+     * 通讯录好友
+     */
+    const CONTACT = 0;
+    /**
+     * 同事
+     */
+    const JOBMATE = 1;
+    /**
+     * 同学
+     */
+    const CLASSMATE = 2;
+    /**
+     * 互加好友（APP中）
+     */
+    const FRIEND = 3;
+    /**
+     * 父子（含母子）
+     */
+    const FATHER = 4;
+    /**
+     * 兄弟（含姐妹）
+     */
+    const BROTHER = 5;
+    /**
+     * 亲戚
+     */
+    const RELATIVE = 6;
+
+    static $dict = [
+        'CONTACT'    =>[
+            'text'=>'通讯录好友',
+            'level'=>4
+        ],
+        'JOBMATE'   => [
+            'text'=>'同事',
+            'level'=>5
+        ],
+        'CLASSMATE' =>[
+            'text'=>'同学',
+            'level'=>6
+        ],
+        'FRIEND'    =>[
+            'text'=>'互加好友',
+            'level'=>5
+        ],
+        'FATHER'    =>[
+            'text'=>'父子（含母子）',
+            'level'=>8
+        ],
+        'BROTHER'    =>[
+            'text'=>'兄弟（含姐妹）',
+            'level'=>8
+        ],
+        'RELATIVE'    =>[
+            'text'=>'亲戚',
+            'level'=>7
+        ],
+    ];
+
+    public static function getKey($v)
+    {
+        return array_keys(self::$dict)[$v];
+    }
+
+    public static function getText($v)
+    {
+        return array_values(self::$dict)[$v]['text'];
+    }
+
+    public static function getLevel($v)
+    {
+        return array_values(self::$dict)[$v]['level'];
+    }
+}

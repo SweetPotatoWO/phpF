@@ -1,0 +1,91 @@
+<?php
+
+namespace MobileApi\Api;
+
+use MobileApi\Common\MobileApiBase;
+use Service\User\Logic\UserAuthLogic;
+
+
+
+/**
+ * Description of index
+ *
+ * @author Administrator
+ */
+class ApiAuth extends MobileApiBase
+{
+
+
+    private $return  = array("code"=>1,"msg"=>"","info"=>array());
+
+    public function getRules()
+    {
+        return array(
+            "jobAuth"=>array(
+                "mailBox"=>array('name' => 'mailBox', 'require' => true, "default"=>"", 'desc' => '邮箱的图片 可不传'),
+                "certificate"=>array('name' => 'certificate', 'require' => true, "default"=>"", 'desc' => '在职证明的图片链接'),
+                "workCard"=>array('name' => 'workCard', 'require' => true, "default"=>"", 'desc' => '工牌的照片'),
+            ),
+        );
+    }
+
+
+    /**
+     * 首页推荐列表
+     * @desc 首页推荐
+     * @return code int  0成功 1失败
+     * @return msg string 信息
+     */
+    public function jobAuth() {
+        $this->userCheck();
+        $data = array();
+        if($this->mailBox) $data['mailBox'] = str_replace(UPLOAD,"",$this->mailBox);
+        if($this->certificate) $data['certificate'] = str_replace(UPLOAD,"",$this->certificate);
+        if($this->workCard) $data['workCard'] = str_replace( UPLOAD,"",$this->workCard);
+
+        $logic = new UserAuthLogic();
+        $res = $logic->addAuth($data);
+        if($res) {
+            $this->return['code'] = 0;
+            $this->return['msg'] = "操作成功";
+        } else {
+            $this->return['code'] = 1;
+            $this->return['msg'] = "操作失败";
+        }
+        return $this->return;
+
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+}

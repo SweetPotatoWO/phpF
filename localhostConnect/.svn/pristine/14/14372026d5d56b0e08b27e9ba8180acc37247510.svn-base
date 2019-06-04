@@ -1,0 +1,101 @@
+<div id="sub-article-edit">
+    <script type="text/javascript" src="{$Think.BPATH}js/article/ueditor.config.js?version={$Think.BNO}" ></script>    
+    <script type="text/javascript" charset="utf-8" src="/Public/plugins/ueditor/ueditor.all.min.js"></script>
+    <script type="text/javascript" charset="utf-8" src="{$Think.BPATH}js/uploader/webuploader.min.js"></script>
+    <script type="text/javascript" charset="utf-8" src="{$Think.BPATH}js/uploader/uploader.js"></script>
+    <h4 class="title">编辑-文字碎片</h4>   
+    <input  type="hidden" name="hidAction" id="hidAction" value="view" >
+    <form class="form-horizontal" id="form-patch">
+        <ul id="myTab" class="nav nav-tabs">
+            <li class="active"><a href="#home" data-toggle="tab">基本信息</a></li>
+        </ul>
+        <input type="hidden" id="pID" name="pID" value="{$data.pID}">
+        <div id="myTabContent" class="tab-content">
+            <div class="tab-pane fade in active" id="home" style="position: relative;">
+                <div class="form-group  has-info pt-10">
+                    <label class="col-sm-1 control-label" >碎片名称：</label>
+                    <div class="col-sm-4">
+                        <input class="form-control" type="text" id="pName" placeholder="碎片名称" name="pName" value="{$data.pName}">
+                    </div>
+                </div>
+                <div class="form-group  has-info pt-10">
+                    <label class="col-sm-1 control-label" >标示：</label>
+                    <div class="col-sm-4">
+                        <input class="form-control" type="text" id="pKey" placeholder="碎片标示" name="pKey" value="{$data.pKey}">
+                    </div>
+                </div>
+                <div class="form-group has-info">
+                    <label class="col-sm-1 control-label" for="inputInfo">内容：</label>
+                    <div class="col-sm-4">
+                        <textarea  class="area_edit span12" cols="50" rows="4" name="pContent" id="pContent">{$data.pContent}</textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="col-sm-1 control-label" ></label>
+            <div class="col-sm-4">      
+                <a class="btn btn-primary mt_10 butSavePatch" href="javascript:;">保存</a>  
+                <a class="btn btn-info mt_10 butReturn" href="javascript:;">返回</a> 
+            </div>
+        </div>   
+
+    </form>
+    <script type="text/javascript" >
+        $(function() {
+            var ue = UE.getEditor('pContent'); //初始化编辑器
+            $(".butReturn").click(function() {
+                $Util.returnRefresh();
+            });
+            patchvalid();
+            $(".butSavePatch").click(function() {
+                var isOK = $("#form-patch").valid();
+                if (isOK) {
+                    savePatch();
+                }
+            });
+        });
+        function savePatch() {
+            var data = $Util.getData($("#form-patch"));
+            $.ajax({
+                type: "post",
+                url: "/Backend/Spread/savePatch",
+                data: {'par': data},
+                dataType: "json",
+                beforeSend: function(XMLHttpRequest) {
+                    $(".sub-content").showLoading();
+                },
+                success: function(data, textStatus) {
+                    $(".sub-content").hideLoading();
+                    if (data.status == 1) {
+                        $("#pID").val(data.data);
+                        $("#hidAction").val("edit");
+                        $win.confirm(data.msg + ",是否关闭窗口？").on(function() {
+                            $('.butReturn').trigger("click");
+                        });
+                    } else {
+                        $win.warn(data.msg);
+                    }
+                },
+                complete: function(XMLHttpRequest, textStatus) {
+                    $(".sub-content").hideLoading();
+                },
+                error: function() {
+                    $(".sub-content").hideLoading();
+                }
+            });
+        }
+        function patchvalid() {
+            $("#form-patch").validate({
+                rules: {
+                    pName: {required: true},
+                    pKey: {required: true},
+                },
+                messages: {
+                    pName: {required: "请填写碎片名称"},
+                    pKey: {required: "请填写标示"},
+                }
+            });
+        }
+    </script>
+</div>

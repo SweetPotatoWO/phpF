@@ -1,0 +1,242 @@
+<div id="sub-share-edit">  
+    <script type="text/javascript" charset="utf-8" src="{$Think.BPATH}js/uploader/webuploader.min.js"></script>
+    <script type="text/javascript" charset="utf-8" src="{$Think.BPATH}js/uploader/uploader.js"></script>
+    <h4 class="title">编辑-回复消息</h4> 
+    <form class="form-horizontal" id="form-reply">
+        <ul id="myTab" class="nav nav-tabs">
+            <li class="share"><a href="#home" data-toggle="tab">基本信息</a></li>
+        </ul>
+        <input type="hidden" id="replyID" name="replyID" value="{$data.replyID}">
+        <input type="hidden" id="hidUpURL" value="{$Think.UPLOAD}">
+        <div id="myTabContent" class="tab-content">
+            <div class="tab-pane fade in active" id="home" style="position: relative;">
+                <div style="position: absolute;top:5px;left:45%;margin-left: 10px;" id="uploadDiv">
+                    <div class="uppic">	
+                        <if condition="strlen($data['imgUrl']) gt 0">
+                            <img src="{$Think.UPLOAD}{$data.imgUrl}" id="shareImg1" style="width: 240px;height: 180px;display: block;margin-bottom: 15px;" />
+                            <else /> <img src="/Public/backend/images/graybox.jpg" id="shareImg1" style="width: 240px;height: 180px;display: block;margin-bottom: 15px;" />
+                        </if>                        
+                    </div>
+                    <div class="upfilebox">                      
+                        <label class="upload-box upload-img">上传图片</label>                    
+                    </div>                  
+                </div>
+                <div class="form-group  has-info">
+                    <label class="col-sm-1 control-label" >消息类型：</label>
+                    <div class="col-sm-4">
+                        <select id="replyType" name="replyType" class="form-control">
+                            <foreach name="replyTypes" item="vo" >
+                                <option value="{$key}" <eq name="data.replyType" value="$key">selected="selected"</eq>>{$vo}</otption>
+                            </foreach>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group has-info">
+                    <label class="col-sm-1 control-label" >内容格式：</label>
+                    <div class="col-sm-4">
+                        <select  id="contentType" name="contentType" class="form-control">
+                            <foreach name="contentTypes" item="vo" >
+                                <option value="{$key}" <eq name="data.contentType" value="$key">selected="selected"</eq>>{$vo}</otption>
+                            </foreach>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group has-info">
+                    <label class="col-sm-1 control-label" for="keyword">关键词：</label>
+                    <div class="col-sm-4">
+                        <input type="text" id="keyword" name="keyword" value="{$data.keyword}" disabled="disabled" placeholder="关键词" class="form-control">         
+                    </div>
+                </div>
+                <div class="form-group has-info">
+                    <label class="col-sm-1 control-label" for="title">回复标题：</label>
+                    <div class="col-sm-3" style="width: 28%;">
+                        <input type="text" id="title" name="title" value="{$data.title}" placeholder="回复标题" class="form-control">         
+                    </div>
+                    <label class="checkbox checkbox-inline">
+                        <input type="checkbox" name="showTitle" id="showTitle"  <gt name="data.replyID" value="0"><eq name="data.showTitle"  value="1">checked</eq><else/>checked</gt>>
+                        <span class="lbl"> </span>      
+                        显示
+                    </label>  
+                </div>
+                <div class="form-group  has-info" id="imgUrlDiv">
+                    <label class="col-sm-1 control-label" for="imgUrl">图片路径：</label>
+                    <div class="col-sm-4">
+                        <input type="text" id="imgUrl" name="imgUrl" value="{$data.imgUrl}" readonly="readonly"  class="form-control">         
+                    </div>
+                </div>
+                <div class="form-group" id="urlDiv">
+                    <label class="col-sm-1 control-label" for="url">跳转URL：</label>
+                    <div class="col-sm-3" style="width: 28%;">
+                        <input type="text" id="url" name="url" value="{$data.url}"  class="form-control">   
+                    </div>
+                    <label class="checkbox checkbox-inline">
+                        <input type="checkbox" name="isAuth" id="isAuth"  <gt name="data.replyID" value="0"><eq name="data.isAuth"  value="1">checked</eq></gt>>
+                        <span class="lbl"> </span>      
+                        授权
+                    </label>  
+                </div>
+                <div class="form-group  has-info" id="contentDiv">
+                    <label class="col-sm-1 control-label">文本内容：</label>
+                    <div class="col-sm-4">
+                        <textarea  class="area_edit span12" cols="50" rows="4" name="content" id="wxcontent">{$data.content}</textarea>
+                    </div>
+                </div>
+                <div class="form-group" >
+                    <label class="col-sm-1 control-label">可用占位符：</label>
+                    <div class="col-sm-4"> <label class="checkbox checkbox-inline" style="color: red;">{phone} 手机号码/用户名  {invitecode}个人邀请码</label></div>
+                </div>
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="col-sm-1 control-label" ></label>
+            <div class="col-sm-4">      
+                <a class="btn btn-primary mt_10 butSaveShare" href="javascript:;">保存</a>  
+                <a class="btn btn-info mt_10 butReturn" href="javascript:;">返回</a> 
+            </div>
+        </div>   
+
+    </form>
+    <script type="text/javascript" >
+        $(function () {
+            $(".upload-img").InitUploader({
+                filesize: "3",
+                sendurl: "/Backend/Spread/saveShareImg",
+                inputID: "imgUrl", //路径控件ID
+                browseID: "shareImg1", //浏览ID
+                swf: "{$Think.BPATH}js/uploader/uploader.swf",
+                filetypes: "jpg,jpge,png,gif",
+            });
+            init();
+        });
+
+        function init() {
+            $("#form-reply").validate({
+                rules: {
+                    title: {required: true, maxlength: 30},
+                    keyword: {required: true, maxlength: 30}
+                },
+                messages: {
+                    title: {required: "请输入回复标题", maxlength: "回复标题最大长度为30个字符"},
+                    keyword: {required: "请输入关键词", maxlength: "关键词最大长度为30个字符"}
+                }
+            });
+            $(".butReturn").click(function () {
+                $Util.returnRefresh();
+            });
+            $(".butSaveShare").click(function () {
+                var isOK = $("#form-reply").valid();
+                if (isOK) {
+                    saveReply();
+                }
+            });
+            $("#replyType").change(function () {
+                initReplyType();
+            });
+            $("#contentType").change(function () {
+                initContentType();
+            });
+            initReplyType();
+            initContentType();
+        }
+
+        function initReplyType() {
+            var replyType = $("#replyType").val();
+            if (replyType == "autoReply" || replyType == "click") {
+                $("#keyword").removeAttr("disabled");
+            } else {
+                $("#keyword").attr('disabled', true);
+                $("#keyword").val(replyType);
+            }
+        }
+
+        function initContentType() {
+            var contentType = $("#contentType").val();
+            if (contentType == "text") {
+                $("#imgUrl").attr('disabled', true);
+                $("#imgUrlDiv").hide();
+                $("#uploadDiv").hide();
+                $("#url").attr('disabled', true);
+                $("#urlDiv").hide();
+                $("#wxcontent").removeAttr("disabled");
+                $("#contentDiv").show();
+                $("#wxcontent").rules("remove");
+                $("#imgUrl").rules("remove");
+                $("#url").val('');
+                $("#imgUrl").val('');
+                $("#wxcontent").rules("add", {required: true,
+                    messages: {
+                        required: "请输入回复内容"
+                    }
+                });
+            } else if (contentType == "image") {
+                $("#imgUrl").removeAttr("disabled");
+                $("#imgUrlDiv").show();
+                $("#uploadDiv").show();
+                $("#wxcontent").attr('disabled', true);
+                $("#contentDiv").hide();
+                $("#wxcontent").rules("remove");
+                $("#imgUrl").rules("remove");
+                $("#url").removeAttr("disabled");
+                $("#urlDiv").show();
+                $("#wxcontent").val('');
+                $("#imgUrl").rules("add", {required: true,
+                    messages: {
+                        required: "请上传图片"
+                    }
+                });
+            } else {
+                $("#wxcontent").removeAttr("disabled");
+                $("#contentDiv").show();
+                $("#imgUrl").removeAttr("disabled");
+                $("#imgUrlDiv").show();
+                $("#url").removeAttr("disabled");
+                $("#urlDiv").show();
+                $("#uploadDiv").show();
+                $("#wxcontent").rules("remove");
+                $("#imgUrl").rules("remove");
+                $("#wxcontent").rules("add", {required: true,
+                    messages: {
+                        required: "请输入回复内容"
+                    }
+                });
+                $("#imgUrl").rules("add", {required: true,
+                    messages: {
+                        required: "请上传图片"
+                    }
+                });
+            }
+        }
+
+        function saveReply() {
+            var data = $Util.getData($("#form-reply"));
+            data.showTitle = $("#showTitle").prop('checked') ? 1 : 0;
+            data.isAuth = $("#isAuth").prop('checked') ? 1 : 0;
+            $.ajax({
+                type: "post",
+                url: "/Backend/Spread/saveWxReply",
+                data: {'par': data},
+                dataType: "json",
+                beforeSend: function () {
+                    $(".sub-content").showLoading();
+                },
+                success: function (data) {
+                    $(".sub-content").hideLoading();
+                    if (data.status == 1) {
+                        $win.confirm(data.msg + ",是否关闭窗口？").on(function () {
+                            $('.butReturn').trigger("click");
+                        });
+                    } else {
+                        $win.warn(data.msg);
+                    }
+                },
+                complete: function () {
+                    $(".sub-content").hideLoading();
+                },
+                error: function () {
+                    $(".sub-content").hideLoading();
+                }
+            });
+        }
+
+    </script>
+</div>

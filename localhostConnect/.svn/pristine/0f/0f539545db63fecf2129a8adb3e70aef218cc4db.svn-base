@@ -1,0 +1,556 @@
+<?php
+
+namespace Service\Integral\Logic;
+
+use Service\Integral\Model\IntegralModel;
+
+class IntegralLogic {
+
+    private $model = null;
+
+    public function __construct() {
+        $this->model = new IntegralModel();
+    }
+
+    /**
+     * 添加和编辑积分项
+     */
+    public function addIntegralType($data) {
+        $data['operateIP'] = getIP();
+        return $this->model->addType($data);
+    }
+
+    /**
+     * 获取到全部的积分选项
+     */
+    public function getAllIntegral($where = "", $field = "") {
+        $result = $this->model->selectType($where, $field);
+        foreach ($result as $k => $val) {
+            $result[$k]['sign'] = $val['typeValue'] * 1 < 0 ? '-' : '+';
+            $result[$k]['typeValue'] = pointMoney(abs($val['typeValue']));
+        }
+        return $result;
+    }
+
+    /** 获取到一个积分选项
+     * @param string $where
+     * @return mixed
+     */
+
+    public function getOneIntegral($where = "", $field = "") {
+        $info = $this->model->selectType($where, $field);
+        return $info[0];
+    }
+
+    /**
+     * 删除积分选项
+     */
+    public function delIntegralType($type) {
+        return $this->model->delType($type);
+    }
+
+    /*     * 给用户添加积分的操作
+     * @param $userID
+     * @param $type
+     * @return bool
+     */
+
+    public function userIntegralInc($userID, $type, $weight) {
+        $integralTypeInfo = $this->model->getTypeInfo($type, $weight);
+        if (empty($integralTypeInfo)) {
+            return false;
+        }
+        $res = $this->IntegralAccountInt($userID, $integralTypeInfo);
+        if (empty($res)) {   //当没有返回记录的时候
+            return false;
+        }
+        $this->addIntergalLog($userID, $integralTypeInfo, $res);  //添加记录
+        return true;
+    }
+
+    /*     * 用户消费积分的操作
+     * @param $userID
+     * @param $type
+     * @return bool
+     */
+
+    public function userIntegralDec($userID, $type, $weight) {
+        $integralTypeInfo = $this->model->getTypeInfo($type, $weight);
+        if (empty($integralTypeInfo)) {
+            return false;
+        }
+        $res = $this->IntegralAccountDec($userID, $integralTypeInfo);
+        if (empty($res)) {   //当没有返回记录的时候
+            return false;
+        }
+        $this->addIntergalLog($userID, $integralTypeInfo, $res);  //添加记录
+        return true;
+    }
+
+    /*     * 增加用户的积分
+     * @param $userID
+     * @param $data    积分类型的数据
+     * @return mixed
+     */
+
+    protected function IntegralAccountInt($userID, $data) {
+        return $this->model->intOrSaveIntegral($userID, $data);
+    }
+
+    /*     * 减去用户的积分
+     * @param $userID
+     * @param $data   积分类型的数据
+     * @return mixed
+     */
+
+    protected function IntegralAccountDec($userID, $data) {
+        return $this->model->decOrSaveIntegral($userID, $data);
+    }
+
+    /**
+     * 添加一条记录
+     * @param $userID
+     * @param $data   积分类型的数据
+     * @param $userAccountData  账户变动前后的的数据
+     * @return mixed
+     */
+    protected function addIntergalLog($userID, $data, $userAccountData) {
+        return $this->model->addIntergalLog($userID, $data, $userAccountData);
+    }
+
+    /**
+     * 添加一条余额变动记录
+     * @param $userID
+     * @param $data
+     * @param $userAccountData
+     * @return mixed
+     */
+    protected function addBalancelog($userID, $userAccountData, $num = 1, $type = 1, $symbol = 1) {
+        return $this->model->addBalanceLog($userID, $userAccountData, $num, $type, $symbol);
+    }
+
+    /** 获取到用户的积分详情
+     * @param $userID
+     */
+
+    public function getUserIntegral($userID) {
+        return $this->model->getUserIntegral($userID);
+    }
+
+    /*     * 获取到用户的积分明细
+     * @param string $where
+     * @param string $field
+     * @return mixed
+     */
+
+    public function getIntegraDetail($where = "", $field = "", $limit = "0,10") {
+        return $this->model->IntegraDetail($where, $field, $limit);
+    }
+
+    /**
+     * 启币明细
+     */
+    public function getIntegraDetailByID($where, $limit = '0,10') {
+        $field = 'B.typeName,B.typeValue,A.addDatetime';
+        $result = $this->model->getIntegraDetail($where, $field, $limit);
+        foreach ($result as $k => $val) {
+            $result[$k]['sign'] = $val['typeValue'] * 1 < 0 ? '-' : '+';
+            $result[$k]['typeValue'] = pointMoney(abs($val['typeValue']));
+            $result[$k]['addDatetime'] = date('Y-m-d H:i', $val['addDatetime']);
+        }
+        return $result;
+    }
+
+    /**
+     * 给用户添加额度的操作
+     * @param $userID
+     * @param $type
+     * @return bool
+     */
+
+    public function userBalanceInc($userID, $type) {
+
+        $res = $this->model->BalanceInt($userID, $type,5);  //一次操作 兌换5次
+        if (empty($res)) {   //当没有返回记录的时候
+            return false;
+        }
+        $typeCode = ($type == "letter") ? 1 : 2;
+        $this->addBalancelog($userID, $res, 1, $typeCode, 1);  //添加记录
+        return true;
+    }
+
+    /**
+     * 用户消费额度的操作
+     * @param $userID
+     * @param $type
+     * @return bool
+     */
+
+    public function userBalanceDec($userID, $type) {
+
+        $res = $this->model->BalanceDec($userID, $type);
+        if (empty($res)) {   //当没有返回记录的时候
+            return false;
+        }
+        $typeCode = ($type == "letter") ? 1 : 2;
+        $this->addBalancelog($userID, $res, 1, $typeCode, 0);  //添加记录
+        return true;
+    }
+
+    /**
+     * 用户某项启币汇总
+     */
+    public function getUserTotalCoinByType($userID, $type) {
+        if ($userID * 1 < 1 || empty($type)) {
+            return false;
+        }
+        $where['userID'] = $userID;
+        $where['typeWeight'] = $type;
+        $res = $this->model->getUserTotalCoinByType($where);
+        return $res;
+    }
+
+
+    /**
+     * 新增积分账户，在用户注册的时候加入
+     * @param type $userID
+     * @param type $phone
+     * @return boolean
+     */
+    public function addIntegral($userID, $phone) {
+        if (isset($userID)) {
+            $result = $this->model->addIntegral($userID, $phone);
+            return $result;
+        }
+        return false;
+    }
+
+    /**
+     * 积分账户
+     * @param type $where
+     * @param type $whereArr
+     * @param type $limit
+     */
+    public function getAccountList($where, $whereArr, $limit) {
+        $result = $this->model->getAccountList("(1=1)" . $where, $whereArr, $limit);
+        return $result;
+    }
+
+    /**
+     * 余额流水
+     */
+    public function getBalanceItem($where, $whereArr, $limit) {
+        $result = $this->model->getBalanceItem("(1=1)" . $where, $whereArr, $limit);
+        foreach ($result['rows'] as $k => $v) {
+            switch ($v['type']) {
+                case '1':
+                    $result['rows'][$k]['type'] = '私信额度';
+                    break;
+                case '2':
+                    $result['rows'][$k]['type'] = '申请额度';
+                    break;
+            }
+            $str = $v['symbol'] > 0 ? '+' : '-';
+            $result['rows'][$k]['changeValue'] = $str . $v['changeValue'];
+        }
+        return $result;
+    }
+
+    /**
+     *   查询单个积分账户是的积分类型
+     */
+    public function getIntegralType($integralID) {
+        if ($integralID * 1 < 0) {
+            return false;
+        }
+        $where.="";
+        $whereArr = array();
+        $data = "";
+        $dataArr = array();
+//        $where.=" AND isSystem = '%d'";
+//        array_push($whereArr, 0);
+        $where.=" AND statusMark = '%d'";
+        array_push($whereArr, 1);
+        $data .= " AND a.integralID ='%d' ";
+        array_push($dataArr, $integralID);
+        $result["integralType"] = $this->model->getIntegralType("(1=1)" . $where, $whereArr);
+        $result["integral"] = $this->model->getTypes("(1=1)" . $data, $dataArr);
+        return $result;
+    }
+
+    /**
+     * 兑换的积分
+     * @param type $par
+     * @param type $integralTypeInfo
+     */
+    public function saveIntegral($par, $integralTypeInfo) {
+        $userID = $par["userID"];
+        $ip = get_client_ip();
+        $isBatch = $par["isBatch"];
+        $trackKey = "";
+        $typeCode = $integralTypeInfo["typeCode"];
+        if ($integralTypeInfo["typeValue"] == "0.00") {
+            $typeValue = $par["intVal"];
+            $remark = $par["remark"];
+        } else {
+            $typeValue = $integralTypeInfo["typeValue"];
+            $remark = $integralTypeInfo["remark"];
+        }
+
+        $arr = array("status" => 1, "msg" => "", "data" => "");
+        if (!empty($isBatch)) { //当判断不为空的时候确定了为批量发放数据
+            $useLogic = new \Service\User\Logic\UserLogic();
+            $colLogic = new \Service\Common\CollectiveLogic();
+            $info = array();
+            if ($par["sendInteg"] == 2) {
+                $excelInfo = $par["excelInfo"];
+                $bsRes = $colLogic->trmatn($excelInfo, ",");
+                $userNameList = explode(",", $bsRes);
+                $userNameList = array_filter($userNameList);
+                $usersUnique = array_unique($userNameList);
+                $repet = array_diff_key($userNameList, $usersUnique);
+                if (!empty($repet)) {
+                    $arr["status"] = 0;
+                    $arr["msg"] = "用户名重复";
+                    return $arr;
+                }
+                $info = $userNameList;
+            } else {
+                $phoneStr = $par["articleTitle"];
+                $info = explode(",", $phoneStr);
+            }
+            if (empty($info)) {
+                $arr["status"] = 0;
+                $arr["msg"] = "没有获取到手机号码！";
+            }
+
+            $phoneStatus = true;
+            foreach ($info as $v) {
+                $v = trim($v);
+                if (empty($v)) {
+                    $arr["status"] = 0;
+                    $arr["msg"] = "不能有空的电话号码！";
+                    break;
+                }
+                $userInfo = $useLogic->getByPhone($v);
+                if (empty($userInfo)) {
+                    $phoneStatus = false;
+                    $arr["status"] = 0;
+                    $arr["msg"] = "电话号码:" . $v . "不存在!";
+                    break;
+                }
+                $result = $this->updateIntegral($userInfo["userID"], $typeCode, $ip, $remark, $trackKey, $typeValue);
+                if (empty($result)) {
+                    $arr["status"] = 0;
+                    $arr["msg"] = "批量更新出错！";
+                }
+            }
+        } else {
+            $result = $this->updateIntegral($userID, $typeCode, $ip, $remark, $trackKey, $typeValue);
+            if (empty($result)) {
+                $arr["status"] = 0;
+                $arr["msg"] = "增加积分失败！";
+            }
+        }
+        return $arr;
+    }
+
+    /**
+     * 积分变更记录
+     * @param type $userID
+     * @param type $type
+     * @param type $operateIP
+     * @param type $remark
+     * @param type $orderNo
+     * @param type $integral
+     * @return type
+     */
+    public function updateIntegral($userID, $type, $operateIP, $remark = "", $orderNo = "", $integral = 0) {
+        if (strlen($type) > 0 && $integral == 0) {
+            $value = $this->getTypeValue($type);
+            $integral = $value["typeValue"];
+            if (strlen($remark) < 2) {
+                $remark = $value["typeRemark"];
+            }
+        }
+
+        if (strlen($type) < 1 && $integral == 0) {
+            logger_sys("签到积分类型数据错误", "userID:" . $userID . " | type: " . $type . " | operateIP: " . $operateIP . " | integral : " . $integral);
+            return false;
+        }
+        $result = $this->model->updateIntegral($userID, $integral, $orderNo, $type, $remark, $operateIP);
+        return $result;
+    }
+
+    /**
+     * 积分类型查询 
+     * @param type $where
+     * @param type $whereArr
+     * @param type $limit
+     */
+    public function getType($where, $whereArr, $limit) {
+        $result = $this->model->getType("(1=1)" . $where, $whereArr, $limit);
+        return $result;
+    }
+
+    /**
+     * 获取类型积分
+     * @param type $type
+     * @return type
+     */
+    public function getTypeValue($type) {
+        $where["typeWeight"] = $type;
+        $where["statusMark"] = 1;
+        $field = "typeCode,typeValue,remark";
+        $result = $this->model->getSinType($where, $field);
+        return $result;
+    }
+
+    /**
+     * 查询单个积分类型 
+     * @param type $integralTypeID
+     */
+    public function getSinType($integralTypeID) {
+        if ($integralTypeID * 1 < 0) {
+            return FALSE;
+        }
+        $where["typeID"] = $integralTypeID;
+        $field = "typeID,typeName,typeCode,typeWeight,typeValue,remark,statusMark";
+        $result = $this->model->getSinType($where, $field);
+        return $result;
+    }
+
+    /**
+     * 保存积分类型 
+     */
+    public function saveType($data) {
+        try {
+            $where = array();
+            if ($data["typeID"] * 1 > 0 && count($data) > 0) {
+                $where["typeID"] = $data["typeID"];
+                $data["editUserName"] = C("userName");
+                $data["editUserID"] = C("userID");
+                $data["editDatetime"] = time();
+                unset($data["integralTypeID"]);
+            } else {
+                $data["addUserID"] = C("userID");
+                $data["addUserName"] = C("userName");
+                $data["addDatetime"] = time();
+            }
+            $data['statusMark'] = $data['statusMark'] * 1 > 0 ? 1 : 0;
+            $result = $this->model->saveType($data, $where);
+            return $result;
+        } catch (Exception $ex) {
+            logger(__METHOD__, $ex->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * 删除积分类型 
+     */
+    public function delType($integralTypeID) {
+        if ($integralTypeID * 1 < 0) {
+            return false;
+        }
+        $where["typeID"] = $integralTypeID;
+        $data["statusMark"] = 0;
+        $result = $this->model->saveType($data, $where);
+        return $result;
+    }
+
+    /**
+     * 查询积分领取记录
+     * @param type $where
+     * @param type $whereArr
+     * @param type $limit
+     */
+    public function getItem($where, $whereArr, $limit) {
+        $field = "A.detailID,A.typeCode,A.originalIntegral,A.changeIntegral,A.changeValue,A.addDatetime,A.remark,B.nickname,B.phone";
+        $result = $this->model->getItem("(1=1)" . $where, $whereArr, $limit, $field);
+        return $result;
+    }
+
+    /**
+     * 获取用户积分
+     * @param type $userID
+     * @return boolean
+     */
+    public function getIntegral($userID) {
+        $info = $this->model->getIntegral($userID);
+        return $info;
+    }
+
+    /**
+     * 获取用户兑换列表
+     * @param type $where
+     * @param type $whereArr
+     * @param type $limit
+     * @return type
+     */
+    public function exchangeOrderList($where, $whereArr, $limit) {
+        $orderStatus = array(0 => "删除", 1 => "未发货", 2 => "已发货", 3 => "取消",);
+        $list = $this->model->exchangeOrderList($where, $whereArr, $limit);
+        $arr = array();
+        foreach ($list["rows"] as $k => $v) {
+            $v['orderStatusTxt'] = $orderStatus[$v['orderStatus']];
+            $v['addDatetime'] = date("Y-m-d H:i", $v["addDatetime"]);
+            $v['wx_addDatetime'] = formatshortDate($list["rows"][$k]['addDatetime']);
+            $arr[] = $v;
+        }
+        $list["rows"] = $arr;
+        return $list;
+    }
+
+    /**
+     * 获取积分明细
+     * @param type $userID
+     * @return boolean
+     */
+    public function getIntegralList($where, $whereArr, $limit) {
+
+        $list = $this->model->getIntegralList($where, $whereArr, $limit);
+
+        $ret = array();
+        foreach ($list['rows'] as $v) {
+            $v['remark'] = borrowLinkFormat($v['remark']);
+            if (trim($v['remark']) == "投资获得积分") {
+                $v['remark'] = "出借获得积分";
+            }
+            $v['addDatetime'] = date("Y-m-d H:i", $v["addDatetime"]);
+            $ret[] = $v;
+        }
+        $list['rows'] = $ret;
+        return $list;
+    }
+
+    /**
+     * 获取用户积分和用户vip等级折扣
+     */
+    public function getUserVipinfo($userID) {
+        if (empty($userID)) {
+            return false;
+        }
+        return $this->model->getUserVipinfo($userID);
+    }
+    
+    /**
+     * 统计用户累计签到
+     */
+    public function getTotalSign(array $where){
+        if(empty($where)){
+            return false;
+        }
+        return $this->model->getTotalSign($where);
+    }
+
+
+    /**
+     * 统计用户累计签到的次数
+     */
+    public function getStat($userID) {
+        $model = new IntegralModel();
+        return $model->getStat($userID);
+    }
+
+}

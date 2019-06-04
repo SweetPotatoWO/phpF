@@ -1,0 +1,492 @@
+<?php
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+namespace Service\News\Logic;
+
+use Common\Common\Redis;
+use Common\Plugins\UploadClient;
+
+/**
+ * Description of Account
+ *
+ * @author abc
+ */
+class WeiXinLogic {
+
+    private $token;
+    private $appID;
+    private $appSecret;
+    public $accessToken;
+
+    public function __CONSTRUCT() {
+        $this->token = TOKEN;
+        $this->appID = APPID;
+        $this->appSecret = APPSECRET;
+        $cache = Redis::getInstance();
+        $objToken = $cache->get("WX_AccessToken");
+        if ($objToken && $objToken['token'] && $objToken['expires']>time()) {
+            $this->accessToken = $objToken['token'];
+        } else {
+            logger("WX_AccessToken过期", json_encode($objToken));
+            $this->flushToken();
+        }
+    }
+
+    private function flushToken(){
+        $cache = Redis::getInstance();
+        $this->accessToken = $this->AccessTokenGet();
+        $objToken = [
+            'token'=>$this->accessToken,
+            'expires'=>time()+5400
+        ];
+        $cache->set("WX_AccessToken", json_encode($objToken), 5400);
+    }
+
+    /**
+     * 获取微信分享配置信息。
+     */
+    public function getShareConfig($url = '') {
+        $jsapiTicket = $this->getJsApiTicket();
+        $timestamp = time();
+        $nonceStr = $this->getNonceStr();
+        // 这里参数的顺序要按照 key 值 ASCII 码升序排序
+        $rawString = "jsapi_ticket=$jsapiTicket&noncestr=$nonceStr&timestamp=$timestamp&url=$url";
+        $signature = sha1($rawString);
+        $signPackage = array(
+            "appId" => APPID,
+            "nonceStr" => $nonceStr,
+            "timestamp" => $timestamp,
+            "url" => $url,
+            "signature" => $signature,
+            "rawString" => $rawString
+        );
+        return $signPackage;
+    }
+
+    /**
+     * 生成二维码
+     * @param type $userID
+     */
+    public function userQcode($userID, $registerDatetime, $userKey) {
+
+        $weixinImg = "upload/weixin/" . date("Y", $registerDatetime) . "/" . date("m", $registerDatetime) . "/" . $userKey . ".png"; //微信个人二维码
+        $imgUrl = UPLOAD . "/" . $weixinImg;
+
+        $redisTimeOut = $this->isRedisQcode($userID);
+        if (!$redisTimeOut) {
+            $this->scanWxQrcode($userID, $weixinImg);
+            return $imgUrl;
+        }
+        //生成二维码
+        $ret = $imageurl = $this->QrcodeCreate($userID);
+        if (!$ret) {
+            $this->scanWxQrcode($userID, $weixinImg);
+            return $imgUrl;
+        }
+        //保存二维码到本地
+        $this->DownQrcodeImg($imageurl, $weixinImg);
+        $this->scanWxQrcode($userID, $weixinImg);
+        return $imgUrl;
+    }
+
+    /**
+     * 识别微信二维码
+     * @param type $userID
+     * @param type $filepath
+     */
+    private function scanWxQrcode($userID, $filepath) {
+        $client = new UploadClient();
+        $res = $client->scanWxQrcode($filepath);
+        if ($res !== false) {
+            $redis = Redis::getInstance();
+            $redis->set("FriendWXQrcode_" . strtoupper(md5($res)), $userID, 3600 * 24 * 30);
+        }
+    }
+
+    /**
+     * 此用户二维码是否过期  
+     * @param type $userID   只有用户ID小于100000 都是永久二维码
+     * @return boolean 过期 true , 未过期false
+     */
+    public function isRedisQcode($userID) {
+        if ($userID <= 100000) {  //目前用户超过了 100000 ，在这范围的目前不考虑生成二维码 ，若没有，将手动生成 
+            return false;
+        }
+        $cache = Redis::getInstance();
+        $isValue = $cache->get("WXQrcode_" . $userID);
+        if (empty($isValue)) {
+            $cache->set("WXQrcode_" . $userID, $userID, 3600 * 24 * 6); //存储6天
+            return true;
+        }
+        return false;
+    }
+
+    /* 创建二维码 @param - $qrcodeID传递的参数，$qrcodeType二维码类型 默认为临时二维码 @return - 返回二维码图片地址 */
+
+    public function QrcodeCreate($qrcodeID) {
+        if ($qrcodeID > 100000) {
+            $qrcodeType = 'QR_SCENE';   //临时
+            $expire_seconds = 3600 * 24 * 7;
+        } else {
+            $expire_seconds = 1800;
+            $qrcodeType = 'QR_LIMIT_SCENE'; //永久
+        }
+
+        $tempJson = '{"expire_seconds": ' . $expire_seconds . ', "action_name": "' . $qrcodeType . '", "action_info": {"scene": {"scene_id": ' . $qrcodeID . '}}}';
+        $url = "https://api.weixin.qq.com/cgi-bin/qrcode/create?access_token=" . $this->accessToken;
+        $tempArr = json_decode($this->https_post($url, $tempJson), true);
+        if (@array_key_exists('ticket', $tempArr)) {
+            return 'https://mp.weixin.qq.com/cgi-bin/showqrcode?ticket=' . $tempArr['ticket'];
+        } else {
+            $cache = Redis::GetInstance();
+            $cache->del("WXQrcode_" . $qrcodeID);
+            logger_sys("二维码创建失败", "用户缓存redis：WXQrcode_" . $qrcodeID . " || " . json_encode($tempArr));
+            return false;
+        }
+    }
+
+    public function DownQrcodeImg($imageUrl, $filename) {
+        $client = new UploadClient();
+        $client->upLoadWX($filename, $imageUrl);
+        //file_put_contents($filename, $imageInfo);
+    }
+
+    /* 从微信服务器获取access_token并写入配置文件 */
+
+    private function AccessTokenGet() {
+        $url = 'https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=' . $this->appID . '&secret=' . $this->appSecret;
+        $tempArr = json_decode($this->https_post($url), true);
+        if (@array_key_exists('access_token', $tempArr)) {
+            return $tempArr['access_token'];
+        } else {
+            logger_sys("微信accessToken失败", "reids：_WX_AccessToken || " . json_encode($tempArr));
+            return false;
+        }
+    }
+
+    /* 使用curl来post一个json数据 */
+
+    public function https_post($url, $jsonData = "") {
+        $curl = curl_init();
+        curl_setopt($curl, CURLOPT_URL, $url);
+        curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, FALSE);
+        curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, FALSE);
+        if (!empty($jsonData)) {
+            curl_setopt($curl, CURLOPT_POST, 1);
+            curl_setopt($curl, CURLOPT_POSTFIELDS, $jsonData);
+        }
+        curl_setopt($curl, CURLOPT_TIMEOUT, 30);
+        curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
+        $result = curl_exec($curl);
+        curl_close($curl);
+        return $result;
+    }
+
+    /**
+     * 获取微信Auth2.0网页授权链接
+     * @param unknown $redirect  必填    跳转页面
+     * @param string $state      非必填  用于传递参数
+     * @param string $scope      非必填  snsapi_base （不弹出授权页面，直接跳转，只能获取用户openid），snsapi_userinfo （弹出授权页面)
+     * @return string
+     */
+    public function getAuthUrl($redirect, $state = 'STATE', $scope = 'snsapi_base') {
+        $appid = APPID;
+        $redirect_url = urlencode(WECHAT . $redirect);
+        $url = "https://open.weixin.qq.com/connect/oauth2/authorize?appid=$appid&redirect_uri=$redirect_url&response_type=code&scope=$scope&state=$state#wechat_redirect";
+        // $url = "http://wap.teamtop-weixin.com/controller/FInterface.ashx?parm=Authorization_SnsApiBase&wyb_code=0B782EDE48684EAD68C8E731656D04AEE30526BE5D9AEACD&ret_type=0&ret_url=$redirect_url";
+        return $url;
+    }
+
+    /**
+     * 获取微信用户openid
+     * @return number|unknown
+     */
+    public function getOpenId() {
+        $appid = $this->appID;
+        $secret = $this->appSecret;
+        $code = I("GET.code");
+        $state = I("GET.state");
+        if (empty($code)) {
+            return false;
+        }
+        $url = "https://api.weixin.qq.com/sns/oauth2/access_token?appid=$appid&secret=$secret&code=$code&grant_type=authorization_code";
+        $obj = (array) json_decode($this->vpost($url, ''));
+        if (isset($obj['openid'])) {
+            return $obj['openid'];
+        }
+        return FALSE;
+    }
+
+    public function getUserInfo() {
+        $appid = $this->appID;
+        $secret = $this->appSecret;
+        $code = I("GET.code");
+        if (empty($code)) {
+            return false;
+        }
+        $oauthurl = "https://api.weixin.qq.com/sns/oauth2/access_token?appid=$appid&secret=$secret&code=$code&grant_type=authorization_code";
+        $oauth = json_decode($this->vpost($oauthurl, ''));
+        $param2 ['access_token'] = $oauth->access_token;
+        $param2 ['openid'] = $oauth->openid;
+        $param2 ['lang'] = 'zh_CN';
+        $url = "https://api.weixin.qq.com/sns/userinfo?" . http_build_query($param2);
+        $info = json_decode(file_get_contents($url));
+        $data['name'] = $info->nickname;
+        $data['openid'] = $oauth->openid;
+        $data["headimgurl"] = $info->headimgurl;
+        return $data;
+    }
+
+    /**
+     * 模拟提交数据函数
+     * @param unknown $url
+     * @param unknown $data
+     * @return unknown
+     */
+    function vpost($url, $data) {
+
+        $curl = curl_init(); // 启动一个CURL会话
+        curl_setopt($curl, CURLOPT_URL, $url); // 要访问的地址
+        curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, FALSE); // 对认证证书来源的检查
+        curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, FALSE); // 从证书中检查SSL加密算法是否存在
+        curl_setopt($curl, CURLOPT_USERAGENT, 'Mozilla/5.0 (compatible; MSIE 5.01; Windows NT 5.0)'); // 模拟用户使用的浏览器
+        curl_setopt($curl, CURLOPT_POST, 1); // 发送一个常规的Post请求
+        curl_setopt($curl, CURLOPT_POSTFIELDS, $data); // Post提交的数据包x
+        curl_setopt($curl, CURLOPT_TIMEOUT, 30); // 设置超时限制防止死循环
+        curl_setopt($curl, CURLOPT_HEADER, 0); // 显示返回的Header区域内容
+        curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1); // 获取的信息以文件流的形式返回
+        $tmpInfo = curl_exec($curl); // 执行操作
+        if (curl_errno($curl)) {
+            echo 'Errno' . curl_error($curl); //捕抓异常
+        }
+        curl_close($curl); // 关闭CURL会话
+        return $tmpInfo; // 返回数据
+    }
+
+    /*     * **************************************************
+     *  微信带证书提交数据 - 微信红包使用
+     * ************************************************** */
+
+    public function wxHttpsRequestPem($url, $vars, $second = 30, $aHeader = array()) {
+        $ch = curl_init();
+        //超时时间
+        curl_setopt($ch, CURLOPT_TIMEOUT, $second);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        //这里设置代理，如果有的话
+        //curl_setopt($ch,CURLOPT_PROXY, '10.206.30.98');
+        //curl_setopt($ch,CURLOPT_PROXYPORT, 8080);
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+
+        //以下两种方式需选择一种
+        //第一种方法，cert 与 key 分别属于两个.pem文件
+        //默认格式为PEM，可以注释
+        curl_setopt($ch, CURLOPT_SSLCERTTYPE, 'PEM');
+        curl_setopt($ch, CURLOPT_SSLCERT, getcwd() . '/apiclient_cert.pem');
+        //默认格式为PEM，可以注释
+        curl_setopt($ch, CURLOPT_SSLKEYTYPE, 'PEM');
+        curl_setopt($ch, CURLOPT_SSLKEY, getcwd() . '/apiclient_key.pem');
+
+        curl_setopt($ch, CURLOPT_CAINFO, 'PEM');
+        curl_setopt($ch, CURLOPT_CAINFO, getcwd() . '/rootca.pem');
+
+        //第二种方式，两个文件合成一个.pem文件
+        //curl_setopt($ch,CURLOPT_SSLCERT,getcwd().'/all.pem');
+
+        if (count($aHeader) >= 1) {
+            curl_setopt($ch, CURLOPT_HTTPHEADER, $aHeader);
+        }
+
+        curl_setopt($ch, CURLOPT_POST, 1);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $vars);
+        $data = curl_exec($ch);
+        if ($data) {
+            curl_close($ch);
+            return $data;
+        } else {
+            $error = curl_errno($ch);
+            echo "call faild, errorCode:$error\n";
+            curl_close($ch);
+            return false;
+        }
+    }
+
+    /*     * ***************************************************
+     *      生成随机字符串 - 最长为32位字符串
+     * *************************************************** */
+
+    public function wxNonceStr($length = 16, $type = FALSE) {
+        $chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        $str = "";
+        for ($i = 0; $i < $length; $i++) {
+            $str .= substr($chars, mt_rand(0, strlen($chars) - 1), 1);
+        }
+        if ($type == TRUE) {
+            return strtoupper(md5(time() . $str));
+        } else {
+            return $str;
+        }
+    }
+
+    /*     * *****************************************************
+     *      将数组解析XML - 微信红包接口
+     * ***************************************************** */
+
+    public function wxArrayToXml($parameters = NULL) {
+        if (is_null($parameters)) {
+            $parameters = $this->parameters;
+        }
+
+        if (!is_array($parameters) || empty($parameters)) {
+            die("参数不为数组无法解析");
+        }
+
+        $xml = "<xml>";
+        foreach ($arr as $key => $val) {
+            if (is_numeric($val)) {
+                $xml.="<" . $key . ">" . $val . "</" . $key . ">";
+            } else
+                $xml.="<" . $key . "><![CDATA[" . $val . "]]></" . $key . ">";
+        }
+        $xml.="</xml>";
+        return $xml;
+    }
+
+    /*     * *****************************************************
+     *      微信MD5签名生成器 - 需要将参数数组转化成为字符串[wxFormatArray方法]
+     * ***************************************************** */
+
+    public function wxMd5Sign($content, $privatekey) {
+        try {
+            if (is_null($key)) {
+                throw new Exception("财付通签名key不能为空！");
+            }
+            if (is_null($content)) {
+                throw new Exception("财付通签名内容不能为空");
+            }
+            $signStr = $content . "&key=" . $key;
+            return strtoupper(md5($signStr));
+        } catch (Exception $e) {
+            die($e->getMessage());
+        }
+    }
+
+    /*     * *****************************************************
+     *      微信格式化数组变成参数格式 - 支持url加密
+     * ***************************************************** */
+
+    public function wxFormatArray($parameters = NULL, $urlencode = FALSE) {
+        if (is_null($parameters)) {
+            $parameters = $this->parameters;
+        }
+        $restr = ""; //初始化空
+        ksort($parameters); //排序参数
+        foreach ($parameters as $k => $v) {//循环定制参数
+            if (null != $v && "null" != $v && "sign" != $k) {
+                if ($urlencode) {//如果参数需要增加URL加密就增加，不需要则不需要
+                    $v = urlencode($v);
+                }
+                $restr .= $k . "=" . $v . "&"; //返回完整字符串
+            }
+        }
+        if (strlen($restr) > 0) {//如果存在数据则将最后“&”删除
+            $restr = substr($restr, 0, strlen($restr) - 1);
+        }
+        return $restr; //返回字符串
+    }
+
+    /*     * *****************************************************
+     *      微信商户订单号 - 最长28位字符串
+     * ***************************************************** */
+
+    public function wxMchBillno($mchid = NULL) {
+        if (is_null($mchid)) {
+            if (self::mchid == "" || is_null(self::mchid)) {
+                $mchid = time();
+            } else {
+                $mchid = self::mchid;
+            }
+        } else {
+            $mchid = substr(addslashes($mchid), 0, 10);
+        }
+        return date("Ymd", time()) . time() . $mchid;
+    }
+
+    /**
+     * 获取指定长度的随机字符串。
+     * @param type $length
+     * @return type
+     */
+    private function getNonceStr($length = 16) {
+        $chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        $str = "";
+        for ($i = 0; $i < $length; $i++) {
+            $str .= substr($chars, mt_rand(0, strlen($chars) - 1), 1);
+        }
+        return $str;
+    }
+
+    /**
+     * 获取微信分享票据。
+     * @return type
+     */
+    private function getJsApiTicket($times=0) {
+        $redisName = "share_jsapi_ticket";
+        $redis = Redis::GetInstance();
+        $data = $redis->get($redisName);
+        if (empty($data) || $data["expire_time"] < time()) {
+            $accessToken = $this->accessToken;
+            // 如果是企业号用以下 URL 获取 ticket
+            // $url = "https://qyapi.weixin.qq.com/cgi-bin/get_jsapi_ticket?access_token=$accessToken";
+            $url = "https://api.weixin.qq.com/cgi-bin/ticket/getticket?type=jsapi&access_token=$accessToken";
+            $res = json_decode($this->httpGet($url));
+            $ticket = $res->ticket;
+            if ($ticket) {
+                $res->expire_time = time() + 7000;
+                $redis->set($redisName, $res, 7000);
+            }else{
+                logger('jssdk获取失败',json_encode($res));
+                if($times<1 && $res['errcode']==40001){ //access_token过期，再请求一次（仅一次，避免死循环）
+                    $this->flushToken();
+                    return $this->getJsApiTicket(1);
+                }
+            }
+        } else {
+            $ticket = $data["ticket"];
+        }
+        return $ticket;
+    }
+
+    /**
+     * Http Get请求。
+     * @param type $url
+     * @return type
+     */
+    private function httpGet($url) {
+        $curl = curl_init();
+        curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($curl, CURLOPT_TIMEOUT, 500);
+        curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, false);
+        curl_setopt($curl, CURLOPT_URL, $url);
+        $res = curl_exec($curl);
+        curl_close($curl);
+        return $res;
+    }
+
+    /**
+     * 判断用户是否关注了公共号，http请求方式: GET https://api.weixin.qq.com/cgi-bin/user/info?access_token=ACCESS_TOKEN&openid=OPENID&lang=zh_CN 
+     */
+    /*public function userInfo() {
+        $post['access_token'] = $this->AccessTokenGet();
+        $post['openid'] = $this->getOpenId();
+        $post['lang'] = 'zh_CN';
+    }*/
+
+}

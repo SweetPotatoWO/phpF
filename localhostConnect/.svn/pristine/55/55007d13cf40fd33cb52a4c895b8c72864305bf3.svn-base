@@ -1,0 +1,50 @@
+<div id="sub-User-list">
+    <script type="text/javascript" src="{$Think.BPATH}js/datejs/WdatePicker.js"></script> 
+    <input type="hidden" name="hidrefurl" id="hidrefurl" value="{:U(ACTION_NAME, $_GET)}">
+    <h4 class="title">用户名片统计 <span class="titleqit">默认查询名片数量大于零的用户</span></h4>
+    <form class="form-inline" id="query_User"> 
+        <div class="form-group ">
+            <label class="control-label">基本信息：</label>
+            <input type="text" class="form-control ipt mr-10" value="{$Think.post.txtphone}" name="txtphone" id="txtphone" placeholder="手机号"> 
+            <input type="text" class="form-control ipt mr-10" value="{$Think.post.txtrealName}" name="txtrealName" id="txtrealName" placeholder="姓名">       
+        </div>    
+        <div class="form-group mr-10">
+            <label class="control-label">名片数量：>=</label>
+            <input type="text" class="form-control ipt mr-10" value="{$Think.post.cardCount|default=0}" name="cardCount" id="cardCount" placeholder="数量"> 
+        </div>
+         <div class="form-group">
+            <a href="{:U(ACTION_NAME, $_GET)}"  onclick="$Util.openQuery(this, event, 'query_User')"  class="btn btn-info"><i class="icon-search"></i>查询</a> 
+        </div>
+    </form>
+    <table class="table table-striped table-bordered">
+        <thead>
+            <tr> 
+                <th>用户名</th>
+                <th>手机</th>
+                <th>名片数量</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody>
+        <volist name="result" id="vo">
+            <tr>  
+                <td >{$vo.nickname}</td>
+                <td>{$vo.phone}</td>
+                <td >{$vo.total|default=0}</td>
+                <td><a class="btn btn-xs btn-primary pr-10" href="/Backend/User/getUserCard/id/{$vo.userID}"  onclick="$Util.openWin(this, event)"><span class="icon-search"></span>名片列表</a>
+                </td>
+            </tr>
+        </volist>
+        </tbody>
+    </table>
+    <nav class=" pagination-centered">
+        <ul class="pagination">
+            {$page}
+        </ul>
+    </nav>
+    <script type="text/javascript" >
+    </script>
+</div>
+
+
+

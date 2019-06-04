@@ -1,0 +1,57 @@
+<div id="sub-User-list">
+    <script type="text/javascript" src="{$Think.BPATH}js/datejs/WdatePicker.js"></script> 
+    <input type="hidden" name="hidrefurl" id="hidrefurl" value="{:U(ACTION_NAME, $_GET)}">
+    <h4 class="title">{$companyInfo.companyName}<span class='titleqit'>企业经营异常信息</span></h4>
+    <table class="table table-striped table-bordered">
+        <thead>
+            <tr> 
+                <th>列入时间</th>
+                <th>列入原因</th>
+                <th>决定机关</th>
+                <th>移除日期</th>
+                <th>移除原因</th>
+                <th>移除机关</th>
+                <th>最后同步时间</th>
+            </tr>
+        </thead>
+        <tbody>
+        <volist name="result" id="vo">
+            <tr>  
+                <td>{$vo.inTime}</td>
+                <td><a href="#"   data-toggle="popover" data-placement="bottom" data-content="{$vo.inReason}" title="" data-original-title="提示">{$vo.inReason|sub_str=0,10,'...'}</a></td>
+                <td>{$vo.decisiveOrg}</td>
+                <td>{$vo.removeTime}</td>
+                <td><a href="#"   data-toggle="popover" data-placement="bottom" data-content="{$vo.removeReason}" title="" data-original-title="提示">{$vo.removeReason|sub_str=0,10,'...'}</a></td>
+                <td>{$vo.removeOrg}</td>
+                <td>{$vo.lastSyncTime}</td>
+            </tr>
+        </volist>
+        </tbody>
+    </table>
+    <nav class=" pagination-centered">
+        <ul class="pagination">
+            {$page}
+        </ul>
+    </nav>
+    <script type="text/javascript" >
+        $(function ($) {
+            $("[data-toggle='popover']").popover().on("mouseenter", function () {
+                var _this = this;
+                $(this).popover("show");
+                $(this).siblings(".popover").on("mouseleave", function () {
+                    $(_this).popover('hide');
+                });
+            }).on("mouseleave", function () {
+                var _this = this;
+                setTimeout(function () {
+                    if (!$(".popover:hover").length) {
+                        $(_this).popover("hide")
+                    }
+                }, 100);
+            });
+        });
+    </script>
+</div>
+
+
+

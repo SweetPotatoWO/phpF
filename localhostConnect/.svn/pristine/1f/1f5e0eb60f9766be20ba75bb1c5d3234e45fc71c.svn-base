@@ -1,0 +1,49 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: zhoull
+ * Date: 2018/11/5
+ * Time: 14:57
+ */
+
+namespace Service\Connect;
+
+
+use Service\Connect\Model\ConnectEnjoyModel;
+use Service\Connect\Model\ConnectGoodatModel;
+
+class ConnectConst
+{
+    //region 关系标签定义
+    /**
+     * 好友
+     */
+    const LBL_Friend="FRIEND";
+    /**
+     * 通讯录联系人
+     */
+    const LBL_Contact="CONTACT";
+    /**
+     * 名片好友
+     */
+    const LBL_Card="CARD";
+    /**
+     * 好友申请
+     */
+    const LBL_Apply="APPLY";
+    /**
+     * 屏蔽
+     */
+    const LBL_Ignore="IGNORE";
+
+    /**
+     * 感兴趣行业
+     */
+    const LBL_IND_Enjoy=ConnectEnjoyModel::TypeRelation;
+    /**
+     * 熟悉行业
+     */
+    const LBL_IND_Goodat=ConnectGoodatModel::TypeRelation;
+    //endregion
+
+}

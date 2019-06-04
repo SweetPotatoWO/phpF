@@ -1,0 +1,70 @@
+<div class="modal-body">
+    <input  type="hidden" name="hidAction" id="hidAction" value="view" >
+    <form class="form-horizontal" id="form-prop">       
+        <input type="hidden" name='febackID' id='febackID' value="{$data.febackID}"/>
+        <div class="form-group has-info">
+            <label class="control-label col-sm-2" for="inputInfo">处理信息：</label>
+            <div>
+                <textarea class="area_edit span5 form-control" cols="50" rows="3" name="remark" id="remark">{$data.remark}</textarea>
+            </div>
+        </div>
+    </form>
+</div>
+<div class="modal-footer">
+    <button type="button" id="butCancel" class="btn btn-default" data-dismiss="modal">取消</button>
+    <button type="button" id="butSaveInfo" class="btn btn-primary" >保存</button>
+</div>  
+<script type="text/javascript" >
+    $(function($) {
+        servicevalid();
+        $("#butSaveInfo").click(function() {
+            var isOK = $("#form-prop").valid();
+            if (isOK) {
+                saveInfo();
+            }
+        });
+    });
+
+    function saveInfo() {
+        var data = {};
+        data.remark = $("#remark").val();
+        data.febackID = $("#febackID").val();
+        $.ajax({
+            type: "post",
+            url: "/Backend/Service/saveProp",
+            data: {'par': data},
+            dataType: "json",
+            beforeSend: function() {
+                $(".sub-content").showLoading();
+            },
+            success: function(data) {
+                $(".sub-content").hideLoading();
+                if (data.status == 1) {
+                    $("#hidAction").val("edit");
+                    $win.message(data.msg).on(function() {
+                        $('#butCancel').trigger("click");
+                    });
+                } else {
+                    $win.warn(data.msg);
+                }
+            },
+            complete: function() {
+                $(".sub-content").hideLoading();
+            },
+            error: function() {
+                $(".sub-content").hideLoading();
+            }
+        });
+    }
+
+    function servicevalid() {
+        $("#form-prop").validate({
+            rules: {
+                remark: {maxlength: 80, required: true}
+            },
+            messages: {
+                remark: {maxlength: "最大长度80个字符", required: "请填写处理信息"}
+            }
+        });
+    }
+</script>

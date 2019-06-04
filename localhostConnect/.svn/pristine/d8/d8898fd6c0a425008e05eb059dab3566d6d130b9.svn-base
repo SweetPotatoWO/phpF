@@ -1,0 +1,99 @@
+<?php
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+namespace Service\Statistic\Model;
+
+use Common\Model\SlaveCustomModel;
+use Think\Exception;
+
+/**
+ * Description of ReportModel
+ *
+ * @author DREAM
+ */
+class ReportModel extends SlaveCustomModel {
+
+    /**
+     * 月统计
+     * @param type $start
+     * @param type $'end'
+     */
+    public function getMonthDataList($start, $end) {
+        return $this->SlaveDB->query("CALL sp_GetMonthList(%d,%d)", $start, $end);
+    }
+
+    /**
+     * 周统计
+     * @param type $start
+     * @param type $'end'
+     */
+    public function getWeekDataList($start, $end) {
+        return $this->SlaveDB->query("CALL sp_GetWeekList(%d,%d)", $start, $end);
+    }
+
+    /**
+     * 注册登录统计s
+     * @param type $start
+     * @param type $'end'
+     * @return type
+     */
+    public function getRstCollect($start, $end) {
+        $result = $this->SlaveDB->query("CALL sp_GetRegisterAndLogin(%d,%d)", $start, $end);
+        return $result;
+    }
+
+    /**
+     * 获取站点人数统计
+     * @return type
+     */
+    public function getUserCount() {
+        $tomorrow = mktime(0, 0, 0, date("m"), date("d") + 1, date("Y"));
+        $today = mktime(0, 0, 0, date("m"), date("d"), date("Y"));
+        $yesterday = mktime(0, 0, 0, date("m"), date("d") - 1, date("Y"));
+        $Year = mktime(0, 0, 0, 1, 1, date("Y"));
+        $halfYear = mktime(0, 0, 0, 7, 1, date("Y"));
+        $nextYear = mktime(0, 0, 0, 1, 1, date("Y") + 1);
+        $month = mktime(0, 0, 0, date("m"), 1, date("Y"));
+        $lastMonth = mktime(0, 0, 0, date("m") - 1, 1, date("Y"));
+        $NextMonth = mktime(0, 0, 0, date("m") + 1, 1, date("Y"));
+        $noweek = date("w");
+        if ($noweek == 0)
+            $noweek = 7;
+        $lastWeek = mktime(0, 0, 0, date("m"), date("d") - $noweek - 6, date("Y"));
+        $week = mktime(0, 0, 0, date("m"), date("d") - $noweek + 1, date("Y"));
+        $nextWeek = time();
+        $sqlSelect = " count(1) as sumTotal,
+            count(case  when vip IS NOT NULL then vip end) as  vipAuthTotal,count(case when jobAuth IS NOT NULL then jobAuth end) as  jobAuthTotal from d_user ";
+        $sqlPart = array(
+            array("name" => "总计", 'start' => "", 'end' => ""),
+            array("name" => "上年", 'start' => $Year, 'end' => $halfYear),
+            array("name" => "本年", 'start' => $Year, 'end' => $nextYear),
+            array("name" => "上月", 'start' => $lastMonth, 'end' => $month),
+            array("name" => "本月", 'start' => $month, 'end' => $NextMonth),
+            array("name" => "上周", 'start' => $lastWeek, 'end' => $week),
+            array("name" => "本周", 'start' => $week, 'end' => $nextWeek),
+            array("name" => "昨天", 'start' => $yesterday, 'end' => $today),
+            array("name" => "今天", 'start' => $today, 'end' => $tomorrow)
+        );
+        $sql = "";
+        foreach ($sqlPart as $key => $value) {
+            $where = "";
+            $tempSelect = "select '" . $value["name"] . "' as sumType, (SELECT COUNT(1) from  d_user_info where(1=1) ";
+            if ($value["start"]) {
+                $tempSelect .= " and addDatetime BETWEEN " . $value["start"] . " and " . $value["end"];
+                $where = " where regDatetime BETWEEN " . $value["start"] . " and " . $value["end"];
+            }
+            $tempSelect .= ") as realNameTotal, ";
+            $sql .= "union (" . $tempSelect . $sqlSelect . $where . ")";
+        }
+        $sql = substr($sql, 5);
+        $data = $this->SlaveDB->query($sql);
+        return $data;
+    }
+
+}

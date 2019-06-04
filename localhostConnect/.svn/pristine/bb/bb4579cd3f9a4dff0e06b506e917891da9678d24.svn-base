@@ -1,0 +1,52 @@
+<?php
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+namespace Service\User\Model;
+
+use Common\Model\SlaveModel;
+
+class UserLevelModel extends SlaveModel {
+
+    /**
+     * 根据金额获取相应的等级
+     * @param type $money
+     * @return boolean
+     */
+    public function getLevel($money) {
+        if (empty($money)) {
+            return false;
+        }
+
+        $where['minAccount'] = array('elt', $money);
+        $where['maxAccount'] = array('gt', $money);
+        $ret = $this->SlaveDB()->where($where)->find();
+        return $ret;
+    }
+
+    /**
+     * 获取指定VIP等级加息利率。
+     * @param type $viplevel
+     */
+    public function getLevelRate($viplevel) {
+        if (empty($viplevel)) {
+            return false;
+        }
+        $where['level'] = $viplevel;
+        return $this->field('rate')->where($where)->find();
+    }
+    
+    /**
+     * 获取VIP等级
+     * 
+     */
+    public function getUserLevelList(){
+        $vipList = $this->field( "id,level,rate")->select(); 
+        return $vipList;
+    }
+
+}

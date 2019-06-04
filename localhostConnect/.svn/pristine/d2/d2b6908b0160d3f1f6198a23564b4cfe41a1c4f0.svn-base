@@ -1,0 +1,100 @@
+<?php
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+namespace Service\User\Logic;
+
+use Service\User\Model\UserLevelModel;
+use Service\User\Model\UserModel;
+use Service\Operate\Model\UserLevelLogModel;
+
+/**
+ * Description of AccountLogic
+ *
+ * @author Bourne
+ */
+class UserLevelLogic {
+
+    public $model = null;
+
+    public function __construct() {
+        $this->model = new UserLevelModel();
+    }
+
+    /**
+     * 自动同步用户升级 
+     *
+     * 
+     */
+    public function autoLevelUser($userID = null) {
+
+        if (empty($userID)) {
+            return false;
+        }
+        $userModel = new UserModel();
+        $accountInfo = $userModel->getUserAccountInfo($userID);
+        if (empty($accountInfo)) {
+            return false;
+        }
+        $level = $this->model->getLevel($accountInfo["totalMoney"]);
+        if (!$level) {
+            return false;
+        }
+        $logData = array();
+        $userData = array();
+        //只升级，不降级
+        if ($accountInfo["viplevel"] < $level["level"]) {
+            $userData["viplevel"] = $level["level"];
+            $userWhere['userID'] = $userID;
+            $ret = $userModel->editUser($userData, $userWhere);
+            //插入日志
+            if ($ret) {
+                $logData["userID"] = $accountInfo["userID"];
+                $logData["userName"] = $accountInfo["phone"];
+                $logData["userBeforVIP"] = $accountInfo["viplevel"];
+                $logData["userAfterVIP"] = $level["level"];
+                $logData["money"] = $accountInfo["totalMoney"];
+                $logLogic = new UserLevelLogModel();
+                $logLogic->saveLevelLog($logData);
+            }
+        }
+    }
+
+    /**
+     * 获取指定VIP等级加息利率。
+     * @param type $viplevel
+     */
+    public function getLevelRate($viplevel) {
+        $result = $this->model->getLevelRate($viplevel);
+        if (!empty($result) && $result['rate'] * 1 > 0) {
+            return $result['rate'];
+        } else {
+            return 0;
+        }
+    }
+
+    /**
+     * 获取用户等级信息
+     * @param type $where
+     * @return array
+     */
+    public function getUserLevel($money) {
+        $levelLogic = new UserLevelModel;
+        return $levelLogic->getLevel($money);
+    }
+
+    /**
+     * 获取所有VIP等级
+     * 
+     */
+    public function getUserLevelList() {
+        $levelLogic = new UserLevelModel;
+        $list = $levelLogic->getUserLevelList();
+        return $list;
+    }
+
+}

@@ -1,0 +1,253 @@
+<?php
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+namespace Wechat\Controller;
+
+use Common\Common\AesSecurity;
+use Common\Common\CodeGenerator;
+use Common\Common\Redis;
+use Service\User\Logic\UserInviteLogic;
+use Service\User\Logic\UserLogic;
+use Service\News\Logic\WeiXinLogic;
+use Service\News\Logic\SendSMSLogic;
+use Service\Integral\Logic\IntegralLogic;
+use Think\Controller;
+
+/**
+ * Description of UserController
+ *
+ * @author Administrator
+ */
+class UserController extends Controller {
+
+    /**
+     * 用户邀请
+     */
+    public function inviteFriend() {
+        $token = $_COOKIE['token'];
+        $aes = new AesSecurity();
+        $token = $aes->decryptData($token);
+        $info = $this->getTokenInfo($token);
+        if(!$info) {
+            echo "页面出现错误";
+            exit;
+        }
+        $userID = $info['userID'];
+        $logic = new IntegralLogic();
+        $qmCoin = $logic->getUserTotalCoinByType($userID, 'invitingFriends'); //用户邀请获得的总启币
+        $Integral = new UserInviteLogic();
+        $list = $Integral->getList($userID);
+
+        $this->assign("count",count($list));
+        $this->assign('list',$list);
+        $a  = (empty($list))? 1:2;
+        $this->assign('isempty',$a);
+        $code = new CodeGenerator();
+        $code = $code->createCode($userID);
+        $url = SITE."wechat/user/register/key/".$code;
+        $this->assign('url',$url);
+        $this->assign('inviteCoin', floor($qmCoin));
+        $this->display('inviteFriend');
+    }
+
+
+    /**
+     * 根据token获取到参数
+     * @param $token
+     * @return bool
+     */
+    private function getTokenInfo($token) {
+        if (!empty($token)) {
+            $redis = Redis::GetInstance();
+            $searchKey = $this->getLoginCaheKey($token);
+            $keys = $redis->getKeys($searchKey);
+            if ($keys) {
+                if (count($keys) > 1) {
+                    logger_sys("Token重复", serialize($keys));
+                }
+                $userInfo = $redis->get($keys[0]);
+                if ($userInfo) {
+                    return $userInfo;
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * 获取登录缓存key
+     * @param type $token
+     * @param type $userID
+     * @return type
+     */
+    private function getLoginCaheKey($token, $userID = '') {
+        return sprintf('APP_Login_%s_%s', $token, $userID);
+    }
+
+
+    /**
+     * 显示注册的页面
+     *
+     */
+    public function register()  {
+        $key  = I("key");
+        $code = new CodeGenerator();
+        $userID = $code->decode($key);
+        $userLogic = new UserLogic();
+        $userInfo = $userLogic->getUserInfo($userID);
+        $this->assign("userInfo",$userInfo);
+        $this->assign("key",$key);
+        $this->assign('type',I("type"));
+        $this->display("register");
+    }
+
+
+    /**
+     * 处理注册的数据
+     */
+    public function handleRegister() {
+        if(!IS_AJAX) {
+            echo json_encode(array('err'=>1,'msg'=>'非法请求'));
+            exit;
+        }
+        $phone = I("phone");
+        $code = I("code");
+        $key = I("key");
+        $type = I("type");
+        $Gen = new CodeGenerator();
+        $userID = $Gen->decode($key);
+        $user = new UserLogic();
+        $userIntvit = new UserInviteLogic();
+        $info = $user->getByPhone($phone);
+        if(empty($userID)) {
+            echo json_encode(array('err'=>1,'msg'=>'数据丢失'));
+            exit;
+        }
+
+        if(!empty($info)) {
+            echo json_encode(array('err'=>1,'msg'=>'用户已经注册过'));
+            exit;
+        }
+        $arr = $userIntvit->getInviteOne($userID,$phone);
+        if(!empty($arr)) {
+            echo json_encode(array('err'=>1,'msg'=>'已经邀请过'));
+            exit;
+        }
+        if(!verify_phone($phone)) {
+            echo json_encode(array('err'=>1,'msg'=>'手机号码错误'));
+            exit;
+        }
+
+        $entity["phone"] = $phone;
+        $entity["smsCode"] = $code;
+        $entity["terminal"] = 1;
+        $entity['operateIP'] = getIP();
+
+        $res = $user->smsLogin($entity);
+        if($res * 1 > 0) {
+            $res = $userIntvit->saveInvite($userID,$phone,$res,$type);
+            if($res) {   //邀请成功的时候
+                $intavit = new IntegralLogic();
+                $intavit->userIntegralInc($userID,'newbieTasks','invitingFriends');  //添加积分
+            }
+            $info['err'] = 0;
+            $info['data'] = $Gen->createCode($res);
+            $info['msg'] = "注册成功";
+        } else {
+            $info['err'] = 1;
+            $info['msg'] = "登录失败";
+        }
+        echo json_encode($info);
+        exit;
+    }
+
+
+    /**
+     * 发送短信
+     */
+    public function sms() {
+
+        if(!IS_AJAX) {
+            echo json_encode(array('err'=>1,'msg'=>'非法请求'));
+            exit;
+        }
+        $phone = I('phone');
+        if(!verify_phone($phone)) {   //验证手机号码
+            echo json_encode(array('err'=>1,'msg'=>'手机号码错误'));
+            exit;
+        }
+
+        $user = new UserLogic();
+        $info = $user->getByPhone($phone);
+        if(!empty($info)) {
+            echo json_encode(array('err'=>1,'msg'=>'用户已经注册过'));
+            exit;
+        }
+
+        $logic = new SendSMSLogic();
+        $res = $logic->sendCode($phone,'find','1');
+        if ($res === true) {
+            $data['err'] = 0;
+            $data["msg"] = "发送验证码成功";
+        } else {
+            $data["err"] = 1;
+            $data["msg"] = $res;
+        }
+        echo json_encode($data);
+        exit;
+    }
+
+
+
+    /**
+     * 注册成功
+     */
+    public function registerSuccess() {
+        $key = I("key");
+        $otherkey = I("otherkey");
+        $Gen = new CodeGenerator();
+        $IntvituserID = $Gen->decode($key);
+        $userlogic = new UserLogic();
+        $userID = $Gen->decode($otherkey);
+        $IntviteInfo = $userlogic->getUserInfo($IntvituserID);
+        $userInfo = $userlogic->getUserInfo($userID);
+        $this->assign('phone',hidPhone($userInfo['phone']));
+        $this->assign('Invitephone',hidPhone($IntviteInfo['phone']));
+        $this->display('regsucceed');
+    }
+
+
+
+
+
+
+
+    /**
+     * 注册协议
+     */
+    public function registerText() {
+        $this->display('termsService');
+    }
+
+
+    /**
+     * 隐私协议
+     */
+    public function secretText() {
+        $this->display('privacy');
+    }
+
+
+    /**
+     * 名片助手
+     */
+    public function cardAssistant() {
+        $this->display('cardAssistant');
+    }
+
+}

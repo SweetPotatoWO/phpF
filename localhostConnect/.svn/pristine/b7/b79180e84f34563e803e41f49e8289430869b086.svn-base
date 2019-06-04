@@ -1,0 +1,122 @@
+<div id="sub-article-list">
+    <input  type="hidden" name="hidrefurl" id="hidrefurl" value="{:U(ACTION_NAME, $_GET)}" >
+    <h4 class="title">文章列表</h4>
+    <form class="form-inline" id="query_Article">      
+        <label class="control-label">类型: </label>
+        <select class="form-control mr-10" name="txtTypeID" style="width: 180px">
+            {$htmlType}
+        </select>    
+        <label class="control-label">标题: </label>
+        <input type="text" class="form-control" value="{$Think.post.txtTitle}" name="txtTitle" placeholder="请输入">     
+        <a href="{:U(ACTION_NAME, $_GET)}"  onclick="$Util.openQuery(this, event, 'query_Article')"  class="btn btn-info"><i class="icon-search"></i>查询</a>
+        <a href="/Backend/Spread/editArticle"  onclick="$Util.openWin(this, event)" class="btn btn-success"><i class="icon-plus"></i>新增</a>     
+    </form>
+    <table class="table table-striped table-bordered">
+        <thead>
+            <tr>          
+                <th>文章类型</th>
+                <th>标题</th>
+                <th>图片</th>
+                <th>排序</th>
+                <th>状态</th>
+                <th>阅读量</th>
+                <th>创建人</th>
+                <th>创建时间</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody>
+        <volist name="article" id="item">
+            <tr>         
+                <td>{$item.typeName}</td>
+                <td style="text-align: left"><a href="#" data-toggle="tooltip" data-placement="top" title="{$item.articleTitle}" title="" >{$item.articleTitle|sub_str=0,15,'...'}</a></td>
+                <td> <php> echo (strlen($item['articlePhoto']) > 0 ? "<a class='image_gall' title='浏览' href='" . UPLOAD . $item['articlePhoto'] . "'> [浏览]</a>" : "");</php></td>
+            <td>{$item.articleSort}</td>
+            <td>
+            <if condition="$item.status eq 1 "> 
+                <span  >   未发布  </span> 
+                <elseif condition="$item.status eq 2"/> 
+                <span  style="color:green;font-size: 12px">已发布 </span>                  
+                <else />
+                未知
+            </if></td>
+            <td>{$item.viewCount}</td>
+            <td>{$item.addUserName}</td>
+            <td>{$item.addDatetime|formatlongDate}</td>
+            <td>
+            <if condition="($item.typeID lt 16) OR ($item.typeID gt 18  AND $item.typeID lt 21)">
+                <a class="btn btn-xs btn-info pr-10" href="/About/preview/num/{$item.articleID}" target="_blank" title="预览"><span class="icon-search"></span>预览</a>
+            </if>
+            <a class="btn btn-xs btn-primary pr-10" href="/Backend/Spread/editArticle/key/{$item.articleID}"  onclick="$Util.openWin(this, event)"><span class="icon-edit"></span>修改  </a>
+            
+            <if condition="($item.typeID neq 196) AND ($item.typeID neq 197) AND ($item.typeID neq 198) ">
+                <a class="btn btn-xs btn-warning pr-10 delete" href="/Backend/Spread/delArticle" data="{$item.articleID}"><span class="icon-remove"></span>删除</a>
+            </if>
+            </td>
+            </tr>
+        </volist>
+        </tbody>
+    </table>
+    <nav class=" pagination-centered">
+        <ul class="pagination">  
+            {$pageHtml}
+        </ul>
+    </nav>
+
+    <script type="text/javascript" >
+        $(function($) {
+            $('[data-toggle="tooltip"]').tooltip();
+            $(".image_gall").popImage();
+            $("[data-toggle='popover']").popover().on("mouseenter", function() {
+                var _this = this;
+                $(this).popover("show");
+                $(this).siblings(".popover").on("mouseleave", function() {
+                    $(_this).popover('hide');
+                });
+            }).on("mouseleave", function() {
+                var _this = this;
+                setTimeout(function() {
+                    if (!$(".popover:hover").length) {
+                        $(_this).popover("hide")
+                    }
+                }, 100);
+            });
+            $(".delete").click(function(e) {
+                var url = $(this).attr("href");
+                var key = $(this).attr("data");
+                $win.confirm("确定要删除吗").on(function() {
+                    $.ajax({
+                        type: "post",
+                        url: url,
+                        data: {'key': key},
+                        dataType: "json",
+                        beforeSend: function(XMLHttpRequest) {
+                            $(".sub-content").showLoading();
+                        },
+                        success: function(data, textStatus) {
+                            $(".sub-content").hideLoading();
+                            if (data.status == 1) {
+                                $win.message(data.msg).on(function() {
+                                    $Util.openQuery();
+                                });
+                            } else {
+                                $win.warn(data.msg);
+                            }
+                        },
+                        complete: function(XMLHttpRequest, textStatus) {
+                            $(".sub-content").hideLoading();
+                        },
+                        error: function() {
+                            $(".sub-content").hideLoading();
+                        }
+                    });
+                });
+                e.preventDefault();
+                return false;
+            });
+        });
+    </script>
+</div>
+
+
+

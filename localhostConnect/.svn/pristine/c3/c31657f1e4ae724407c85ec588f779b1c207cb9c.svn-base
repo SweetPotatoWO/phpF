@@ -1,0 +1,57 @@
+<?php
+
+namespace Frontend\Controller;
+
+use Common\Common\CodeGenerator;
+use Service\User\Logic\UserLogic;
+use     Think\Controller;
+
+/**
+ * Class IndexController pc端首页
+ * @package Home\Controller
+ */
+class ApiactivityController extends Controller {
+
+
+
+
+    public function successJson($data) {
+        echo json_encode(array('code'=>0,'info'=>$data,"msg"=>'操作成功'));
+        exit;
+    }
+
+
+    public function failJson($msg) {
+        echo json_encode(array('code'=>1,'info'=>'',"msg"=>$msg));
+        exit;
+    }
+
+
+    /**
+     * 检查是否为老用户
+     * 返回的数据
+     * return code int 1 表示 接口操作失败 0 表示成功
+     * return msg string 信息提示
+     * return info array 信息组合
+     * return isOld int 1 表示 是老用户 0 不是老用户
+     * return userInfo array 老用户的基本信息
+     */
+    public function checkUserLogin() {
+        $phone = I('phone');
+        if(empty($phone) || !verify_phone($phone)) {
+            $this->failJson("传递的参数不正确");
+        }
+        $user = new UserLogic();
+        $info = $user->getByPhone($phone);
+        if(empty($info)) {
+            $data['isOld'] = 0;   //不是老用户
+            $data['userInfo'] = array();
+            $this->successJson($data);
+        } else {
+            $data['isOld'] = 1;
+            $data['userInfo'] = $info;
+            $this->successJson($data);
+        }
+    }
+
+}

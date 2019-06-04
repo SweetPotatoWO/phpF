@@ -1,0 +1,281 @@
+<?php
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+namespace Wechat\Controller;
+use Common\Common\AesSecurity;
+use Common\Common\Redis;
+use Service\JavaService\Logic\SiteLogic;
+use Think\Controller;
+/**
+ * Description of UserController
+ *
+ * @author Administrator
+ */
+class CompanyController extends Controller {
+
+
+
+    private $companyID;
+    public function _initialize()
+    {
+
+        $token = $_COOKIE['token'];
+        $aes = new AesSecurity();
+        $token = $aes->decryptData($token);
+        $info = $this->getTokenInfo($token);
+        if(!$info['userID']) {   //是否有登录
+            echo "页面出现错误";
+            exit;
+        }
+        $companyID = I('companyID');
+        if(!empty($companyID)) {
+            $this->companyID = $companyID;
+        }
+        $this->assign('companyID',$companyID);
+    }
+
+
+    /**
+     * 根据token获取到参数
+     * @param $token
+     * @return bool
+     */
+    private function getTokenInfo($token) {
+        if (!empty($token)) {
+            $redis = Redis::GetInstance();
+            $searchKey = $this->getLoginCaheKey($token);
+            $keys = $redis->getKeys($searchKey);
+            if ($keys) {
+                if (count($keys) > 1) {
+                    logger_sys("Token重复", serialize($keys));
+                }
+                $userInfo = $redis->get($keys[0]);
+                if ($userInfo) {
+                    return $userInfo;
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * 获取登录缓存key
+     * @param type $token
+     * @param type $userID
+     * @return type
+     */
+    private function getLoginCaheKey($token, $userID = '') {
+        return sprintf('APP_Login_%s_%s', $token, $userID);
+    }
+
+
+    private function  jsonSuccess($data) {
+        echo json_encode(array('code'=>0,'msg'=>'','data'=>$data));
+        exit;
+    }
+
+    private function jsonFail($mes) {
+        echo json_encode(array('code'=>0,'msg'=>$mes,'data'=>""));
+        exit;
+    }
+
+
+    /**
+     * 股东高管信息
+     */
+    public function management() {
+        $site = new SiteLogic();
+        $man = $site->getManagers($this->companyID);
+        $sharehold = $site->getShareholder($this->companyID);
+        $manstatus = 1;
+        if(empty($man['list'])) {
+            $manstatus = 0;
+        }
+        $shareholdStatus = 1;
+        if(empty($sharehold['list'])) {
+            $shareholdStatus = 0;
+        }
+        $this->assign("manstatus",$manstatus);
+        $this->assign("shareholdStatus",$shareholdStatus);
+        $this->assign('man',$man['list']);
+        $this->assign('sharehold',$sharehold['list']);
+        $this->display('management');
+    }
+
+
+
+    /**
+     * 工商信息
+     */
+    public function businessInfo() {
+        $site = new SiteLogic();
+        $baseInfo = $site->getChattelMortgage($this->companyID);  //基本信息
+        $changeInfo = $site->changeInfos($this->companyID);
+        $type = I('type');
+        $this->assign('type',$type);
+        $this->assign('baseInfo',$baseInfo);
+        $this->assign('changelist',$changeInfo);
+        $this->assign('companyID',$this->companyID);
+        $this->display('businessInfo');
+    }
+
+    /**
+     * 获取到变更信息
+     */
+    public function changeInfos() {
+        $page = I("page");
+        $site = new SiteLogic();
+        $list = $site->changeInfos($this->companyID,array($page-1,15));
+        if(empty($list['list'])) {
+            $this->jsonFail("没有数据");
+        }
+        $this->jsonSuccess($list['list']);
+    }
+
+
+    /**
+     * 获取投资
+     */
+    public function getInvests() {
+        $page = I("page");
+        $site = new SiteLogic();
+        $list = $site->invests($this->companyID,array($page-1,15));
+        if(empty($list['list'])) {
+            $this->jsonFail("没有数据");
+        }
+        $this->jsonSuccess($list['list']);
+    }
+
+    /**
+     * 获取年报
+     */
+    public function getReport() {
+        $page = I("page");
+        $site = new SiteLogic();
+        $list = $site->reportList($this->companyID,array($page-1,15));
+        if(empty($list['list'])) {
+            $this->jsonFail("没有数据");
+        }
+        $this->jsonSuccess($list['list']);
+    }
+
+    /**
+     * 年报详情
+     */
+    public function reportDetail() {
+        $id = I('id');
+        if(empty($id)) {
+            echo "参数错误";
+            die();
+        }
+        $sitelogic = new SiteLogic();
+        $data = $sitelogic->reportInfo($id);
+        $data = $data['datas'];
+        $this->assign('domainInfo',  json_decode($data['domainInfo'],true));
+        $this->assign('equityChange', json_decode($data['equityChange'],true));
+        $this->assign('guaranteeInfo', json_decode($data['guaranteeInfo'],true));
+        $this->assign('obdInvestment', json_decode($data['obdInvestment'],true));
+        $this->assign('reportID', $data['reportID']);
+        $this->assign('orgAssetInfo', json_decode($data['orgAssetInfo'],true));
+        $this->assign('orgBaseInfo',json_decode($data['orgBaseInfo'],true));
+        $this->assign('reportChange ', json_decode($data['reportChange'],true));
+        $this->assign('shareHolder ', json_decode($data['shareHolder'],true));
+        $this->assign('data',$data);
+        $this->display('reportDetail');
+    }
+
+    /**
+     * 知识产权
+     */
+    public function property() {
+        $type = I('type');
+        $this->assign('type',$type);
+        $this->display('property');
+    }
+
+
+    /**
+     * 获取到商标的列表
+     */
+    public function getPropertyList() {
+        $page = I("page");
+        $site = new SiteLogic();
+        $list = $site->property($this->companyID,array($page-1,15));
+        if(empty($list['list'])) {
+            $this->jsonFail("没有数据");
+        }
+        $this->jsonSuccess($list['list']);
+    }
+
+    /**
+     * 专利详情
+     */
+    public function patentDetail() {
+
+        $data = I("data");
+        $data = unserialize(urldecode($data));
+        $this->assign('data',$data);
+        $this->assign('agentName',json_decode($data['agentName'],true)[0]);
+        $this->assign('inventroName',json_decode($data['inventroName'],true)[0]);
+        $this->assign('ipc',json_decode($data['ipc'],true)[0]);
+        $this->display('patentDetail');
+    }
+
+
+    /**
+     * 获取到专利的列表
+     */
+    public function getPatentList() {
+        $page = I("page");
+        $site = new SiteLogic();
+        $list = $site->patent($this->companyID,array($page-1,15));
+        if(empty($list['list'])) {
+            $this->jsonFail("没有数据");
+        }
+        $this->jsonSuccess($list['list']);
+    }
+
+    /**
+     * 信用信息
+     */
+    public function creditInfo() {
+        $this->display('creditInfo');
+    }
+
+
+    /**
+     * 获取到行政处罚的列表
+     */
+    public function getPenalty() {
+        $page = I("page");
+        $site = new SiteLogic();
+        $list = $site->penalty($this->companyID,array($page-1,15));
+        if(empty($list['list'])) {
+            $this->jsonFail("没有数据");
+        }
+        $this->jsonSuccess($list['list']);
+    }
+
+
+    /**
+     * 经营异常
+     *
+     */
+    public function getAbnormal() {
+        $page = I("page");
+        $site = new SiteLogic();
+        $list = $site->abnormal($this->companyID,array($page-1,15));
+        if(empty($list['list'])) {
+            $this->jsonFail("没有数据");
+        }
+        $this->jsonSuccess($list['list']);
+    }
+
+
+
+}

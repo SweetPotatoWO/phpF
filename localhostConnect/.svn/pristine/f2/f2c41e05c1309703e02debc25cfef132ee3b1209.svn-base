@@ -1,0 +1,61 @@
+<?php
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+namespace Service\System\Logic;
+
+class LabelLogic {
+
+    private $model = null;
+
+    public function __construct() {
+        $this->model = new \Service\System\Model\LabelModel();
+    }
+
+    /**
+     * 标签列表
+     */
+    public function getLableList($where, $whereArr, $limit) {
+        $result = $this->model->getLableList($where, $whereArr, $limit);
+        return $result;
+    }
+
+    /**
+     * 获取标签信息
+     */
+    public function getLabelInfo($id) {
+        if ($id * 1 < 1) {
+            return false;
+        }
+        return $this->model->getLabelInfo($id);
+    }
+
+    /**
+     * 保存标签
+     */
+    public function saveLabel($par) {
+        if (empty($par)) {
+            return false;
+        }
+        $data = $where = array();
+        if ($par["labelID"] * 1 > 0 && count($par) > 0) {
+            $where["labelID"] = $par["labelID"];
+        }
+        $data['labelCode'] = $par['labelCode'];
+        $data['labelDesc'] = $par['labelDesc'];
+        $data['labelLogo'] = $par['bannerUrl'];
+        return $this->model->saveLabel($data, $where);
+    }
+
+    /**
+     * 删除标签
+     */
+    public function delLable($id) {
+        return $this->model->delLable($id);
+    }
+
+}

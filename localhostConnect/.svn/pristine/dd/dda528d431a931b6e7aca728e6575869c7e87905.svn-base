@@ -1,0 +1,92 @@
+<include file="Common:header" />
+<div class="invite">
+	<div class="banner"></div>
+	
+	<div class="methods">
+		<div class="content">
+			<h2 class="text-center">邀请好友</h2>
+			<div class="clearfix">
+				<a href="javascript:;" class="item text-center fl wechat">微信好友</a>
+				<a href="javascript:;" class="item text-center fl moments">朋友圈</a>
+				<a href="javascript:;" class="item text-center fl qq">QQ</a>
+				<a href="javascript:;" data-clipboard-text="{$url}/type/5" class="item text-center fl link" id="link">复制链接</a>
+			</div>
+		</div>
+	</div>
+	
+	<div class="record">
+		<div class="content">
+			<div class="title clearfix fs-12">
+				<div class="fl">共邀请<font>{$count}</font>位好友加入启脉</div>
+				<div class="fr">已获取<font>{$inviteCoin}</font>启币</div>
+			</div>
+			<!--滚动部分，暂无数据则不显示这一部分-->
+			<if condition="$isempty eq 2">
+			<div class="topLoop overflow-h">
+				<div class="bd text-center color-7">
+					<ul class="mt-0">
+						<foreach name="list" item="v">
+							<li class="clearfix">
+								<div class="fl">{$v.nickname}</div>
+								<div class="fr">{$v.phone}</div>
+							</li>
+						</foreach>
+
+					</ul>
+				</div>
+			</div>
+			</if>
+			<!--滚动部分end-->
+		</div>
+	</div>
+</div>
+<script type="text/javascript" src="{$Think.WXPATH}js/jquery.superslide.js?version={$Think.VNO}" ></script>
+<script type="text/javascript" src="{$Think.WXPATH}js/clipboard.min.js?version={$Think.VNO}" ></script>
+<script type="text/javascript">jQuery(".topLoop").slide({mainCell: ".bd ul", effect: "topMarquee", vis: 4, interTime: 80, autoPlay: true});</script>
+</body>
+</html>
+<script>
+    window.qhzapp = new QHZAPP({
+        api: ['default', 'share'], //'share'可选填
+        wxHost: '{$Think.SITE}Wechat/',
+        actcode: 'arborDayAct',
+        shareurl: '{$Think.SITE}Mobile/Activity/arborDayAct'//选填，不需要获取分享信息可以不填
+    });
+	$('.wechat').click(function () {   //微信调用APP的分享
+	    var params = {};
+	    params.title = "启脉邀请好友,欢迎来注册~";
+	    params.msg = "上启脉，找人脉，找金脉，找启飞脉，让我们脉动起来~";
+	    params.imgurl = "{$Think.UPLOAD}/upload/banner/201809/201809055b8f8b7f10cb6.png";
+	    params.url = "{$url}/type/2";
+        qhzapp.share(params);
+	});
+	$('.moments').click(function () {  //空间调用APP的分享
+        var params = {};
+        params.title = "启脉邀请好友,欢迎来注册~";
+        params.msg = "上启脉，找人脉，找金脉，找启飞脉，让我们脉动起来~";
+        params.imgurl = "{$Think.UPLOAD}/upload/banner/201809/201809055b8f8b7f10cb6.png";
+        params.url = "{$url}/type/3";
+	    qhzapp.share(params);
+	});
+    $('.qq').click(function () {  //qq调用APP的分享
+        var params = {};
+        params.title = "启脉邀请好友,欢迎来注册~";
+        params.msg = "上启脉，找人脉，找金脉，找启飞脉，让我们脉动起来~";
+        params.imgurl = "{$Think.UPLOAD}/upload/banner/201809/201809055b8f8b7f10cb6.png";
+        params.url = "{$url}/type/4";
+        qhzapp.share(params);
+    });
+
+
+	var obj = document.getElementById("link");
+	var clipboard = new ClipboardJS(obj);
+	clipboard.on('success', function(e) {
+		alert("复制成功");
+	});
+	clipboard.on('error', function(e) {
+		console.log(e);
+	});
+
+
+
+</script>

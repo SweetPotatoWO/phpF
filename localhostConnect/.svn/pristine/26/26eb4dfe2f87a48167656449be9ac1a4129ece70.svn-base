@@ -1,0 +1,110 @@
+<?php
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+namespace SmallApi\Controller;
+
+use Common\Common\AesSecurity;
+use Common\Common\CodeGenerator;
+use Common\Common\Redis;
+use Service\User\Logic\UserInviteLogic;
+use Service\User\Logic\UserLogic;
+use Service\News\Logic\WeiXinLogic;
+use Service\News\Logic\SendSMSLogic;
+use Service\Integral\Logic\IntegralLogic;
+use Think\Controller;
+use Service\UserCenter\Logic\UserCenterLogic;
+use Service\Spread\Logic\AppInfoLogic;
+use Service\Integral\Logic\CardLogic;
+use SmallApi\Controller\BaseMobileController;
+
+
+/**
+ * Description of UserController
+ *
+ * @author Administrator
+ */
+class UserController extends BaseMobileController {
+
+    private $return = array('status' => 0, 'msg' => '', 'data' => '');
+
+    /**
+     * 用户信息反馈
+     * @return string
+     */
+    public function addFeback() {
+        $par = I('post.');
+        $where = array();
+        $userID = C('userID');
+        $where["terminal"] = 4;
+        $where["versions"] = '小程序1.0';
+        $where["febackInfo"] = $par['febackInfo'];
+        $where["phone"] = $par['phone'];
+        $where["userID"] = $userID;
+        $where["equipmentID"] = strtolower($par['deviceID']);
+        $where["addDatetime"] = time();
+        $logic = new AppInfoLogic();
+        $countInfo = $logic->getDayFeback($where["equipmentID"]);
+        if ($countInfo >= 3) {
+            $this->return["msg"] = "每天只能反馈3次";
+            return $this->return;
+        }
+        if (empty($where["phone"])) {
+            $where["phone"] = C('phone');
+        } else if (!verify_phone($where["phone"])) {
+            $this->return["msg"] = "请输入正确的手机号码！";
+            return $this->return;
+        }
+        $where["feback_type"] = 0;
+        $res = $logic->addFeback($where);
+        if (empty($res)) {
+            $this->return["msg"] = "反馈信息失败";
+            return $this->return;
+        }
+        $newlogic = new NewsLogic();
+        $newlogic->sendSystemME($userID, -1, 'feedBack');   //我方发送系统的信息
+        $this->return["status"] = 1;
+        $this->return['msg'] = '提交成功！';
+        return $this->return;
+    }
+
+    /**
+     * 名片列表
+     */
+    public function userCardList() {
+        $card = new CardLogic();
+        $userID = C('userID');
+        $dataRes = $card->getUserCardList($userID);
+        if(empty($dataRes['list'])) {
+            $this->return['msg'] = "数据为空";
+        } else {
+            $this->return['status'] =1;
+            $this->return['data']['count'] = $dataRes['count'];
+            $this->return['data']['list'] = $dataRes['list'];
+        }
+        return $this->return;
+    }
+    /**
+     * 名片详情
+     */
+    public function cardInfoByID() {
+        $par = I('post.');
+        $cardID = $par['cid'];
+        $logic = new CardLogic();
+        $data = $logic->getCardInfo($cardID);
+        if(empty($data)) {
+            $this->return['msg'] = "返回信息为空";
+        } else {
+            $this->return['status'] =1;
+            $this->return['data'] = $data;
+            $this->return['msg'] = "操作成功";
+        }
+        return $this->return;
+    }
+
+
+}

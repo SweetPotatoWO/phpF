@@ -1,0 +1,75 @@
+<?php
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+namespace Service\News\Model;
+
+use Common\Model\SlaveModel;
+
+/**
+ * Description of SmsVerifyModel
+ *
+ * @author DREAM
+ */
+class SmsVerifyModel extends SlaveModel {
+
+    /**
+     * 新增手机验证码记录
+     * @param type $entity
+     * @return boolean
+     */
+    public function addVerify($entity) {
+        try {
+            if (is_array($entity)) {
+                $entity['addDatetime'] = time();
+                $model = M("SmsVerify");
+                $model->where('receivePhone=' . $entity ['receivePhone'])->data('stutas=1')->save();
+                $result = $model->data($entity)->add();
+                return $result;
+            }
+            return false;
+        } catch (Exception $ex) {
+            logger(__METHOD__, $ex->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * 获取验证码
+     * @param array $field
+     * @param array $where
+     * @return boolean
+     */
+    public function getVerify($field, $where) {
+        $where["stutas"] = 0;
+        $model = M("SmsVerify");
+        $result = $model->field($field)->where($where)->order("verifyID desc")->find();
+        if (!empty($result)) {
+            return $result;
+        }
+        return false;
+    }
+
+    /**
+     * 验证码查询 
+     * @param type $where
+     * @param type $whereArr
+     * @param type $limit
+     */
+    public function getCode($where, $whereArr, $limit, $field) {
+        $model = $this->SlaveDB();
+        $result["total"] = $model->table("d_sms_verify")->where($where, $whereArr)->count();
+        $result["rows"] = $model->table("d_sms_verify")->field($field)->where($where, $whereArr)->limit($limit)->order("addDatetime DESC")->select();
+        return $result;
+    }
+
+
+    public function getSmsNum($d) {
+        return M("smsVerify")->where(array("deviceNo"=>$d,'addDatetime'=>array('egt',time()-10)))->count();
+    }
+
+}

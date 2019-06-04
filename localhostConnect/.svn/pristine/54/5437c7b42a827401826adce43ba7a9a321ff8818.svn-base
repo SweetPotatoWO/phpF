@@ -1,0 +1,42 @@
+/*
+Navicat MySQL Data Transfer
+
+Source Server         : 钱盒子测试
+Source Server Version : 50631
+Source Host           : 120.25.85.171:3306
+Source Database       : devmbox_hx
+
+Target Server Type    : MYSQL
+Target Server Version : 50631
+File Encoding         : 65001
+
+Date: 2018-08-08 14:47:35
+*/
+
+SET FOREIGN_KEY_CHECKS=0;
+
+-- ----------------------------
+-- Table structure for d_wx_reply
+-- ----------------------------
+DROP TABLE IF EXISTS `d_wx_reply`;
+CREATE TABLE `d_wx_reply` (
+  `replyID` int(11) NOT NULL AUTO_INCREMENT COMMENT '主键',
+  `replyType` varchar(50) NOT NULL DEFAULT '' COMMENT '根据微信消息推送接口来：even[click，view]',
+  `keyword` varchar(200) NOT NULL DEFAULT '' COMMENT '关键词',
+  `contentType` varchar(50) NOT NULL DEFAULT '' COMMENT '内容类型：news，text，image',
+  `title` varchar(100) NOT NULL DEFAULT '' COMMENT '回复标题',
+  `showTitle` tinyint(1) unsigned NOT NULL DEFAULT '1' COMMENT '是否显示回复标题',
+  `content` varchar(500) NOT NULL DEFAULT '' COMMENT '文本字符串',
+  `imgUrl` varchar(500) NOT NULL DEFAULT '' COMMENT '图片路径',
+  `url` varchar(200) NOT NULL DEFAULT '' COMMENT 'URL地址',
+  `isAuth` tinyint(1) unsigned NOT NULL DEFAULT '0' COMMENT 'URL链接是否需要授权',
+  `status` tinyint(1) unsigned NOT NULL DEFAULT '1' COMMENT '状态：1有效 0删除',
+  `addUserID` int(11) unsigned NOT NULL DEFAULT '0' COMMENT '添加人用户ID',
+  `addUserName` varchar(50) NOT NULL DEFAULT '' COMMENT '添加人用户名',
+  `addDatetime` int(11) unsigned NOT NULL DEFAULT '0' COMMENT '添加时间',
+  `editUserID` int(11) unsigned NOT NULL DEFAULT '0' COMMENT '编辑人用户ID',
+  `editUserName` varchar(50) NOT NULL DEFAULT '' COMMENT '编辑人用户名',
+  `editDatetime` int(11) unsigned NOT NULL DEFAULT '0' COMMENT '修改时间',
+  `operateIP` varchar(50) NOT NULL DEFAULT '' COMMENT '操作IP',
+  PRIMARY KEY (`replyID`)
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8 COMMENT='微信回复';

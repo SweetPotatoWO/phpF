@@ -1,0 +1,169 @@
+<?php
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+namespace Service\Spread\Model;
+
+use Think\Model;
+use Common\Model\SlaveModel;
+use Think\Exception;
+
+/**
+ * 文章
+ *
+ * @author DREAM
+ */
+class HomeArticleModel extends SlaveModel {
+
+    /**
+     * 获取文章 查询从库后台使用
+     * @return type
+     */
+    public function getArticle($where, $whereArr, $limit) {
+        $result["total"] = $this->SlaveDB()->table("d_home_article")->where($where, $whereArr)->count();
+        $field = "articleID,typeName,articleTitle,articlePhoto,status,articleSort,addDatetime,addUserName,articleUrl,typeID,usefulCount,nouseCount,viewCount";
+        $result["rows"] = $this->SlaveDB()->table("d_home_article")->where($where, $whereArr)->field($field)->order('addDatetime desc')->limit($limit)->select();
+        return $result;
+    }
+
+    /**
+     * 获取文章 查询从库 供手机端使用，不包含合计
+     * @return type
+     */
+    public function getMArticle($where, $whereArr, $limit) {
+        $field = "articleID,typeName,articleTitle,articlePhoto,status,articleSort,addDatetime";
+        $result = $this->SlaveDB()->table("d_home_article")->where($where, $whereArr)->field($field)->order('articleSort desc,addDatetime desc')->limit($limit)->select();
+        return $result;
+    }
+
+    /**
+     * 获取指定文章
+     * @param type $type
+     * @param type $limit
+     * @return type
+     */
+    public function getHomeArt($type, $limit) {
+        $field = "articleID,articleTitle,articlePhoto,abstract,articleUrl,addDatetime";
+        $result = $this->SlaveDB()->table("d_home_article")->field($field)->where("status=2 and typeID=" . $type)->order("articleSort desc,articleID desc")->limit($limit)->select();
+        return $result;
+    }
+
+    /**
+     * 查询文章
+     * @param type $where
+     * @return type
+     */
+    public function getEntity($where) {
+        $model = new Model("HomeArticle");
+        $field = "articleID,typeID,typeName,articleTitle,articlePhoto,abstract,articleContent,seoTitle,seoKeys,seoDescription,status,articleSort,addDatetime,articleUrl";
+        $result = $model->field($field)->where($where)->find();
+        return $result;
+    }
+
+    /**
+     * 增加文章阅读量
+     */
+    public function addViewCount($articleID) {
+        return $this->where(array('articleID' => $articleID))->data(array('viewCount' => array('exp', 'viewCount+1')))->save();
+    }
+
+    /**
+     * 保存文章
+     * @param type $data
+     * @param type $where
+     * @return boolean
+     */
+    public function saveArticle($data, $where) {
+        try {
+            $model = M("HomeArticle");
+            if (is_array($where) && count($where) > 0) {
+                $result = $model->where($where)->data($data)->save();
+                return $result * 1 > 0 ? $where["articleID"] : false;
+            } else {
+                return $model->add($data);
+            }
+            return false;
+        } catch (Exception $ex) {
+            logger(__METHOD__, $ex->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * 获取文章信息
+     */
+    public function getHomeArticle($where, $whereArr, $limit) {
+        $model = M("HomeArticle");
+        $field = "articleID,typeID,typeName,articlePhoto,articleContent,articleUrl,abstract,recommend,addDatetime,articleTitle";
+        if (empty($limit)) {
+            $result = $model->field($field)->where($where, $whereArr)->order("articleSort desc,articleID desc")->select();
+        } else {
+            $result["total"] = $model->where($where, $whereArr)->count();
+            $result["rows"] = $model->field($field)->where($where, $whereArr)->order("articleSort desc,articleID desc")->limit($limit)->select();
+        }
+        return $result;
+    }
+
+    /**
+     * 获取帮助中心的文章
+     * @param type $where
+     * @param type $whereArr
+     * @param type $order
+     */
+    public function center($where, $whereArr) {
+        $model = new Model();
+        $field = "articleID,typeID,articlePhoto,articleContent,articleUrl,abstract,recommend,addDatetime,articleTitle";
+        $sql = "select " . $field . " from d_home_article where(1=1)" . $where . " order by articleSort desc,articleID ASC ";
+        $result = $model->query($sql, $whereArr);
+        return $result;
+    }
+
+    /**
+     * 获取相关文章列表
+     * @param type $where
+     * @return type
+     */
+    public function relatedArticle($where) {
+        $model = $this->SlaveDB()->table("d_home_article");
+        $result = $model->field("articleID,articleTitle,addDatetime")->where($where)->limit(5)->order('rand()')->select();
+
+        return $result;
+    }
+
+    /**
+     * 获取上一篇文章列表
+     * @param type $where
+     * @return type
+     */
+    public function preArticle($where) {
+        $model = $this->SlaveDB()->table("d_home_article");
+        $preArticle = $model->field("articleID,articleTitle")->where($where)->limit(1)->order("articleID ASC")->find();
+        return $preArticle;
+    }
+
+    /**
+     * 获取下一篇文章 
+     * @param type $type
+     * @param type $num
+     * @return type
+     */
+    public function nextArticle($where) {
+        $model = $this->SlaveDB()->table("d_home_article");
+        $nextArticle = $model->field("articleID,articleTitle,addDatetime")->where($where)->limit(1)->order("articleID DESC")->find();
+        return $nextArticle;
+    }
+
+    /*     * 根据类型来获取固定类型的文章
+     * @param type $type
+     */
+
+    public function getArticleByTitle($typeID) {
+        $model = $this->SlaveDB()->table("d_home_article");
+        return $model->field("articleContent")->where(array('typeID' => $typeID))->find();
+    }
+
+}

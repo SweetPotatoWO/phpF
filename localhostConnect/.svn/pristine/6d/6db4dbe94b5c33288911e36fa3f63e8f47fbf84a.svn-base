@@ -1,0 +1,143 @@
+<div class="modal-body">
+    <input  type="hidden" name="hidAction" id="hidAction" value="view" >
+    <input  type="hidden" name="hidRoleID" id="hidRoleID" value="{$roleid}" >
+    <form class="form-horizontal" id="form-Role">       
+        <table class="table table-striped table-bordered" id="example-basic">
+            <thead>
+                <tr>          
+                    <th>功能名称</th>
+                    <th>功能代码</th>
+                    <th>选择</th>
+                </tr>
+            </thead>
+            <tbody>
+            <volist name="data" id="vo" key="kyid" >
+                <tr data-tt-id="{$kyid}">
+                    <td>{$vo.menuName}</td>
+                    <td>{$vo.menuCode}</td>
+                    <td>
+                        <label class="checkbox" >
+                            <input class="node-check" type="checkbox" name="access[]" index="{$kyid}-{$kyid}"  value="{$vo.menuID}_1" level='1' <if condition='$vo["access"]'>checked</if>>
+                            <span class="lbl"> </span>      
+                        </label>  
+                    </td>
+                </tr>
+                <volist name="vo.child" id="item" key="chlkeyid">
+                    <tr data-tt-id="{$kyid}.{$chlkeyid}" data-tt-parent-id="{$kyid}">
+                        <td>{$item.menuName}</td>
+                        <td>{$item.menuCode}</td>
+                        <td>
+                            <label class="checkbox" >
+                                <input class="node-check" type="checkbox" name="access[]" index="{$kyid}-{$kyid}_{$chlkeyid}"  value="{$item.menuID}_2" level='2' <if condition='$item["access"]'>checked</if>>
+                                <span class="lbl"> </span>      
+                            </label>  
+                        </td>
+                    </tr>
+                    <volist name="item.child" id="thritem" key="thrkeyid">
+                        <tr data-tt-id="{$kyid}.{$chlkeyid}.1" data-tt-parent-id="{$kyid}.1">
+                            <td>{$thritem.menuName}</td>
+                            <td>{$thritem.menuCode}</td>
+                            <td>
+                                <label class="checkbox" >
+                                    <input class="node-check" type="checkbox" name="access[]"  index="{$kyid}-{$kyid}_{$chlkeyid}_{$thrkeyid}" value="{$thritem.menuID}_3" level='3' <if condition='$thritem["access"]'>checked</if>>
+                                    <span class="lbl"> </span>      
+                                </label>  
+                            </td>
+                        </tr>
+                    </volist>
+                </volist>
+            </volist>
+            </tbody>
+        </table>
+    </form>
+</div>
+<div class="modal-footer">
+    <button type="button" id="butCancel" class="btn btn-default" data-dismiss="modal">关闭</button>
+    <button type="button" id="butSaveRole" class="btn btn-primary" >保存</button>
+</div>  
+<script src="{$Think.BPATH}js/jquery.treetable.js?version={$Think.BNO}"></script>
+<script type="text/javascript" >
+    $(function ($) {
+        $("#example-basic").treetable({expandable: true});
+        $("#example-basic").treetable('expandAll');
+        $(".node-check").click(function () {
+            var clickLevel = $(this).attr("level");
+            var currentIndex = $(this).attr("index");
+            if (clickLevel == '1') {
+                if ($(this).attr("checked")) {
+                    $("input.node-check:checkbox[index^=" + currentIndex + "]").removeAttr("checked");
+                } else {
+                    $("input.node-check:checkbox[index^=" + currentIndex + "]").prop("checked", "checked");
+                    $("input.node-check:checkbox[index^=" + currentIndex + "]").attr("checked", "checked");
+                }
+            } else if (clickLevel == '2') {
+                if ($(this).attr("checked")) {
+                    $("input.node-check:checkbox[index^=" + currentIndex + "]").removeAttr("checked");
+                } else {
+                    var newIndex = currentIndex.substring(0, currentIndex.length - 2);
+                    $("input.node-check:checkbox[index^=" + currentIndex + "]").prop("checked", "checked");
+                    $("input.node-check:checkbox[index^=" + currentIndex + "]").attr("checked", "checked");
+                    $("input.node-check:checkbox[index=" + newIndex + "]").prop("checked", "checked");
+                    $("input.node-check:checkbox[index=" + newIndex + "]").attr("checked", "checked");
+                }
+            } else if (clickLevel == '3') {
+                var newIndex = currentIndex.substring(0, currentIndex.length - 2);
+                $("input.node-check:checkbox[index=" + newIndex + "]").prop("checked", "checked");
+                $("input.node-check:checkbox[index=" + newIndex + "]").attr("checked", "checked");
+                var parentIndex = newIndex.substring(0, newIndex.length - 2);
+                $("input.node-check:checkbox[index=" + parentIndex + "]").prop("checked", "checked");
+                $("input.node-check:checkbox[index=" + parentIndex + "]").attr("checked", "checked");
+            }
+        });
+        
+        $("#butSaveRole").click(function () {
+            saveRole();
+        });
+    });
+
+    function getAccessList() {
+        var accessList = [];
+        $(".node-check[name='access[]']").each(function () {
+            var singleValue = $(this).val();
+            if (this.checked) {
+                accessList.push(singleValue);
+            }
+        });
+        return accessList;
+    }
+
+    function saveRole() {
+        var roleId = $("#hidRoleID").val();
+        var accessList = getAccessList();
+        var requestParam = {
+            roleID: roleId,
+            access: accessList
+        };
+        $.ajax({
+            type: "post",
+            url: "/Backend/Backend/saveSiteRole",
+            data: requestParam,
+            dataType: "json",
+            beforeSend: function (XMLHttpRequest) {
+                $(".sub-content").showLoading();
+            },
+            success: function (data, textStatus) {
+                $(".sub-content").hideLoading();
+                if (data.status == 1) {
+                    $("#hidAction").val("edit");
+                    $win.confirm(data.msg + ",是否关闭窗口？").on(function () {
+                        $('#butCancel').trigger("click");
+                    });
+                } else {
+                    $win.warn(data.msg);
+                }
+            },
+            complete: function (XMLHttpRequest, textStatus) {
+                $(".sub-content").hideLoading();
+            },
+            error: function () {
+                $(".sub-content").hideLoading();
+            }
+        });
+    }
+</script>

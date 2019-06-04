@@ -1,0 +1,1255 @@
+<?php
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+namespace MobileApi\Api;
+
+use Common\Common\ThirdApi\ChuanglanSmsApi;
+use MobileApi\Common\MobileApiBase;
+use Service\Connect\Logic\ConnectRelationLogic;
+use Service\Connect\Logic\OperationLogic;
+use Service\Integral\Logic\IntegralLogic;
+use Service\News\Logic\NewsLogic;
+use Service\News\Logic\SendSMSLogic;
+use Service\User\Logic\IndexLogic;
+use Service\User\Logic\UserFriendLogic;
+use Service\User\Logic\UserInviteLogic;
+use Service\User\Logic\UserLogic;
+use Service\User\Logic\MaillistLogic;
+use Service\User\Logic\UserVisitorLogic;
+use Service\User\Model\ShieldMaillistModel;
+use Service\User\Model\UserInviteModel;
+use Service\User\Model\UserMaillistModel;
+use Service\UserCenter\Logic\UserCenterLogic;
+
+class ApiFriend extends MobileApiBase {
+
+
+    private $return = array('code'=>1,'msg'=>"",'info' => array());
+    public function getRules() {
+
+
+        return array(
+            'newFriends' => array(
+                'pageindex' => array('name' => 'pageindex', 'type' => 'int', 'default' => 1, 'desc' => '页码'),
+                'pagesize' => array('name' => 'pagesize', 'type' => 'int', 'default' => 15, 'desc' => '每页显示数量')
+            ),
+            'myFriends' => array(
+                'pageindex' => array('name' => 'pageindex', 'type' => 'int', 'default' => 1, 'desc' => '页码'),
+                'pagesize' => array('name' => 'pagesize', 'type' => 'int', 'default' => 15, 'desc' => '每页显示数量')
+            ),
+            'mailApply' => array(
+                'pageindex' => array('name' => 'pageindex', 'type' => 'int', 'default' => 1, 'desc' => '页码'),
+                'pagesize' => array('name' => 'pagesize', 'type' => 'int', 'default' => 15, 'desc' => '每页显示数量')
+            ),
+            'viewFriends' => array(
+                'pageindex' => array('name' => 'pageindex', 'type' => 'int', 'default' => 1, 'desc' => '页码'),
+                'pagesize' => array('name' => 'pagesize', 'type' => 'int', 'default' => 15, 'desc' => '每页显示数量')
+            ),
+            'handldMailList'=>array(
+                "phoneStr"=>array("name"=>"phoneStr",'require'=>true,"type"=>"string",'desc'=>'[{"userName":"xxx","phone":"13169601345,13500410038","shieldStatus":0,"shortPhone":"520","group":"亲人"}]账户信息的json字符串'),
+            ),
+
+            'updateMailList'=>array(
+                "phoneStr"=>array("name"=>"phoneStr",'require'=>true,"type"=>"string",'desc'=>'[{"userName":"xxx","phone":"13169601345,13500410038","shieldStatus":1,"shortPhone":"520","group":"亲人"}]账户信息的json字符串'),
+            ),
+            'dealFriendApply' => array(
+                'applyID' => array('name' => 'applyID', 'type' => 'int', 'require' => true, 'desc' => 'id'),
+                'status' => array('name' => 'status', 'type' => 'int', 'require' => true, 'desc' => '状态 2同意 3忽略')
+            ),
+            "isMailli"=>array(),
+            "getEvaList"=>array(
+                'pageindex' => array('name' => 'pageindex', 'type' => 'int', 'default' => 1, 'desc' => '页码'),
+                'pagesize' => array('name' => 'pagesize', 'type' => 'int', 'default' => 15, 'desc' => '每页显示数量')
+            ),
+            "evaluate"=>array(
+                "content"=> array('name' => 'content', 'type' => 'string', 'default' => 1, 'desc' => '内容'),
+                "eID"=> array('name' => 'eID', 'type' => 'int', 'default' => 1, 'desc' => '评价的选项的ID'),
+                "phone"=> array('name' => 'phone', 'type' => 'string', 'default' => 1, 'desc' => '评价人的电话号码'),
+            ),
+            "addFriend"=>array(
+                "friendID"=>array('name' => 'friendID', 'type' => 'int', 'require' => true, 'desc' => '被邀请的好友的ID')
+            ),
+            "invitation"=>array(
+                "phone"=>array('name'=>'phone','type'=>'string','require'=>true,'desc'=>'手机号码'),
+            ),
+            "operateMes"=>array(
+                "phone"=>array('name'=>'phone','type'=>'string','require'=>true,'desc'=>'手机号码'),
+            ),
+            "isOperateMes"=>array(
+                "phone"=>array('name'=>'phone','type'=>'string','require'=>true,'desc'=>'手机号码'),
+            ),
+            "recommend"=>array(
+                'status' => array('name' => 'status', 'type' => 'int', 'require' => true, 'desc' => '状态 1为你推荐 2同事、前同事 3校友'),
+                'pageindex' => array('name' => 'pageindex', 'type' => 'int', 'default' => 1, 'desc' => '页码'),
+                'pagesize' => array('name' => 'pagesize', 'type' => 'int', 'default' => 15, 'desc' => '每页显示数量'),
+            ),
+            'handleShield'=>array(
+                "phoneStr"=>array('name'=>'phoneStr','type'=>'string','require'=>true,'desc'=>'[{phone:13169601344,shieldStatus:0}] 传递这样的json字符串过来 其中shieldStatus 1表示屏蔽 0表示不屏蔽'),
+            ),
+            "removeShield"=>array(
+                "phoneStr"=>array('name'=>'phoneStr','type'=>'string','require'=>true,'desc'=>'手机号码多个用,分隔开'),
+            ),
+            "myShieldList"=>array(
+
+            ),
+            "allMail"=>array(
+
+            ),
+            "commonFriend"=>array(
+                'otherUserID'=> array("name"=>'otherUserID','type'=>'int','require'=>true, 'desc'=>'当前用户的userID'),
+            ),
+            "checkFriendApply"=>array(
+                'otherUserID'=> array("name"=>'otherUserID','type'=>'int','require'=>true, 'desc'=>'当前用户的userID'),
+            ),
+            "delFriend"=>array(
+                'otherUserID'=> array("name"=>'otherUserID','type'=>'int','require'=>true, 'desc'=>'当前用户的userID'),
+            ),
+            "refusalList"=>array(),
+            "getOtherVisitUser"=>array(
+                "ID" => array('name' => 'ID', 'type' => 'int', 'require' => false, 'desc' => '用户的ID 不传就是自己 传了就是别人的', 'default' => 0),
+                'pageindex' => array('name' => 'pageindex', 'type' => 'int', 'default' => 1, 'desc' => '页码'),
+                'pagesize' => array('name' => 'pagesize', 'type' => 'int', 'default' => 15, 'desc' => '每页显示数量')
+            ),
+            "getColleague"=>array(
+                "ID" => array('name' => 'ID', 'type' => 'int', 'require' => false, 'desc' => '用户的ID 不传就是自己 传了就是别人的', 'default' => 0),
+                'pageindex' => array('name' => 'pageindex', 'type' => 'int', 'default' => 1, 'desc' => '页码'),
+                'pagesize' => array('name' => 'pagesize', 'type' => 'int', 'default' => 15, 'desc' => '每页显示数量')
+            ),
+        );
+    }
+
+    /**
+     * 好友申请列表
+     * @desc 获取到好友申请列表
+     * @return int total 申请列表的总数目
+     * @return int list.applyID   申请的唯一ID
+     * @return int list.userID  用户的ID
+     * @return string list.name  用户的名字
+     * @return string list.job  职业
+     * @return string list.userHeadUrl 头像
+     * @return string list.vip 是否为vip 是的话 值为vip
+     * @return string list.jobAuth 是否为职业认证 是的话 值为jobC
+     * @return string list.companyName 公司的名字
+     * @return string list.addDatetime 时间戳
+     * @return array.list.label 认证的一些事情
+     * @return string userKey 用户的通信ID
+     *
+     */
+    public function newFriends() {
+        $rs = array('code' => 0, 'msg' => '', 'info' => array());
+        $this->userCheck();
+        $limit = $this->getLimit($this->pageindex, $this->pagesize);
+        $userID = $this->userID;
+        $logic = new \Service\User\Logic\UserFriendLogic();
+        $result = $logic->getFriendApply($userID, 1, $limit);
+        if ($result['rows']) {
+            $rs['info'] = array(
+                'total' => $result['total'],
+                'list' => $result['rows']
+            );
+        } else {
+            $rs['code'] = 1;
+            $rs['msg'] = '暂无数据';
+        }
+        return $rs;
+    }
+
+
+
+
+    /**
+     * 处理好友申请列表的中的申请
+     * @desc 处理好友请求
+     * @return  string msg          提示信息
+     * @return int code
+     * @return array info
+     */
+    public function dealFriendApply() {
+        $rs = array('code' => 0, 'msg' => '操作成功', 'info' => array());
+        $this->userCheck();
+        $status = $this->status;
+        $userlogic = new UserLogic();
+        $information = $userlogic->getInformationScore($this->userID);
+        if(!$information['isFill'] && $status==2) {   //同意的时候需要判断下
+            $rs['code'] = 1;
+            $rs['msg'] = '请完善信息';
+            return $rs;
+        }
+        $id = $this->applyID;
+        $logic = new \Service\User\Logic\UserFriendLogic();
+        $result = $logic->dealApply($id, $status);
+        if (!$result) {
+            $rs['code'] = 1;
+            $rs['msg'] = '操作失败';
+            return $rs;
+        }
+        if($status == 2 && $result) {   //如果同意的话
+            $applyInfo  = $logic->getAppyInfo($id);
+            $user = new UserLogic();
+            $phone = $user->getPhoneByUserID($applyInfo['userID']);   //申请加你为好友的人的电话号码
+            $userCenter = new UserCenterLogic();
+            $userInfo = $userCenter->getOneByUserID($applyInfo['friendID']);   //你自己的信息
+            $sms = new SendSMSLogic();
+            $sms->AgreeApply($phone,$applyInfo['friendID'],$userInfo['companyName'],$userInfo['name']);    //发送短信
+            $op = new OperationLogic();    //更新到图数据中
+            $op->saveConnectNeo4j(array('userID'=>$this->userID),array('userID'=>$applyInfo['userID']));
+        }
+        $rs['code'] = 0;
+        $rs['msg'] = '操作成功';
+        return $rs;
+    }
+
+
+    /**
+     * 我的好友
+     * @desc 我的好友
+     * @return int    code         操作码，0表示成功， 1表示失败
+     * @return  array  info         返回数据 
+     * @return  string msg          提示信息
+     * @return string total  总的好友数量
+     * @return int list.userID  用户的ID
+     * @return string list.name  用户的名字
+     * @return string list.job  职业
+     * @return string list.userHeadUrl 头像
+     * @return string list.vip 是否为vip 是的话 值为vip
+     * @return string list.jobAuth 是否为职业认证 是的话 值为jobC
+     * @return string list.companyName 公司的名字
+     * @return string list.addDatetime 时间戳
+     * @return array.list.label 认证的一些事情
+     * @return string userKey 用户的通信ID
+     */
+    public function myFriends() {
+        $rs = array('code' => 0, 'msg' => '', 'info' => array());
+        $this->userCheck();
+        $limit = $this->getLimit($this->pageindex, $this->pagesize);
+        $userID = $this->userID;
+        $logic = new \Service\User\Logic\UserFriendLogic();
+        $result = $logic->getFriendList($userID, $limit);
+
+        if ($result['rows']) {
+            $rs['info'] = array(
+                'total' => $result['total'],
+                'list' => $result['rows']
+            );
+        } else {
+            $rs['code'] = 1;
+            $rs['msg'] = '暂无数据';
+        }
+        return $rs;
+    }
+
+
+
+    /**
+     *  通讯录好友
+     * @desc 邀请好友列表
+     * @return string totalMail 通讯录总的联系人数
+     * @return string totalMember 通讯录中已加入平台的好友数
+     * @return string totalNum 通讯录中未加入平台的好友数据总条数
+     * @return string list.userName  用户的名字
+     * @return string list.group  关系
+     * @return string list.phone  手机号码
+     * @return string list.hidphone  手机号码
+     * @return string list.status  0未邀请 1已邀请 2已通过邀请 3拒绝邀请
+     */
+    public function mailApply() {
+        $rs = array('code' => 0, 'msg' => '', 'info' => array());
+        $this->userCheck();
+        $limit = $this->getLimit($this->pageindex, $this->pagesize);
+        $logic = new \Service\User\Logic\UserFriendLogic();
+        $result = $logic->getMailInvite($this->userID,$this->userPhone, $limit); //测试数据
+        if ($result['totalMail'] == 0) {
+            $rs['code'] = 1;
+            $rs['msg'] = '未导入通讯录';
+        } else {
+            $rs['info'] = $result;
+        }
+        return $rs;
+    }
+
+    /**
+     * 邀请列表中的查看好友
+     * @desc 查看好友
+     * @return string totalMember 通讯录中已加入平台的好友
+     * @return string totalNum 数据总条数
+     * @return array list     列表
+     * @return string list.name  用户的名字
+     * @return string list.job  职业
+     * @return string list.userHeadUrl 头像
+     * @return string list.vip 是否为vip 是的话 值为vip
+     * @return string list.jobAuth 是否为职业认证 是的话 值为jobC
+     * @return string list.companyName 公司的名字
+     * @return string list.addDatetime 时间戳
+     * @return array.list.label 认证的一些事情
+     * @return string userKey 用户的通信ID
+     * @return string status  0不是好友 1已申请 2申请成功
+     */
+    public function viewFriends() {
+        $rs = array('code' => 0, 'msg' => '', 'info' => array());
+        $this->userCheck();
+        $limit = $this->getLimit($this->pageindex, $this->pagesize);
+        $userID = $this->userID;
+        $logic = new \Service\User\Logic\UserFriendLogic();
+        $result = $logic->mailFriendList($userID, $limit);
+        if (empty($result['list'])) {
+            $rs['code'] = 1;
+            $rs['msg'] = '没有好友加入平台';
+        } else {
+            $rs['info'] = $result;
+        }
+        return $rs;
+    }
+
+
+
+
+    /**
+     * 导入通讯录
+     * @desc 导入通讯录
+     * @return int code 0 成功 1失败
+     * @return string msg 提示
+     * @return array info 信息
+     */
+    public function handldMailList() {
+        $this->userCheck();
+        $logic = new MaillistLogic();
+        $model = new UserFriendLogic();
+        $status = $model->getMailImportStatus($this->userID,'import');
+        if(!empty($status)) {
+            $rs['code'] = 1;
+            $rs['msg'] = "已经导入过了";
+            return $rs;
+        }
+        $logic->deleteMaillist($this->userID);  //先清空某人的通讯录
+        $infoList = json_decode(htmlspecialchars_decode($this->phoneStr),true);
+        $rs = array('code' => 0, 'msg' => "", 'info' => array());
+        if(empty($infoList)) {
+            $rs['code'] = 1;
+            $rs['msg'] = "通讯录为空";
+            return $rs;
+        }
+        $content = array();
+        $j = 0;  //临界点
+        $num = count($infoList);
+        $phoneArr = array();
+        for ($i=0; $i<$num; $i++) {
+            $phone = $infoList[$i]['phone'];  //获取到某个用户的电话号码
+            if(!in_array($phone,$phoneArr)){   //用户不在重复的池子中
+                $content[] = $infoList[$i];    //进处理队列
+                $phoneArr[] = $phone;    //用户筛选出来后进去重的池子中
+            }
+            if($j == 100) {  //每100个导入一次
+                $this->noticeGoMail($content,$this->userID,$this->userPhone);  //异步导入
+                $content = array();
+                $j = 0;
+            }
+            $j++;
+            if($i == ($num-1)) {   //最后一次统一导入
+                $this->noticeGoMail($content,$this->userID,$this->userPhone);  //异步导入
+                break;
+            }
+        }
+        $model->addMailImportLog($this->userID,$num,'import');  //添加状态
+        return $rs;
+    }
+
+
+    /**
+     * 更新通讯录
+     * @desc 更新通讯录
+     * @return int code 0 成功 1失败
+     * @return string msg 提示
+     * @return array info 信息
+     */
+    public function updateMailList() {
+        $this->userCheck();
+        $uflogic = new UserFriendLogic();
+        $infoList = json_decode(htmlspecialchars_decode($this->phoneStr),true);
+        $rs = array('code' => 0, 'msg' => "", 'info' => array());
+        if(empty($infoList)) {
+            $rs['code'] = 1;
+            $rs['msg'] = "通讯录为空";
+            return $rs;
+        }
+        $status = $uflogic->getMailImportStatus($this->userID,'import');
+        if(!empty($status)) {    //更新
+            $updateID = $uflogic->addMailImportLog($this->userID,0,'update');  //添加状态  //添加一条为0的记录
+            $content = array();
+            $j = 0;  //临界点
+            $num = count($infoList);
+            $phoneArr = array();
+            for ($i=0; $i<$num; $i++) {
+                $phone = $infoList[$i]['phone'];  //获取到某个用户的电话号码
+                if(!in_array($phone,$phoneArr)){   //用户不在重复的池子中
+                    $content[] = $infoList[$i];    //进处理队列
+                    $phoneArr[] = $phone;    //用户筛选出来后进去重的池子中
+                }
+                if($j == 30) {  //每100个导入一次
+                    $this->noticeUpdateMail($content,$this->userID,$this->userPhone,'one',$updateID);  //异步导入
+                    $content = array();
+                    $j = 0;
+                }
+                $j++;
+                if($i == ($num-1)) {   //最后一次统一导入
+                    $this->noticeUpdateMail($content,$this->userID,$this->userPhone,'end',$updateID);  //异步导入
+                    break;
+                }
+            }
+        } else {   //新增
+            $content = array();
+            $j = 0;  //临界点
+            $num = count($infoList);
+            $phoneArr = array();
+            for ($i=0; $i<$num; $i++) {
+                $phone = $infoList[$i]['phone'];  //获取到某个用户的电话号码
+                if(!in_array($phone,$phoneArr)){   //用户不在重复的池子中
+                    $content[] = $infoList[$i];    //进处理队列
+                    $phoneArr[] = $phone;    //用户筛选出来后进去重的池子中
+                }
+                if($j == 100) {  //每100个导入一次
+                    $this->noticeGoMail($content,$this->userID,$this->userPhone);  //异步导入
+                    $content = array();
+                    $j = 0;
+                }
+                $j++;
+                if($i == ($num-1)) {   //最后一次统一导入
+                    $this->noticeGoMail($content,$this->userID,$this->userPhone);  //异步导入
+                    break;
+                }
+            }
+            $uflogic->addMailImportLog($this->userID,$num,'import');  //添加状态
+        }
+        return $rs;
+    }
+
+
+
+    /**
+     * 通知go去回调函数
+     * 分批导入数据库
+     */
+    private function noticeGoMail($content,$userID,$phone) {
+        $data['userID']=$userID;
+        $data['content'] = $content;
+        $data['phone'] = $phone;
+        $returnurl = SITE . "Callback/notifyMail";
+        $callLogic = new \Service\Common\CallBackLogic();
+        $callLogic->sendCallbackInfo($returnurl, $data);
+    }
+
+
+    /**
+     * 通知go去回调函数
+     * 分批导入数据库
+     */
+    private function noticeUpdateMail($content,$userID,$phone,$code,$logID) {
+        $data['userID']=$userID;
+        $data['content'] = $content;
+        $data['phone'] = $phone;
+        $data['code'] = $code;
+        $data['logID'] = $logID;
+        $returnurl = SITE . "Callback/notifyUpdateMail";
+        $callLogic = new \Service\Common\CallBackLogic();
+        $callLogic->sendCallbackInfo($returnurl, $data);
+    }
+
+    /**
+     * 是否已经上传了通讯录
+     * @desc 检查是否已经同步了通讯录
+     * @return int code 0 成功 1失败
+     * @return int isMailli 0没导过 1导过
+     * @return string msg 提示
+     * @return array info 信息
+     */
+    public function isMailli() {
+        $this->userCheck();
+        $logic = new UserFriendLogic();
+        $info = $logic->getMailImportStatus($this->userID);
+        if(empty($info)) {
+            $isMailli = 0;
+        } else {
+            $isMailli = 1;
+        }
+        $rs = array('code' => 0, 'msg' => '', 'info' => array());
+        $rs['info']['isMailli'] = $isMailli;
+        return $rs;
+    }
+
+
+    /**
+     * 邀请动作
+     * @desc 邀请这个动作
+     * @return string msg 提示
+     * @return array info 信息
+     */
+    public function invitation() {
+        $this->userCheck();
+        $rs = array('code' => 0, 'msg' => '', 'info' => array());
+        $phone = $this->phone;
+        if(!verify_phone($phone)) {
+            $rs['code'] = 1;
+            $rs['msg'] = "手机号码格式不对劲";
+            return $rs;
+        }
+        $mail = new UserMaillistModel();
+        $info = $mail->getMaillstOne($this->userID,$this->phone);  //检查一遍
+        if(empty($info)) {
+            $rs['code'] = 1;
+            $rs['msg'] = "通讯录中不存在该用户的信息";
+            return $rs;
+        }
+
+        $invite = new UserInviteLogic();
+        $user = new UserLogic();
+        $userInfo = $user->getUserInfo($this->userID);
+
+        $data['userID'] = $this->userID;
+        $data['phone'] = $this->userPhone;
+        $data['invitePhone'] = $this->phone;
+        $res = $invite->addInvite($data);
+        if($res) {   //邀请成功
+            $sms = new SendSMSLogic();
+            $sms->sendInvitationMes($phone,$this->userID,$userInfo['name']);   //发送短信
+            $rs['msg'] = "邀请成功";
+        } else {
+            $rs['code'] = 1;
+            $rs['msg'] = "邀请过了";
+        }
+        return $rs;
+    }
+
+
+
+
+
+    /**
+     * 邀请马甲用户
+     * @desc 邀请这个动作
+     * @return string msg 提示
+     * @return array info 信息
+     */
+    public function operateMes() {
+        $this->userCheck();
+        $rs = array('code' => 0, 'msg' => '', 'info' => array());
+        $phone = $this->phone;
+        if(!verify_phone($phone)) {
+            $rs['code'] = 1;
+            $rs['msg'] = "手机号码格式不对劲";
+            return $rs;
+        }
+
+        $user = new UserLogic();
+        $userInfo = $user->getUserInfo($this->userID);
+
+        $data['userID'] = $this->userID;
+        $data['invitePhone'] = $this->phone;
+        $res = $user->insertOtherInvite($data);
+        if($res) {   //邀请成功
+            $connect = new ConnectRelationLogic();
+            $connect->addApplyMobile($this->userID,$this->phone,time());
+            $sms = new SendSMSLogic();
+            $sms->sendInvitationMes($phone,$this->userID,$userInfo['name']);   //发送短信
+            $rs['msg'] = "邀请成功";
+        } else {
+            $rs['code'] = 1;
+            $rs['msg'] = "邀请过了";
+        }
+        return $rs;
+    }
+
+
+    /**
+     * 判断是否邀请过马甲用户
+     * @desc 判断是否邀请过马甲用户
+     * @return string msg 提示
+     * @return int status   是否曾经邀请过 1 邀请了 0 没有
+     * @return array info 信息
+     */
+    public function isOperateMes() {
+        $this->userCheck();
+        $rs = array('code' => 0, 'msg' => '', 'info' => array());
+        $this->phone;
+        $user  = new UserLogic();
+        $res = $user->isInvite($this->userID,$this->phone);
+        if($res) {
+            $rs['info']['status'] = 1;
+        } else {
+            $rs['info']['status'] = 0;
+        }
+        return $rs;
+    }
+
+
+
+
+
+    /**
+     * 一键邀请
+     * @desc 一键邀请
+     * @return string msg 提示
+     * @return array info 信息
+     */
+    public function allInvitation() {
+        $this->userCheck();
+        $rs = array('code' => 0, 'msg' => '操作成功', 'info' => array());
+        $logic = new UserFriendLogic();
+        //处理邀请的信息
+        $phonelist = $logic->getSenMailNoInvit($this->userID);  //获取到不敏感的未邀请用户
+        if(empty($phonelist)) {
+            $rs['code'] =1;
+            $rs['msg'] = "已经全部邀请";
+            return $rs;
+        }
+
+        $time = time();
+        $all = array();
+        foreach ($phonelist as $key =>$value) {
+            $one = array(
+                'invitePhone'=>$value['phone'],
+                'userID'=>$this->userID,
+                'phone'=>$this->userPhone,
+                'addDatetime'=>$time,
+                'sendDatetime'=>$time,
+            );
+            $all[] = $one;
+        }
+        $phoneStr = trim(implode(',',array_column($phonelist,'phone')),',');
+        $invita = new UserInviteLogic();
+        $invita->addAll($all);
+        $logic->noticeGoCall($this->userID,$phoneStr);   //go去回调
+        return $rs;
+    }
+
+
+
+
+
+
+
+
+    /**
+     * 获取到通讯录评价名单
+     * @desc 通讯录评价名单
+     * @return array list     列表
+     * @return string userName 姓名
+     * @return string group 分组
+     * @return string status  0未评价 1已评价
+     * @return string content  评价内容
+     * @return string msg 提示
+     * @return string    userKey       用来通信的唯一标识
+     * @return array info 信息
+     */
+    public function getEvaList() {
+        $this->userCheck();
+        $rs = array('code' => 0, 'msg' => '', 'info' => array());
+        $limit = $this->getLimit($this->pageindex, $this->pagesize);
+        $logic = new \Service\User\Logic\UserFriendLogic();
+        $result = $logic->getMailEva($this->userID,$this->userPhone,$limit);
+        if (empty($result)) {
+            $rs['code'] = 1;
+            $rs['msg'] = '未导入通讯录';
+        } else {
+            $rs['info'] = $result;
+        }
+        return $rs;
+    }
+
+
+    /**
+     * 评价动作
+     * @desc 用户评价动作
+     * @return string msg 提示
+     * @return array info 信息
+     */
+    public function evaluate() {
+        $this->userCheck();
+        $rs = array('code' => 0, 'msg' => '', 'info' => array());
+        $logic = new UserFriendLogic();
+        $info = $logic->getOneEva($this->userID,$this->phone);
+        if(!empty($info)) {
+            $rs['code']= 1;
+            $rs['msg'] = "已经评价了";
+            return $rs;
+        }
+        $data = array(
+            "content"=>$this->content,
+            "contentType"=>$this->eID,
+            "userID"=>$this->userID,
+            "evaPhone"=>$this->phone,
+            "addDatetime"=>time(),
+        );
+        $res = $logic->addEvaData($data);
+        if ($res) {
+            $user = new UserLogic();
+            $evainfo = $user->getByPhone($this->phone);   //评价那个人的USERinfo信息
+            if(!empty($evainfo)) {   //当不为空的时候
+                $new = new NewsLogic();
+                $new->sendSystemME($evainfo['userID'],$this->userID,'evaluate',array($this->content));   //发送系统消息
+            }
+            $info = $user->getUserInfo($this->userID);
+            $sms = new SendSMSLogic();   //发欧神诺短信
+            $sms->sendEvaluateMes($this->phone,$this->userID,$info['name'],$this->content);   //发送短信
+            $rs['code'] = 0;
+            $rs['msg'] = '添加评价成功';
+        } else {
+            $rs['msg'] = "添加评价失败";
+        }
+        return $rs;
+    }
+
+
+    /**
+     * 获取到评价选项
+     * @desc 获取到评价的选项
+     * @return string msg  信息
+     * @return int code  0 成功 1失败
+     * @return array info.eID  评价内容的ID
+     * @return string info.content 展示内容
+     * @return array info.evalue 权值
+     * @return string msg 提示
+     * @return array info 信息
+     */
+    public function evaValueList() {
+        $rs = array('code' => 0, 'msg' => '', 'info' => array());
+        $logic = new UserFriendLogic();
+        $list = $logic->evaContentList();
+        $rs['code'] = 0;
+        $rs['msg'] = "";
+        $rs['info'] = $list;
+        return $rs;
+    }
+
+
+    /**
+     * 发起添加好友动作(该接口特殊处理 code=2 )
+     * @desc 添加好友动作
+     * @return string msg 提示
+     * @return array info 信息
+     */
+    public function addFriend() {
+        $this->userCheck();
+        $logic = new UserFriendLogic();
+        $num = $logic->getNowTimeApplyConnt($this->userID);  //获取到今日的次数
+        $res = $logic->getFailOneApply($this->userID,$this->friendID);   //是否存在正在申请中和已经完成申请的记录
+
+        $newlogic = new NewsLogic();
+        $refuse = $newlogic->isRefuse($this->userID,$this->friendID);   //判断是否存在拒收关系
+        if($refuse != 0) {
+            $this->return['code'] = 1;
+            if ($refuse == 1) {
+                $this->return['msg'] = "您已将对方加入黑名单，请将其移除黑名单后再添加好友";
+            } else if($refuse == 2)  {
+                $this->return['msg'] = "对方已将您拉入黑名单，暂时不能添加他为好友";
+            }
+            return $this->return;
+        }
+
+        if($this->userID == $this->friendID) {
+            $this->return['code'] = 1;
+            $this->return['msg'] = "不支持添加自己为好友";
+            return $this->return;
+        }
+        if($res) {
+            $this->return['code'] = 1;
+            $this->return['msg'] = "存在申请记录了";
+            return $this->return;
+        }
+        if($num >=10) {   //超过免费额度 10次的时候
+            $integralLogic = new  IntegralLogic();
+            $account = $integralLogic->getUserIntegral($this->userID);
+            if($account['applyBalance'] <=0 ) {   //不够的时候
+                $res = $integralLogic->userIntegralDec($this->userID,'convertibility','apply');  //先扣除
+                if(!$res) {   //不足的时候
+                    $this->return['code'] = 2;
+                    $this->return['msg'] = "积分不足以兌换";
+                    return $this->return;
+                }
+                $integralLogic->userBalanceInc($this->userID,'apply');  //再兌换
+            }
+            $res = $integralLogic->userBalanceDec($this->userID,'apply');  //
+            if(!$res) {
+                $this->return['code'] = 2;
+                $this->return['msg'] = "使用额度不足";
+                return $this->return;
+            }
+        }
+        $info = $logic->isFriend($this->userID,$this->friendID);   //先判断是不是好友
+        if(!empty($info)) {
+            $this->return['code'] = 1;
+            $this->return['msg'] = "已经是好友了";
+            return $this->return;
+        }
+
+        $addData = array(
+            "status"=>1,
+            "userID"=>$this->userID,
+            "friendID"=>$this->friendID,
+        );
+        $res = $logic->addFriendApply($addData);   //添加申请记录
+        if($res) {
+            //好友申请入图
+            $connectLogic = new ConnectRelationLogic();
+            $connectLogic->addApply($this->userID,$this->friendID,time());
+
+            $user = new UserLogic();
+            $phone = $user->getPhoneByUserID($this->friendID);
+            $userCenter = new UserCenterLogic();
+            $userInfo = $userCenter->getOneByUserID($this->userID);
+            $sms = new SendSMSLogic();
+            $sms->FriendApply($phone,$this->userID,$userInfo['companyName'],$userInfo['name']);    //发送短信
+
+            $info = $logic->getMoreApply($this->friendID,$this->userID);   //判断对方曾经是否申请过加你好友
+            if(!empty($info)) {
+                $logic->dealApply($res,2);   //当存在有的申请 直接互为好友 无需重新处理
+                $op = new OperationLogic();    //更新到图数据中
+                $op->saveConnectNeo4j(array('userID'=>$this->userID),array('userID'=>$this->friendID));
+            }
+            $this->return['code'] = 0;
+            $this->return['msg'] = "操作成功";
+        } else {
+            $this->return['code'] = 1;
+            $this->return['msg'] = "操作失败";
+        }
+        return $this->return;
+    }
+
+
+    /**
+     * 人脉推荐列表
+     * @desc 人脉
+     * @return int    code         操作码，0表示成功， 1表示失败
+     * @return  array  info         返回数据
+     * @return  string msg          提示信息
+     * @return string list        信息列表
+     * @return int userID 用户的ID
+     * @return string phone 电话
+     * @return string name 名字
+     * @return string job 职业
+     * @return string companyName 公司的名字
+     * @return string companyID 公司的ID
+     * @return string userHeadUrl 用户的头像
+     * @return string addDatetime 添加的时间
+     * @return string visitDatetime 活跃显示
+     * @return array label 头衔
+     * @return int vip  是否为VIP
+     * @return int jobAuth 是否职业认证
+     * @return string userKey 用户的唯一标识
+     */
+    public function recommend() {
+       $this->userCheck();
+       $rs = array('code' => 1, 'msg' => '', 'info' => array());
+
+       $connectLogic = new ConnectRelationLogic();
+       $indexLogic = new IndexLogic();
+       $limit = $this->getLimit($this->pageindex, $this->pagesize);
+
+       switch ($this->status) {
+           case 2:   //同事 前同事
+               $objlist = $connectLogic->getRecommendConnect(intval($this->userID),$limit,true);
+               break;
+           case 3:  //校友
+               $objlist = $connectLogic->getRecommendConnect(intval($this->userID),$limit,false,true);
+               break;
+           default:
+               $objlist = $connectLogic->getRecommendConnect(intval($this->userID),$limit);
+       }
+        if(empty($objlist)) {
+            $rs['msg'] = "没有数据";
+            return $rs;
+        }
+        $str = "";
+        foreach ($objlist as $key=>$value) {
+            $objValue['userID'] = $value->getUserId();
+            $objValue['name'] = ($value->getName())? $value->getName():"陌生人" ;
+            $objValue['userHeadUrl'] = $value->getHeadPic();
+            $objValue['companyName'] = $value->getCompany();
+            $objValue['job'] = $value->getProfession();
+            $objValue['jobAuth'] = $value->getJobGrade();
+            $objValue['vip'] = $value->getVipGrade();
+            $objValue['relationship'] = $value->getLabel();
+            $return[] = $objValue;
+            $str .=  $value->getUserId().",";
+        }
+        $str = trim($str,',');
+        $list = $indexLogic->getUserIndex($return,$str,$this->userID);
+        if(empty($list)) {
+            $rs['msg'] = "没有数据";
+        } else {
+            $rs['code'] = 0;
+            $rs['info'] = $list;
+        }
+        return $rs;
+    }
+
+
+
+
+    /**
+     * 屏蔽接口
+     * @desc 屏蔽接口
+     * @return string msg 提示
+     * @return array info 信息
+     */
+    public function handleShield() {
+        $this->userCheck();
+        $rs = array('code' => 1, 'msg' => '', 'info' => array());
+        $maillogic = new MaillistLogic();
+        $phoneArr = json_decode(htmlspecialchars_decode($this->phoneStr),true);
+        if(empty($phoneArr)) {
+            $rs['code'] = 1;
+            $rs['msg'] = "传递为空的值";
+            return $rs;
+        }
+        foreach ($phoneArr as $k=>$v) {
+            if($v['shieldStatus'] == 1) {
+                $shieldPhone[] = $v['phone'];
+            } else {
+                $removePhone[] = $v['phone'];
+            }
+        }
+        if(!empty($shieldPhone)) {  //存在需要屏蔽的数据
+            $info = $maillogic->getMoreMail($shieldPhone,$this->userID);   //获取到被屏蔽清单的数据
+            foreach ($info as $k=>$v) {
+                $shieldData[$k]['userID'] = $v['userID'];
+                $shieldData[$k]['phone'] = $this->userPhone;
+                $shieldData[$k]['shieldPhone'] = $v['phone'];
+                $shieldData[$k]['shieldUserName'] = $v['userName'];
+                $shieldData[$k]['group'] = $v['group'];
+                $shieldData[$k]['addDatetime'] = time();
+            }
+            $maillogic->addShieldRecord($shieldData);   //添加到屏蔽表中
+            $maillogic->updateMailShieldStatus($shieldPhone,$this->userID,1);   //将通讯录中的状态修改掉
+            $logicConnect = new ConnectRelationLogic();
+            $logicConnect->notifySynShield($this->userID,implode(",",$shieldPhone),1);
+        }
+
+        if(!empty($removePhone)) {    //如果存在移除的项目
+            $maillogic->removeShieldRecord($removePhone,$this->userID);   //移除掉不用被屏蔽的电话号码
+            $maillogic->updateMailShieldStatus($removePhone,$this->userID,0);  //将已经屏蔽的状态修改为正常
+            $logicConnect = new ConnectRelationLogic();
+            $logicConnect->notifySynShield($this->userID,implode(",",$removePhone),0);
+        }
+        $rs['code'] = 0;
+        $rs['msg'] = "操作成功";
+        return $rs;
+    }
+
+
+    /**
+     * 移除屏蔽接口
+     * @desc 屏蔽接口
+     * @return string msg 提示
+     * @return array info 信息
+     */
+    public function removeShield() {
+        $this->userCheck();
+        $rs = array('code' => 1, 'msg' => '', 'info' => array());
+        $maillogic = new MaillistLogic();
+        $phonelist = explode(",",$this->phoneStr);
+
+        if(empty($phonelist)) {
+            $rs['code'] = 1;
+            $rs['msg'] = "传递的为空";
+            return $rs;
+        }
+        $res = $maillogic->removeShieldRecord($phonelist,$this->userID);
+
+        if($res) {
+            $maillogic->updateMailShieldStatus($phonelist,$this->userID,0);
+            $logicConnect = new ConnectRelationLogic();
+            $logicConnect->notifySynShield($this->userID,$this->phoneStr,0);
+            $rs['code'] = 0;
+            $rs['msg'] = "操作成功";
+        } else {
+            $rs['code'] = 1;
+            $rs['msg'] = "操作失败";
+        }
+        return $rs;
+    }
+
+
+
+    /**
+     * 我的屏蔽
+     * @desc 屏蔽接口
+     * @return string msg 提示
+     * @return int  shieldPhone 被屏蔽的电话号码
+     * @return int  hipShieldPhone 被屏蔽隐藏的电话号码
+     * @return string headUrl 电话号码
+     * @return string shieldUserName 通讯录的名字
+     * @return string msg 提示
+     * @return array info 信息
+     */
+    public function myShieldList() {
+        $this->userCheck();
+        $rs = array('code' => 1, 'msg' => '', 'info' => array());
+        $shieldLogic = new ShieldMaillistModel();
+        $info  = $shieldLogic->getMyShieldMail($this->userID);
+        if(!empty($info)) {
+            $rs['code'] = 0;
+            $rs['info']['list'] = $info;
+            $rs['msg'] = "成功";
+        } else {
+            $rs['code'] = 1;
+            $rs['msg'] = "数据为空";
+        }
+        return $rs;
+    }
+
+
+    /**
+     * 屏蔽的通讯录列表
+     * @desc 完整的通讯录
+     * @return string  msg 提示
+     * @return int  phone 电话号码
+     * @return int  hipPhone 隐藏的号码
+     * @return string headUrl 电话号码
+     * @return string userName 通讯录的名字
+     * @return string msg 提示
+     * @return array info 信息
+     */
+    public function allMail() {
+        $this->userCheck();
+        $rs = array('code' => 1, 'msg' => '', 'info' => array());
+        $mailLogic = new MaillistLogic();
+        $list = $mailLogic->getAllMail($this->userID);
+        if(!empty($list)) {
+            $rs['code'] = 0;
+            $rs['info']['list'] = $list;
+            $rs['msg'] = "成功";
+        } else {
+            $rs['code'] = 1;
+            $rs['msg'] = "数据为空";
+        }
+        return $rs;
+    }
+
+
+
+    /**
+     * 共同好友
+     * @desc 获取到当前用户的共同好友
+     * @return string msg  提示
+     * @return int  commonFriendNum 共同好友的数量
+     * @return int  userID 用户的ID
+     * @return int  phone 电话号码
+     * @return string userName 用户的名字
+     * @return string headUrl 头像
+     * @return string companyName 公司的名字
+     * @return string job 职位
+     * @return string companyID 公司的ID
+     * @return string label 用户的头衔
+     */
+    public function commonFriend() {
+        $this->userCheck();
+        $rs = array('code' => 1, 'msg' => '', 'info' => array());
+        $mailLogic = new MaillistLogic();
+        $res = $mailLogic->getCommonFriend($this->userID,$this->otherUserID,$this->userPhone);
+        if($res) {
+            $rs['code'] = 0;
+            $rs['info']['commonFriendNum'] = $mailLogic->getComFriendNum($this->userID,$this->otherUserID,$this->userPhone);
+            $rs['info']['list'] = $res;
+            $rs['msg'] = "成功";
+        } else {
+            $rs['code'] = 1;
+            $rs['msg'] = "数据为空";
+        }
+        return $rs;
+    }
+
+
+    /**
+     * 检查对方是否申请你为好友
+     * @desc 对方是否申请你为好友
+     * @return string  提示
+     * @return string  提示
+     * @return string  applyID 申请ID 存在就是表示真的是存在被邀请的
+     */
+    public function checkFriendApply() {
+        $this->userCheck();
+        $rs = array('code' => 1, 'msg' => '', 'info' => array());
+        $uflogic = new UserFriendLogic();
+        $info = $uflogic->getApplying($this->otherUserID,$this->userID);
+        if($info) {
+            $rs['code'] = 0;
+            $rs['info']['applyID'] = $info['applyID'];
+            $rs['msg'] = "成功";
+        } else {
+            $rs['code'] = 1;
+            $rs['msg'] = "数据为空";
+        }
+        return $rs;
+    }
+
+
+    /**
+     * 删除好友
+     * @desc 删除好友关系
+     * @return string msg 提示
+     * @return array info 信息
+     */
+    public function delFriend() {
+        $this->userCheck();
+        $rs = array('code' => 1, 'msg' => '', 'info' => array());
+        $uflogic = new UserFriendLogic();
+        $uflogic->delFriend($this->otherUserID,$this->userID);
+        $logicGraph = new OperationLogic();
+        $logicGraph->delFriend($this->otherUserID,$this->userID);
+        $rs['code'] = 0;
+        $rs['msg'] = "成功";
+        return $rs;
+    }
+
+
+
+    /**
+     * 黑名单列表
+     * @desc 黑名单列表
+     * @return string msg 提示
+     * @return int userID 用户ID
+     * @return string userHeadUrl 用户的头像
+     * @return string phone 电话
+     * @return string companyName 公司的名字
+     * @return string name 名字
+     * @return string job  工作的名字
+     * @return string group 组的名字
+     * @return string companyID 公司的ID
+     * @return string label 用户的头衔
+     * @return array info 信息
+     */
+    public function refusalList() {
+        $this->userCheck();
+        $rs = array('code' => 1, 'msg' => '', 'info' => array());
+        $logic = new UserFriendLogic();
+        $list = $logic->getRefuseList($this->userID);
+        $rs['code'] = 0;
+        $rs['msg'] = "操作成功";
+        $rs['info'] = $list;
+        return $rs;
+    }
+
+
+    /**
+     * 看了她的还看了
+     * @desc 看了他的还看了
+     * @return int userID 用户的ID
+     * @return string phone 电话
+     * @return string name 名字
+     * @return string job 职业
+     * @return string companyName 公司的名字
+     * @return string companyID 公司的ID
+     * @return string userHeadUrl 用户的头像
+     * @return string addDatetime 添加的时间
+     * @return string workMajorName 行业
+     * @return string visitDatetime 活跃显示
+     * @return array label 头衔
+     * @return int vip  是否为VIP
+     * @return int jobAuth 是否职业认证
+     * @return string userKey 用户的唯一标识
+     */
+    public function getOtherVisitUser() {
+        $this->userCheck();
+        $peopleID = (empty($this->ID))? $this->userID:$this->ID;   //用户的ID
+        $limit = $this->getLimit($this->pageindex, $this->pagesize);
+        if($this->pageindex >5) {   //只显示60条
+            $rs['code'] = 1;
+            $rs['msg'] = "数据为空";
+            return $rs;
+        }
+        $logic = new UserVisitorLogic();
+        $list = $logic->getOtherVisitUser($peopleID,$this->userID,$limit);
+        $rs['code'] = 0;
+        if(empty($list)) {
+            $rs['code'] = 1;
+            $rs['msg'] = "数据为空";
+        } else {
+            $rs['info'] = $list;
+            $rs['msg'] = "操作成功";
+        }
+        return $rs;
+    }
+
+
+
+    /**
+     * 人脉推荐列表
+     * @desc 人脉
+     * @return int    code         操作码，0表示成功， 1表示失败
+     * @return int userID 用户的ID
+     * @return string phone 电话
+     * @return string name 名字
+     * @return string job 职业
+     * @return string companyName 公司的名字
+     * @return string companyID 公司的ID
+     * @return string userHeadUrl 用户的头像
+     * @return string addDatetime 添加的时间
+     * @return string group 组
+     * @return string workMajorName 行业
+     * @return string visitDatetime 活跃显示
+     * @return string isMyself  1 是我自己  0是其他人
+     * @return array label 头衔
+     * @return int vip  是否为VIP
+     * @return int jobAuth 是否职业认证
+     * @return string userKey 用户的唯一标识
+     */
+    public function getColleague() {
+        $this->userCheck();
+        $peopleID = (empty($this->ID))? $this->userID:$this->ID;   //用户的ID
+        $rs = array('code' => 1, 'msg' => '', 'info' => array());
+        $connectLogic = new ConnectRelationLogic();
+        $limit = $this->getLimit($this->pageindex, $this->pagesize);
+        $objlist = $connectLogic->getWorkmate(intval($peopleID),$limit);
+        if(empty($objlist)) {
+            $rs['msg'] = "没有数据";
+            return $rs;
+        }
+        foreach ($objlist as $key=>$value) {
+            $objValue['userID'] = $value->getUserId();
+            $objValue['name'] = ($value->getName())? $value->getName():"陌生人" ;
+            $objValue['userHeadUrl'] =  $value->getHeadPic();
+            $objValue['companyName'] = $value->getCompany();
+            $objValue['job'] = $value->getProfession();
+            $objValue['jobAuth'] = $value->getJobGrade();
+            $objValue['group'] = ($value->getJobTitle())?$value->getJobTitle():"";
+            $objValue['vip'] = $value->getVipGrade();
+            $objValue['relationship'] = $value->getLabel();
+            $objValue['visitDatetime'] = $value->getActiveGrade();
+            $objValue['isMyself'] = ($objValue['userID'] == $this->userID)? 1:0;
+            $return[] = $objValue;
+        }
+        $logic = new UserFriendLogic();
+        $return = $logic->getUserListLabel($return);
+        $info['num'] = $connectLogic->countWorkmate(intval($peopleID),$limit);
+        $info['list'] = $return;
+        if(empty($info['list'])) {
+            $rs['msg'] = "没有数据";
+        } else {
+            $rs['code'] = 0;
+            $rs['info'] = $info;
+        }
+        return $rs;
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+
+}

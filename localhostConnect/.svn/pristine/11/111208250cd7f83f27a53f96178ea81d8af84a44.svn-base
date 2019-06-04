@@ -1,0 +1,138 @@
+<?php
+
+namespace Backend\Controller;
+
+use Backend\Controller\BackendController;
+use Service\Company\Logic\CompanyLogic;
+
+class CompanyController extends BackendController {
+
+    /**
+     * 企业基本信息
+     */
+    public function getCompanyInfo() {
+        $par = I("post.");
+        $where = "";
+        $whereArr = array();
+        if (!is_null($par["txtcompanyName"]) && !empty($par["txtcompanyName"])) {
+            $where .= "AND companyName like '%s'";
+            array_push($whereArr, '%' . $par["txtcompanyName"] . '%');
+        }
+        if (!is_null($par["txtDateStart"]) && !empty($par["txtDateStart"])) {
+            $where.="AND startDatetime>'%d'";
+            array_push($whereArr, strtotime($par["txtDateStart"]));
+        }
+        if (!is_null($par["txtDateEnd"]) && !empty($par["txtDateEnd"])) {
+            $where.="AND startDatetime<'%d'";
+            array_push($whereArr, strtotime('+1 day', strtotime($par["txtDateEnd"])));
+        }
+
+        $limit = $this->getPage();
+        $logic = new CompanyLogic();
+        $result = $logic->getCompanyList($where, $whereArr, $limit);
+        $this->assign("result", $result["rows"]);
+        $this->assign("page", $this->showPage($result["total"]));
+        $this->display("companyList");
+    }
+
+    /**
+     * 企业会员统计
+     */
+    public function getCompanyMember() {
+        $par = I("post.");
+        $where = "";
+        $whereArr = array();
+        if (!is_null($par["txtcompanyName"]) && !empty($par["txtcompanyName"])) {
+            $where .= "AND A.companyName like '%s'";
+            array_push($whereArr, '%' . $par["txtcompanyName"] . '%');
+        }
+        $limit = $this->getPage();
+        $logic = new CompanyLogic();
+        $result = $logic->getCompanyMember($where, $whereArr, $limit);
+        $this->assign("result", $result["rows"]);
+        $this->assign("page", $this->showPage($result["total"]));
+        $this->display("companyMember");
+    }
+
+    /**
+     * 公司成员列表
+     */
+    public function memberList() {
+        $par = I("request.");
+        $where = "";
+        $whereArr = array();
+        if (!is_null($par["id"]) && !empty($par["id"])) {
+            $where .= "AND A.companyID='%s'";
+            $ulogic = new CompanyLogic();
+            $companyInfo = $ulogic->getCompanyBaseInfo($par["id"]);
+            $this->assign('companyInfo', $companyInfo);
+            array_push($whereArr, $par["id"]);
+        }
+        if (!is_null($par["txtphone"]) && !empty($par["txtphone"])) {
+            $where .= "AND B.phone='%s'";
+            array_push($whereArr, $par["txtphone"]);
+        }
+        if (!is_null($par["txtrealName"]) && !empty($par["txtrealName"])) {
+            $where .= "AND B.nickname like '%s'";
+            array_push($whereArr, '%' . $par["txtrealName"] . '%');
+        }
+        if (!is_null($par["txtDateStart"]) && !empty($par["txtDateStart"])) {
+            $where .= "AND B.regDatetime >'%d'";
+            array_push($whereArr, strtotime($par["txtDateStart"]));
+        }
+        if (!is_null($par["txtDateEnd"]) && !empty($par["txtDateEnd"])) {
+            $where .= "AND B.regDatetime <'%d'";
+            array_push($whereArr, strtotime('+1 day', strtotime($par["txtDateEnd"])));
+        }
+        $limit = $this->getPage();
+        $logic = new CompanyLogic();
+        $result = $logic->memberList($where, $whereArr, $limit);
+        $this->assign("result", $result["rows"]);
+        $this->assign("page", $this->showPage($result["total"]));
+        $this->display("memberList");
+    }
+    
+    /**
+     * 获取公司详情
+     */
+    public function companyDetail(){
+        $par = I('get.');
+        if(empty($par['type']) || empty($par['id'])){
+            $this->error('请求出错！');
+        }
+        $logic = new CompanyLogic();
+        $where['companyID'] = $par['id'];
+        $result = array();
+        switch($par['type']){
+            case 'advancedInfo'://公司高级信息表
+                $result = $logic->getAdvancedInfo($where);
+                break;
+            case 'changeInfo'://变更信息
+                $result = $logic->getChangeInfo($where,$this->getPage());
+                break;
+            case 'investInfo'://对外投资信息
+                $result = $logic->getInvestInfo($where,$this->getPage());
+                break;
+            case 'patentInfo'://专利信息
+                $result = $logic->getPatentInfo($where,$this->getPage());
+                break;
+            case 'trademarkInfo'://商标信息
+                $result = $logic->getTrademarkInfo($where,$this->getPage());
+                break;
+//            case 'reportInfo'://企业年报信息
+//                $result = $logic->getReportInfo($where,$this->getPage());
+//                break;
+            case 'abnormalInfo'://经营异常信息
+                $result = $logic->getAbnormalInfo($where,$this->getPage());
+                break;
+            case 'penaltyInfo'://行政处罚信息
+                $result = $logic->getPenaltyInfo($where,$this->getPage());
+                break;
+        }
+        $this->assign("companyInfo", $logic->getCompanyBaseInfo($par['id']));
+        isset($result["rows"])?$this->assign("result", $result["rows"]):$this->assign("result", $result);
+        isset($result["total"]) && $this->assign("page", $this->showPage($result["total"]));
+        $this->display($par['type']);
+    }
+
+}

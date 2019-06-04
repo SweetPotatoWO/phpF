@@ -1,0 +1,83 @@
+<link rel="stylesheet" href="{$Think.BPATH}style/jquery.treetable.css?version={$Think.BNO}" />  
+<style>
+    .table th, .table td {
+        text-align: left;
+        vertical-align: middle;
+        padding: 10px 20px;
+    }
+    .table th:last-of-type, .table td:last-of-type{
+        text-align: center;
+    }
+</style>
+<div id="sub-tdk-list">
+    <input type="hidden" name="hidrefurl" id="hidrefurl" value="{:U(ACTION_NAME, $_GET)}">
+    <h4 class="title">维护—TDK</h4>
+    <form class="form-inline" id="query_TDK">      
+        <label class="control-label pl_20 pr_10">菜单名称: </label>
+        <input type="text" value="{$Think.post.txtmenuName}" name="txtmenuName" placeholder="请输入" class="form-control">      
+        <a href="{:U(ACTION_NAME, $_GET)}"  onclick="$Util.openQuery(this, event, 'query_TDK')"  class="btn btn-info"><i class="icon-search"></i>查询</a>      
+    </form>
+    <table class="table table-striped table-bordered" id="example-basic">
+        <thead>
+            <tr>          
+                <th>菜单名称</th>
+                <th>菜单URL</th>     
+                <th>关键字</th>  
+                <th>标题</th>  
+                <th>描述</th>           
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody>
+        <volist name="result" id="vo" key="kyid" >
+            <tr data-tt-id="{$kyid}">
+                <td >{$vo.menuName}</td>
+                <td style="text-align: left">{$vo.functionUrl}</td>
+                <td style="text-align: left"><a href="#" data-toggle="tooltip" data-placement="top" title="{$vo.keyword}" title="" >{$vo.keyword|sub_str=0,15,'...'}</a></td>
+                <td  style="text-align: left">{$vo.menuTitle|sub_str=0,15,'...'}</td>
+                <td  style="text-align: left">{$vo.description|sub_str=0,15,'...'}</td>
+                <td><a class="btn btn-xs btn-primary pr-10" href="/Backend/Spread/editTdk/key/{$vo.menuID}" title="编辑-TDK管理"  onclick="$win.dialog(this, event)"><span class="icon-edit"></span>修改</a> </td>
+            </tr>
+            <volist name="vo.children" id="item">
+                <tr data-tt-id="{$kyid}.{++$tdkId}" data-tt-parent-id="{$kyid}">
+                    <td >{$item.menuName}</td>
+                    <td style="text-align: left">{$item.functionUrl}</td>
+                    <td style="text-align: left"><a href="#" data-toggle="tooltip" data-placement="top" title="{$item.keyword}" title="" >{$item.keyword|sub_str=0,15,'...'}</a></td>
+                    <td  style="text-align: left">{$item.menuTitle|sub_str=0,15,'...'}</td>
+                    <td  style="text-align: left">{$item.description|sub_str=0,15,'...'}</td>
+                    <td><a class="btn btn-xs btn-primary pr-10" href="/Backend/Spread/editTdk/key/{$item.menuID}" title="编辑-TDK管理"  onclick="$win.dialog(this, event)"><span class="icon-edit"></span>修改</a> </td>
+                </tr>
+                <volist name="item.children" id="dic">
+                    <tr data-tt-id="{$kyid}.1.{$tdkId}" data-tt-parent-id="{$kyid}.{$tdkId}">
+                        <td >{$dic.menuName}</td>
+                        <td style="text-align: left">{$dic.functionUrl}</td>
+                        <td style="text-align: left"><a href="#" data-toggle="tooltip" data-placement="top" title="{$dic.keyword}" title="" >{$dic.keyword|sub_str=0,15,'...'}</a></td>
+                        <td  style="text-align: left">{$dic.menuTitle|sub_str=0,15,'...'}</td>
+                        <td  style="text-align: left">{$dic.description|sub_str=0,15,'...'}</td>
+                        <td><a class="btn btn-xs btn-primary pr-10" href="/Backend/Spread/editTdk/key/{$dic.menuID}" title="编辑-TDK管理"  onclick="$win.dialog(this, event)"><span class="icon-edit"></span>修改</a> </td>
+                    </tr>
+                </volist>
+            </volist>
+        </volist>
+        </tbody>
+    </table>
+    <script src="{$Think.BPATH}js/jquery.treetable.js?version={$Think.BNO}"></script>
+    <script type="text/javascript" >
+                            $(function($) {
+
+                                var data = {};
+                                data.type = "Register";
+                                data.phone = "13632506723";
+                                data.service = "sendMsg";
+                                data.terminal = "2";
+                                data.userPID = "1000";
+                                debugger;
+                                var keys = Object.keys(data);
+                                keys.sort();
+                                 
+                              
+
+                                $("#example-basic").treetable({expandable: true});
+                            });
+    </script>
+</div>

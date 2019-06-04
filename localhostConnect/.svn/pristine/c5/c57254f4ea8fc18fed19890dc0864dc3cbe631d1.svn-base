@@ -1,0 +1,87 @@
+.container{max-width: 1200px !important;}
+.fl {float: left;}
+.fr {float: right;}
+.block {display: block;}
+a:hover, a:focus, a:active {outline: none;text-decoration: none;}
+.header {height: 90px;padding-top: 18px;border-bottom: 1px solid #eaeaea;background: #ffffff;}
+.header .logo {margin-right: 24px;}
+.header .navigation {padding-top: 10px;}
+.navigation ul {margin-bottom: 0;}
+.navigation li {display: inline-block;}
+.navigation li:nth-child(2) {margin-left: 28px;}
+.navigation li a {display: inline-block;font-size: 16px;color: #477bff;width:112px;height:36px;line-height:36px;text-align: center;border: 1px solid #477bff;border-radius: 26px;}
+.navigation li.active a {background: #477bff;border: 1px solid #477bff;color: #fff;}
+footer {color:#fff;font-size:14px;background: #333333;height: 106px;}
+footer a {color:#fff;}
+footer h4 {font-size: 14px;padding-top: 28px;padding-bottom: 20px;margin-bottom: 0;}
+.index .banner {width: 100%;height: 593px;background: url(/Public/frontend/images/home/banner-01.png) no-repeat center top;padding-top: 20px;}
+.index .banner .content {padding-top: 146px;}
+.index .banner .fl p:first-child {font-size: 36px;color: #353b51;}
+.index .banner .fl p:nth-child(2) {font-size: 20px;color: #353b51;}
+.index .banner .btn-primary {
+	position: relative;
+	display: block;
+	font-size: 19px;
+	width:192px;
+	height:50px;
+	line-height:50px;
+	padding: 0;
+	margin-bottom: 24px;
+	padding-left: 25px;
+	border-radius: 40px;
+	border: none;
+	background: -moz-linear-gradient(left, #477bff 50%, #388cff 50%);
+    background: -webkit-gradient(linear, left top, right bottom, color-stop(50%, #477bff), color-stop(100%, #388cff));
+    background: -webkit-linear-gradient(left, #477bff 50%, #388cff 100%);
+    background: -o-linear-gradient(left, #477bff 50%, #388cff 100%);
+    background: linear-gradient(to right, #477bff 0%, #388cff 100%);
+    filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#477bff', endColorstr='#388cff',GradientType=1 );
+    box-shadow: 0 13px 21px rgba(56,140,255,.38);
+}
+.index .banner .btn-primary:hover {background: #477bff;box-shadow: none;}
+.index .banner .ios:before,.index .banner .android:before {content: '';display: block;position: absolute;top: 8px;}
+.index .banner .ios:before {width: 27px;height: 33px;background: url(/Public/frontend/images/home/ios.png) no-repeat;}
+.index .banner .android:before {width: 27px;height: 32px;background: url(/Public/frontend/images/home/and.png) no-repeat;}
+.index .banner .app-code {width: 268px;height: 266px;background: url(/Public/frontend/images/home/qr-code.png) no-repeat;position: relative;margin-left: 60px;}
+.index .banner .line {
+	display: block;
+    width: 96%;
+    height: 26px;
+    left: 2%;
+    background: url(/Public/frontend/images/home/line.png) no-repeat center center;
+    position: absolute;
+    animation: scanCode 8s linear infinite alternate;
+    -moz-animation: scanCode 8s linear infinite alternate;
+    -webkit-animation: scanCode 8s linear infinite alternate;
+    -o-animation: scanCode 8s linear infinite alternate;
+}
+@keyframes scanCode{0% {top:0px;}50% {top:220px;}100% {top:0px;}}
+@-moz-keyframes scanCode{0% {top:0px;}50% {top:220px;}100% {top:0px;}}
+@-webkit-keyframes scanCode{0% {top:0px;}50% {top:220px;}100% {top:0px;}}
+@-o-keyframes scanCode{0% {top:0px;}50% {top:220px;}100% {top:0px;}}
+.index .section .text {padding-top: 156px;}
+.index .section .text h3 {color: #353b51;font-size: 36px;font-weight: bold;margin-bottom: 0;}
+.index .section .text p {color: #94969e;font-size: 16px;}
+.index .section .line {width: 360px;height: 7px;background: url(/Public/frontend/images/home/line-blue.png) no-repeat;margin: 30px 0 20px;}
+.index .section-1 {background: #f2f4fa;padding:62px 0 56px 0;}
+.index .section-1 .img {width:670px;height:524px;background: url(/Public/frontend/images/home/ct-01.png) no-repeat;}
+.index .section-1 .line {transform: rotate(180deg);}
+.index .section-2 {background: #fff;padding: 96px 0 90px 0;}
+.index .section-2 .img {width:662px;height:457px;background: url(/Public/frontend/images/home/ct-02.png) no-repeat;}
+.index .section-3 {width:100%;height:596px;background: url(/Public/frontend/images/home/bg-02.png) no-repeat center center;padding: 90px 0 92px 0;}
+.index .section-3 .text h3,.index .section-3 .text p {color: #fff;}
+.index .section-3 .line {background: url(/Public/frontend/images/home/line-white.png) no-repeat;}
+
+/*about*/
+.about .banner {width: 100%;height: 506px;background: url(/Public/frontend/images/home/banner-02.png) no-repeat center top;padding-top: 20px;}
+.about .banner p {color: #fff;font-size: 16px;text-align: center;}
+.about .banner .fs-24 {font-size: 24px;padding-top: 94px;}
+.about .aboutUs {padding-bottom: 112px;}
+.about .aboutUs h2 {text-align: center;color: #353b51;font-size: 36px;font-weight: bold;padding: 86px 0 70px 0;}
+.about .aboutUs .text {color: #fff;width:590px;padding: 30px 0 0 30px;}
+.about .aboutUs .text h5 {font-size: 30px;margin-bottom: 26px;}
+.about .aboutUs .text p {font-size: 16px;line-height: 30px;text-align: justify;}
+.about .aboutUs .partner {width:870px;height:210px;background: #477bff;border-radius: 20px;margin:0 auto;overflow: hidden;border-top-right-radius: 106px;border-bottom-right-radius: 106px;}
+.about .aboutUs .partner1 {margin-bottom: 66px;}
+.about .aboutUs .partner1 .img {width: 210px;height: 210px;background: url(/Public/frontend/images/home/tx-01.png) no-repeat;}
+.about .aboutUs .partner2 .img {width: 210px;height: 210px;background: url(/Public/frontend/images/home/tx-02.png) no-repeat;}

@@ -1,0 +1,129 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: Administrator
+ * Date: 2018/8/14 0014
+ * Time: 9:50
+ */
+
+namespace Service\UserCenter\Model;
+use Common\Model\SlaveModel;
+use Service\Connect\Logic\OperationLogic;
+
+class UserCompanyModel extends SlaveModel {
+
+
+    /**获取到用户的基本信息很公司的信息
+     * @param $userID
+     * @return mixed
+     */
+    public function getUserCompanyInfo($userID) {
+        $field = "uc.name,u.phoneHide as isShowPhone,uc.job,uc.group,u.userID,u.phone,c.companyID,c.companyLogo,u.headUrl,c.companyName,c.regCapital,c.startDatetime as regDatetime";
+        return   M('user')->alias("u")
+               ->join("left join d_user_company as uc on u.userID=uc.userID")
+               ->join("left join d_company c on uc.companyID = c.companyID")->field($field)
+               ->where(array("u.userID"=>$userID))->find();
+    }
+
+    /**
+     * 添加修改用户的公司信息并且同步user的nickname和realname 字段
+     * @param $data
+     * @param $userID
+     * @return bool|mixed
+     */
+    public function addCompanyUser($data,$userID) {
+        $info = $this->where(array('userID'=>$userID))->find();
+        if($info) {
+             $res = $this->where(array('userID'=>$userID))->save($data);
+        } else {
+             $res = $this->add($data);
+        }
+        if(!empty($data['name'])) {
+            $realAuth = M('user')->where(array('userID'=>$userID))->getField('realAuth');
+            $saveData = array("nickname"=>$data['name']);
+            if($realAuth == 0) {
+                $saveData['realName'] = $data['name'];    //修改认证姓名
+            }
+            M('user')->where(array("userID"=>$userID))->save($saveData);
+        }
+        $this->addCompanyWorkEx($data);  //添加工作经历
+        return $res;
+    }
+
+    /**
+     * 获取到公司
+     * @param $companyID
+     * @return mixed
+     */
+    public function getCompanyByID($companyID,$field="") {
+        $model =  M('company')->where(array('companyID'=>$companyID));
+        if(!empty($field)) {
+            $model = $model->field($field);
+        }
+        return $model->find();
+    }
+
+
+    /**
+     * 获取到一条记录
+     * @param $userID
+     * @return mixed
+     */
+    public function getOne($userID) {
+        return M('user')->alias('u')->join(' left join d_user_company as uc on u.userID=uc.userID')->where(array('u.userID'=>$userID))
+               ->field(array('uc.name','uc.companyName','u.phone'))->find();
+    }
+
+
+    /**
+     * 添加一条工作经历
+     * @param $data
+     * @return mixed
+     */
+    public function addCompanyWorkEx($data) {
+        $info = M("userWorkexperience")->where(array('userID'=>$data['userID']))->getField('userWorkExID');
+        if($info) {
+            return false;
+        }
+        if(empty($data['companyID'])){
+            return false;
+        }
+        $companyInfo['companyID'] = ($data['companyID'])?$data['companyID']:"";
+        $companyInfo['userID']= ($data['userID'])?$data['userID']:"";
+        $companyInfo['companyName']= ($data['companyName'])?$data['companyName']:"";
+        $companyInfo['job']= ($data['job'])?$data['job']:"";
+        $companyInfo["addDatetime"] = time();
+
+
+        $operation = new OperationLogic();
+        $saveWorkData['startDatetime'] = ($companyInfo['startDatetime']) ? $companyInfo['startDatetime'] : 0;   //添加工作经历的数据
+        $saveWorkData['endDatetime'] = ($companyInfo['endDatetime']) ? $companyInfo['endDatetime'] : 0;
+        $saveWorkData['group'] = ($companyInfo['group']) ? $companyInfo['group'] : 0;
+        $saveWorkData['job'] = ($companyInfo['job']) ? $companyInfo['job'] : "";
+        $operation->addWorkModel($saveWorkData, $companyInfo['userID'], $companyInfo['companyID']);   //图数据添加工作经历
+
+        return M("userWorkexperience")->add($companyInfo);
+    }
+
+
+    /**
+     * 获取到看过我的人还看了谁
+     * @param $userID
+     */
+    public function similarPeople($userID,$limit=5) {
+        $sql =  "select uvo.userID,u.phone,uc.companyID,uc.companyName,uc.companyID,uc.job,uc.group from d_user_visitor as uvo 
+                 INNER JOIN d_user_visitor as uvt on uvo.vID = uvt.vID and uvt.userID=".$userID."
+                 INNER JOIN d_user as u on uvo.userID=u.userID
+                 LEFT JOIN d_user_company as uc on u.userID=uc.userID 
+                 GROUP BY uvo.userID limit ".$limit;
+        return $this->query($sql);
+    }
+
+
+
+
+
+
+
+
+}

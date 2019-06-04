@@ -1,0 +1,16 @@
+<li class="bord-l pl-15 relative">
+    <div class="color-deep fs-12 pb-5">2018-11-11</div>
+    <p class="text-ellipsis pr-10">投资人变更（包括出资额、出资方式、出资日期、投资投资人变更（包括出资额、出资方式、出资日期、投资</p>
+    <div class="text-justify pb-10">
+        <div class="clearfix bord-b">
+            <div class="fl before">
+                <h6 class="fs-12 color-deep">变更前</h6>
+                <p>深圳市南山区高科技一路高新科技园12号</p>
+            </div>
+            <div class="fl after">
+                <h6 class="fs-12 color-deep">变更前</h6>
+                <p>深圳市南山区大冲商务中心金蝶软件园12号</p>
+            </div>
+        </div>
+    </div>
+</li>

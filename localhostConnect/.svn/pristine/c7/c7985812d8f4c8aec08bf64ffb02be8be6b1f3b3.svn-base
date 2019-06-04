@@ -1,0 +1,79 @@
+<?php
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+namespace Service\User\Logic;
+
+use Service\User\Model\UserSourceModel;
+
+/**
+ * Description of UserSourceLogic
+ *
+ * @author Administrator
+ */
+class UserSourceLogic {
+
+    private $model = null;
+
+    public function __construct() {
+        $this->model = new UserSourceModel();
+    }
+
+    /**
+     * 获取用户注册来源列表。
+     * @param type $where
+     * @param type $whereArr
+     * @param type $limit
+     * @return type
+     */
+    public function getSourceList($where, $whereArr, $limit) {
+        return $this->model->getSourceList($where, $whereArr, $limit);
+    }
+
+    /**
+     * 获取指定用户注册来源信息。
+     * @param type $sourceID
+     * @return boolean
+     */
+    public function getSource($sourceID) {
+        return $this->model->getSource($sourceID);
+    }
+
+    /**
+     * 获取指定用户注册来源信息。
+     * @param type $sourceID
+     * @return boolean
+     */
+    public function getSourceInfo($where) {
+        return $this->model->getSourceInfo($where);
+    }
+
+    /**
+     * 添加或保存用户注册来源。
+     * @param type $entity
+     * @return boolean
+     */
+    public function saveOrAddSource($entity) {
+        return $this->model->saveOrAddSource($entity);
+    }
+
+    /**
+     * 逻辑删除用户注册来源
+     * @param type $sourceID
+     */
+    public function delSource($sourceID) {
+        return $this->model->delSource($sourceID);
+    }
+
+    /**
+     * 获取用户来源
+     */
+    public function getUserSource($where) {
+        return $this->model->getUserSource($where);
+    }
+
+}

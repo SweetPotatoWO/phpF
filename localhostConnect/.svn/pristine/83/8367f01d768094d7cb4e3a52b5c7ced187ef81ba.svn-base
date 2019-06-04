@@ -1,0 +1,90 @@
+<div class="modal-body">
+    <input  type="hidden" name="hidAction" id="hidAction" value="view" >
+    <form class="form-horizontal" id="form-Parameter">       
+        <input type="hidden" name='parID' id='parID' value="{$data.parID}"/>
+        <div class="form-group has-info">
+            <label class="control-label col-sm-2" for="inputInfo">参数描述：</label>
+            <div class=" col-sm-7">
+                <input type="text" id="parName" name="parName" value="{$data.parName}" class="form-control"  >          
+            </div>
+        </div>
+        <div class="form-group has-info">
+            <label class="control-label col-sm-2" for="inputInfo">Key：</label>
+            <div class=" col-sm-7">
+                <input type="text" id="parKey" name="parKey" value="{$data.parKey}" class="form-control"  >          
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="control-label col-sm-2" for="inputInfo">参数值：</label>
+            <div class="col-sm-7">
+                <input type="text" id="parValue" name="parValue" value="{$data.parValue}" class="form-control">          
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="control-label col-sm-2" for="inputInfo">描述：</label>
+            <div class="col-sm-8">
+                <textarea name="remark" id="remark" rows="4" cols="61" >{$data.remark}</textarea>
+            </div>
+        </div>
+    </form>
+</div>
+<div class="modal-footer">
+    <button type="button" id="butCancel" class="btn btn-default" data-dismiss="modal">关闭</button>
+    <button type="button" id="butSaveParameter" class="btn btn-primary" >保存</button>
+</div>  
+<script type="text/javascript" >
+    $(function($) {
+        parametervalid();
+        $("#butSaveParameter").click(function() {
+            var isOK = $("#form-Parameter").valid();
+            if (isOK) {
+                saveParameter();
+            }
+        });
+    });
+    function saveParameter() {
+        var data = $Util.getData($("#form-Parameter"));
+        $.ajax({
+            type: "post",
+            url: "/Backend/System/saveParameter",
+            data: {'par': data},
+            dataType: "json",
+            beforeSend: function(XMLHttpRequest) {
+                $(".sub-content").showLoading();
+            },
+            success: function(data, textStatus) {
+                $(".sub-content").hideLoading();
+                if (data.status == 1) {
+                    $("#parID").val(data.data);
+                    $("#hidAction").val("edit");
+                    $win.confirm(data.msg + ",是否关闭窗口？").on(function() {
+                        $('#butCancel').trigger("click");
+                    });
+                } else {
+                    $win.warn(data.msg);
+                }
+            },
+            complete: function(XMLHttpRequest, textStatus) {
+                $(".sub-content").hideLoading();
+            },
+            error: function() {
+                $(".sub-content").hideLoading();
+            }
+        });
+    }
+
+    function parametervalid() {
+        $("#form-Parameter").validate({
+            rules: {
+                parName: {required: true, maxlength: 25},
+                parKey: {required: true},
+                parValue: {required: true},
+            },
+            messages: {
+                parName: {required: "参数描述不能为空!", maxlength: "最大长度25个字符"},
+                parKey: {required: "Key不能为空!"},
+                parValue: {required: "参数值不能为空!"},
+            }
+        });
+    }
+</script>

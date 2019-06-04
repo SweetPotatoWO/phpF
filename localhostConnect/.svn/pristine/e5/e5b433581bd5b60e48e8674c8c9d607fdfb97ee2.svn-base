@@ -1,0 +1,58 @@
+<div class="modal-body">
+    <input  type="hidden" name="hidAction" id="hidAction" value="view" >
+    <form class="form-horizontal" enctype="multipart/form-data" method="post" action="/Backend/Business/labelImgSave/" id="form-Parameter">
+        <div class="form-group">
+            <label class="control-label col-sm-2" for="inputInfo">上传图片：</label>
+            <div class="col-sm-7" >
+                <input type="file" id="labelLogo" name="Filedata" >
+                <input type="hidden" id="labelID" name="labelID" value="{$labelID}" >
+            </div>
+        </div>
+
+    </form>
+</div>
+<div class="modal-footer">
+    <button type="button" id="butSaveParameter" class="btn btn-primary" >保存</button>
+</div>  
+<script type="text/javascript" >
+
+
+    function jqSubmit() {
+        var file_obj = document.getElementById('labelLogo').files[0];
+        var fd = new FormData();
+        var id = document.getElementById('labelID').value;
+
+        fd.append('id', id);
+        fd.append('Filedata', file_obj);
+
+        $.ajax({
+            url:'/Backend/Business/labelImgSave/',
+            type:'POST',
+            data:fd,
+            processData:false,  //tell jQuery not to process the data
+            contentType: false,  //tell jQuery not to set contentType
+            //这儿的三个参数其实就是XMLHttpRequest里面带的信息。
+            success:function (data) {
+                $(".sub-content").hideLoading();
+                if (data.status == 1) {
+                    $win.confirm(data.msg + ",是否关闭窗口？").on(function() {
+                        $('#butCancel').trigger("click");
+                    });
+                } else {
+                    $win.warn(data.msg);
+                }
+            }
+        })
+    }
+
+    $(function($) {
+        $("#butSaveParameter").click(function() {
+            var isOK = $("#form-Parameter").valid();
+            if (isOK) {
+                jqSubmit();
+            }
+        });
+    });
+
+
+</script>

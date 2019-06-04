@@ -1,0 +1,17 @@
+<div style="padding: 30px">
+    <div>
+        <p>尊敬的钱盒子用户： </p>
+    </div>
+    <div style="margin: 6px 0 60px 0;">
+        <p>
+            您好！您正在进行邮箱绑定，邮箱验证码为：<span style="color:#F47D30;">%s</span>（30分钟内有效，请及时完成绑定）
+        </p>
+    </div>
+    <div style="color: #999;">
+        <p>如非本人操作，请忽略此邮件，如有其他问题致电：4008-518-319。</p>
+    </div>
+    <div>
+        <p>钱盒子团队<p>
+        <p>%s</p>
+    </div>
+</div>

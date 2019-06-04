@@ -1,0 +1,20 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: Administrator
+ * Date: 2018/8/14 0014
+ * Time: 11:19
+ */
+
+namespace Service\UserCenter\Model;
+use Common\Model\SlaveModel;
+
+class labelModel extends SlaveModel{
+    /**
+     * 获取到全部的label
+     */
+    public function labelList() {
+        return M("Label")->field('labelDesc,labelCode,labelLogo')->select();
+    }
+
+}

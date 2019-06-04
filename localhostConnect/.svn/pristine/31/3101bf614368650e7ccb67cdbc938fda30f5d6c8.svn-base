@@ -1,0 +1,31 @@
+/*
+Navicat MySQL Data Transfer
+
+Source Server         : 钱盒子测试
+Source Server Version : 50631
+Source Host           : 120.25.85.171:3306
+Source Database       : devmbox_hx
+
+Target Server Type    : MYSQL
+Target Server Version : 50631
+File Encoding         : 65001
+
+Date: 2018-08-08 10:36:13
+*/
+
+SET FOREIGN_KEY_CHECKS=0;
+
+-- ----------------------------
+-- Table structure for d_system_log
+-- ----------------------------
+DROP TABLE IF EXISTS `d_system_log`;
+CREATE TABLE `d_system_log` (
+  `logID` int(11) NOT NULL AUTO_INCREMENT COMMENT '日志ID',
+  `logKey` varchar(50) DEFAULT NULL COMMENT '关键字',
+  `URL` varchar(500) DEFAULT NULL COMMENT 'URL',
+  `logTag` varchar(500) DEFAULT NULL COMMENT '标记',
+  `logRemark` varchar(2000) DEFAULT NULL COMMENT '日志描述',
+  `addDatetime` int(11) DEFAULT NULL COMMENT '添加时间',
+  `operateIP` varchar(50) DEFAULT NULL COMMENT 'IP地址',
+  PRIMARY KEY (`logID`)
+) ENGINE=InnoDB AUTO_INCREMENT=76770 DEFAULT CHARSET=utf8 COMMENT='系统日志表';

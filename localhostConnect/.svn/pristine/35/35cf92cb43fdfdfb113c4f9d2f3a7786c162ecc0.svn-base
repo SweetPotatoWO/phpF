@@ -1,0 +1,76 @@
+<?php
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+namespace Service\Search\Model;
+
+use Common\Model\SlaveModel;
+
+class SearchModel extends SlaveModel {
+
+    protected $autoCheckFields = false;
+
+    /**
+     * 接口调用历史
+     */
+    public function getRequestList($where, $whereArr, $limit) {
+        $sqlcount = 'SELECT count(logID) as total
+            FROM d_request_interface_log WHERE(1=1) ' . $where;
+        $total = $this->SlaveDB()->query($sqlcount, $whereArr);
+        $result['total'] = $total[0]['total'];
+        array_push($whereArr, $limit);
+        $sql = 'SELECT * FROM d_request_interface_log WHERE(1=1) ' . $where . ' ORDER BY logID DESC limit %s';
+        $result['rows'] = $this->SlaveDB()->query($sql, $whereArr);
+        return $result;
+    }
+
+    /**
+     * 用户历史搜索
+     */
+    public function userSearchList($where, $whereArr, $limit) {
+        $sqlcount = 'SELECT count(A.userHistoryID) as total
+            FROM d_search_user_history A inner join d_user B ON A.userID=B.userID WHERE(1=1) ' . $where;
+        $total = $this->SlaveDB()->query($sqlcount, $whereArr);
+        $result['total'] = $total[0]['total'];
+        array_push($whereArr, $limit);
+        $sql = 'SELECT A.content,A.searchCount,A.searchType,A.addDatetime,A.lastSearchTime,B.nickname,B.phone FROM d_search_user_history A inner join d_user B ON A.userID=B.userID WHERE(1=1) ' . $where . ' ORDER BY userHistoryID DESC limit %s';
+        $result['rows'] = $this->SlaveDB()->query($sql, $whereArr);
+        return $result;
+    }
+
+    /**
+     * 历史搜索
+     */
+    public function searchList($where, $whereArr, $limit) {
+        $sqlcount = 'SELECT count(historyID) as total
+            FROM d_search_history WHERE(1=1) ' . $where;
+        $total = $this->SlaveDB()->query($sqlcount, $whereArr);
+        $result['total'] = $total[0]['total'];
+        array_push($whereArr, $limit);
+        $sql = 'SELECT content,searchCount,searchType,addDatetime,lastSearchTime  FROM d_search_history WHERE(1=1) ' . $where . ' ORDER BY historyID DESC limit %s';
+        $result['rows'] = $this->SlaveDB()->query($sql, $whereArr);
+        return $result;
+    }
+
+    /**
+     * 用户搜索分类统计
+     */
+    public function getUserSearchCount($where, $whereArr, $limit) {
+        $sqlcount = 'select DISTINCT(A.userID) as total from d_search_user_history A inner join d_user B on A.userID=B.userID 
+                 WHERE(1=1) ' . $where;
+        $total = $this->SlaveDB()->query($sqlcount, $whereArr);
+        $result['total'] = $total[0]['total'];
+        array_push($whereArr, $limit);
+        $sql = "select A.userID,B.nickname,B.phone,sum(case when A.searchType='user' then searchCount end) as userCount,
+                sum(case when A.searchType='company' then searchCount end) as companyCount,
+                sum(case when A.searchType='legal' then searchCount end) as legalCount,sum(searchCount) as totalSearch
+                from d_search_user_history A inner join d_user B on A.userID=B.userID where(1=1) " . $where . " group by A.userID order by totalSearch desc limit %s";
+        $result['rows'] = $this->SlaveDB()->query($sql, $whereArr);
+        return $result;
+    }
+
+}

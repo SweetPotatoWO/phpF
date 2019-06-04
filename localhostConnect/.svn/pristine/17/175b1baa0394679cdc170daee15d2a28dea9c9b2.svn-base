@@ -1,0 +1,1165 @@
+<?php
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+namespace Backend\Controller;
+
+use Service\Card\Logic\CardLogic;
+use Service\Card\Model\UserCardModel;
+use Service\User\Logic;
+use Service\Backend\Logic\ConsoleUserLogic;
+use Service\Common\CollectiveLogic;
+
+class UserController extends BaseEndController {
+
+    /**
+     * 获取用户信息
+     */
+    public function getUser() {
+        $par = I("post.");
+        $where = "";
+        $whereArr = array();
+        if (!is_null($par["txtphone"]) && !empty($par["txtphone"])) {
+            $where.="AND A.phone like '%s'";
+            array_push($whereArr, '%'.$par["txtphone"].'%');
+        }
+        if (!is_null($par["txtrealName"]) && !empty($par["txtrealName"])) {
+            $where .= "AND A.nickname like '%s'";
+            array_push($whereArr, '%' . $par["txtrealName"] . '%');
+        }
+//        if (!is_null($par["txtuserType"]) && $par["txtuserType"] !== "") {
+//            $where.="AND A.userType='%s'";
+//            array_push($whereArr, ($par["txtuserType"]));
+//        }
+        if (!is_null($par["txtDateStart"]) && !empty($par["txtDateStart"])) {
+            $where.="AND A.regDatetime>'%d'";
+            array_push($whereArr, strtotime($par["txtDateStart"]));
+        }
+        if (!is_null($par["txtDateEnd"]) && !empty($par["txtDateEnd"])) {
+            $where.="AND A.regDatetime<'%d'";
+            array_push($whereArr, strtotime('+1 day', strtotime($par["txtDateEnd"])));
+        }
+        if (empty($where)) {
+            $where .= "AND A.regDatetime>'%d'";
+            $startDate = date('Y-m-d', strtotime('-7 days'));
+            array_push($whereArr, strtotime($startDate));
+            $_POST["txtDateStart"] = $startDate;
+            $_POST["txtDateEnd"] = date('Y-m-d', time());
+        }
+
+        $limit = $this->getPage();
+        $logic = new Logic\UserLogic();
+        $result = $logic->getUserList($where, $whereArr, $limit);
+
+        $this->assign("result", $result["rows"]);
+        $this->assign("page", $this->showPage($result["total"]));
+        $this->display("userList");
+    }
+
+    /**
+     * 用户详情
+     */
+    public function userInfo() {
+        $userID = I("get.id");
+        if ($userID * 1 > 0) {
+            $logic = new Logic\UserLogic();
+            $result = $logic->getUserInfoDetail($userID);
+            $this->assign('info', $result['info'][0]);
+            $this->assign('eduList', $result['education']);
+            $this->assign('workList', $result['work']);
+        }
+        $this->display("userInfo");
+    }
+
+    /**
+     * 统计用户名片数量
+     */
+    public function getUserCardCount() {
+        $par = I("post.");
+        $where = "";
+        $twhere = '';
+        $whereArr = array();
+        if (!is_null($par["txtphone"]) && !empty($par["txtphone"])) {
+            $where.="AND A.phone='%s'";
+            array_push($whereArr, $par["txtphone"]);
+        }
+        if (!is_null($par["txtrealName"]) && !empty($par["txtrealName"])) {
+            $where .= "AND A.nickname like '%s'";
+            array_push($whereArr, '%' . $par["txtrealName"] . '%');
+        }
+        if (!is_null($par["cardCount"]) && !empty($par["cardCount"])) {
+            $number = $par["cardCount"] * 1 > 0 ? $par["cardCount"] : 0;
+            $twhere .= "total >= $number";
+        }
+        if (empty($twhere)) {
+            $twhere .= "total > 0";
+        }
+        $limit = $this->getPage();
+        $logic = new Logic\UserLogic();
+        $result = $logic->getUserCardCount($where, $twhere, $whereArr, $limit);
+        $this->assign("result", $result["rows"]);
+        $this->assign("page", $this->showPage($result["total"]));
+        $this->display("userCardCount");
+    }
+
+    /**
+     * 获取用户名片信息
+     */
+    public function getUserCard() {
+        $par = I("request.");
+        $where = "";
+        $whereArr = array();
+        if (!is_null($par["id"]) && !empty($par["id"])) {
+            $where .= "AND A.userID='%s'";
+            $ulogic = new Logic\UserLogic();
+            $userInfo = $ulogic->getUser($par["id"]);
+            $this->assign('userInfo', $userInfo);
+            array_push($whereArr, $par["id"]);
+        }
+        if (!is_null($par["txtrealName"]) && !empty($par["txtrealName"])) {
+            $where .= "AND A.userName like '%s'";
+            array_push($whereArr, '%' . $par["txtrealName"] . '%');
+        }
+        if (!is_null($par["groupType"]) && !empty($par["groupType"])) {
+            $where .= "AND A.groupID = '%d'";
+            array_push($whereArr, $par["groupType"]);
+        }
+        $limit = $this->getPage();
+        $logic = new Logic\UserLogic();
+        $result = $logic->getUserCardList($where, $whereArr, $limit);
+        $this->assign('groupArr', $logic->getAllGroup());
+        $this->assign("result", $result["rows"]);
+        $this->assign("page", $this->showPage($result["total"]));
+        $this->display("userCardList");
+    }
+
+    /**
+     * 名片信息
+     */
+    public function getCardItem() {
+        $id = I('get.id');
+        $logic = new Logic\UserLogic();
+        $info = $logic->getUserCardDetail(['cid' => $id]);
+        $this->assign('info', $info);
+        $this->display('cardItem');
+    }
+
+    /**
+     * 统计用户通讯录
+     */
+    public function getUserMail() {
+        $par = I("post.");
+        $where = "";
+        $twhere = '';
+        $whereArr = array();
+        if (!is_null($par["txtphone"]) && !empty($par["txtphone"])) {
+            $where.=" AND A.phone='%s'";
+            array_push($whereArr, $par["txtphone"]);
+        }
+        if (!is_null($par["txtrealName"]) && !empty($par["txtrealName"])) {
+            $where .= " AND A.nickname like '%s'";
+            array_push($whereArr, '%' . $par["txtrealName"] . '%');
+        }
+        if (!is_null($par["mailCount"]) && !empty($par["mailCount"])) {
+            $number = $par["mailCount"] * 1 > 0 ? $par["mailCount"] : 0;
+            $twhere .= "total >= $number";
+        }
+        if (empty($twhere)) {
+            $twhere .= "total > 0";
+        }
+        $limit = $this->getPage();
+        $logic = new Logic\UserLogic();
+        $result = $logic->getUserMailCount($where, $twhere, $whereArr, $limit);
+        $this->assign("result", $result["rows"]);
+        $this->assign("page", $this->showPage($result["total"]));
+        $this->display("userMailCount");
+    }
+
+    /**
+     * 获取用户通讯录列表
+     */
+    public function getUserMailList() {
+        $par = I("request.");
+        $where = "";
+        $whereArr = array();
+        if (!is_null($par["id"]) && !empty($par["id"])) {
+            $where .= " AND A.userID='%s'";
+            $ulogic = new Logic\UserLogic();
+            $userInfo = $ulogic->getUser($par["id"]);
+            $this->assign('userInfo', $userInfo);
+            array_push($whereArr, $par["id"]);
+        }
+        if (!is_null($par["userPhone"]) && !empty($par["userPhone"])) {
+            $where .= " AND A.phone='%s'";
+            array_push($whereArr, $par["userPhone"]);
+        }
+        if (!is_null($par["userName"]) && !empty($par["userName"])) {
+            $where .= " AND A.userName like '%s'";
+            array_push($whereArr, '%' . $par["userName"] . '%');
+        }
+        $limit = $this->getPage();
+        $logic = new Logic\UserLogic();
+        $result = $logic->getUserMailList($where, $whereArr, $limit);
+        $this->assign("result", $result["rows"]);
+        $this->assign("page", $this->showPage($result["total"]));
+        $this->display("mailList");
+    }
+
+    /**
+     * 导出用户名片
+     */
+    public function exporUserCard() {
+        $dir = "cache/";
+        $fileName = $dir . "userCardList_" . date('Ymdhis') . ".csv";
+        $par = I("post.par");
+        $where = "";
+        $whereArr = array();
+        if (!is_null($par["txtuserphone"]) && !empty($par["txtuserphone"])) {
+            $where.="AND B.phone='%s'";
+            array_push($whereArr, $par["txtuserphone"]);
+        }
+        if (!is_null($par["groupType"]) && !empty($par["groupType"])) {
+            $where.="AND C.groupID='%s'";
+            array_push($whereArr, $par["groupType"]);
+        }
+        if (!is_null($par["txtphone"]) && !empty($par["txtphone"])) {
+            $where.="AND A.phone='%s'";
+            array_push($whereArr, $par["txtphone"]);
+        }
+        if (!is_null($par["txtrealName"]) && !empty($par["txtrealName"])) {
+            $where .= "AND A.userName like '%s'";
+            array_push($whereArr, '%' . $par["txtrealName"] . '%');
+        }
+        if (!is_null($par["txtcompanyName"]) && !empty($par["txtcompanyName"])) {
+            $where .= "AND A.companyName like '%s'";
+            array_push($whereArr, '%' . $par["txtcompanyName"] . '%');
+        }
+        if (!is_null($par["txtDateStart"]) && !empty($par["txtDateStart"])) {
+            $where.="AND A.addDatetime >'%d'";
+            array_push($whereArr, strtotime($par["txtDateStart"]));
+        }
+        if (!is_null($par["txtDateEnd"]) && !empty($par["txtDateEnd"])) {
+            $where.="AND A.addDatetime <'%d'";
+            array_push($whereArr, strtotime('+1 day', strtotime($par["txtDateEnd"])));
+        }
+        $logic = new Logic\UserLogic();
+        $result = $logic->getUserCardList($where, $whereArr, "0,50000");
+        if (empty($result['rows'])) {
+            $this->jsonReturn(0, "导出失败,没有所要导出的数据");
+        }
+        $title = array(
+            "用户昵称",
+            "用户手机号",
+            "名片用户名",
+            "名片用户手机",
+            "公司名",
+            "部门",
+            "职位",
+            '添加时间'
+        );
+        $data = "";
+        $k = 0;
+        foreach ($result["rows"] as $val) {
+            $data[$k][] = $val["nickname"];
+            $data[$k][] = $val["userPhone"];
+            $data[$k][] = $val["userName"];
+            $data[$k][] = $val["phone"];
+            $data[$k][] = $val["companyName"];
+            $data[$k][] = $val['groupName'];
+            $data[$k][] = $val['job'];
+            $data[$k][] = formatlongDate($val['addDatetime']);
+            $k++;
+        }
+        $fp = fopen($fileName, "a+");
+        //添加表头
+        foreach ($title as $key => $item) {
+            $title[$key] = iconv('utf-8', 'GBK', $item);
+        }
+        fputcsv($fp, $title);
+        $arr = array();
+        foreach ($data as $value) {
+            foreach ($value as $keys => $info) {
+                $arr[$keys] = iconv('utf-8', 'GBK', $info);
+            }
+            fputcsv($fp, $arr);
+        }
+        fclose($fp);
+        $this->jsonReturn(1, "导出成功，请点击Dowonload下载", $fileName);
+    }
+
+    /**
+     * 获取用户访客信息
+     */
+    public function getUserView() {
+        $par = I("post.");
+        $where = "";
+        $twhere = '';
+        $whereArr = array();
+        if (!is_null($par["txtphone"]) && !empty($par["txtphone"])) {
+            $where .= "AND A.phone='%s'";
+            array_push($whereArr, $par["txtphone"]);
+        }
+        if (!is_null($par["txtrealName"]) && !empty($par["txtrealName"])) {
+            $where .= "AND A.nickname like '%s'";
+            array_push($whereArr, '%' . $par["txtrealName"] . '%');
+        }
+        if (!is_null($par["totalVis"]) && !empty($par["totalVis"])) {
+            $number = $par["totalVis"] * 1 > 0 ? $par["totalVis"] : 0;
+            $twhere .= "viewtotal >= $number";
+        }
+        if (!is_null($par["txtDateStart"]) && !empty($par["txtDateStart"])) {
+            $where .= "AND A.regDatetime>'%d'";
+            array_push($whereArr, strtotime($par["txtDateStart"]));
+        }
+        if (!is_null($par["txtDateEnd"]) && !empty($par["txtDateEnd"])) {
+            $where .= "AND A.regDatetime<'%d'";
+            array_push($whereArr, strtotime('+1 day', strtotime($par["txtDateEnd"])));
+        }
+        if (empty($twhere)) {
+            $twhere .= "viewtotal > 0";
+        }
+        $limit = $this->getPage();
+        $logic = new Logic\UserLogic();
+        $result = $logic->getUserView($where, $twhere, $whereArr, $limit);
+        $this->assign("result", $result["rows"]);
+        $this->assign("page", $this->showPage($result["total"]));
+        $this->display("userVisitorList");
+    }
+
+    /**
+     * 获取用户好友情况
+     */
+    public function getUserFriendCount() {
+        $par = I("post.");
+        $where = "";
+        $twhere = '';
+        $whereArr = array();
+        if (!is_null($par["txtphone"]) && !empty($par["txtphone"])) {
+            $where .= "AND A.phone='%s'";
+            array_push($whereArr, $par["txtphone"]);
+        }
+        if (!is_null($par["txtrealName"]) && !empty($par["txtrealName"])) {
+            $where .= "AND A.nickname like '%s'";
+            array_push($whereArr, '%' . $par["txtrealName"] . '%');
+        }
+        if (!is_null($par["friendCount"]) && !empty($par["friendCount"])) {
+            $number = $par["friendCount"] * 1 > 0 ? $par["friendCount"] : 0;
+            $twhere .= "friendCount >= $number";
+        }
+        if (!is_null($par["txtDateStart"]) && !empty($par["txtDateStart"])) {
+            $where .= "AND A.regDatetime>'%d'";
+            array_push($whereArr, strtotime($par["txtDateStart"]));
+        }
+        if (!is_null($par["txtDateEnd"]) && !empty($par["txtDateEnd"])) {
+            $where .= "AND A.regDatetime<'%d'";
+            array_push($whereArr, strtotime('+1 day', strtotime($par["txtDateEnd"])));
+        }
+        if (empty($twhere)) {
+            $twhere .= "friendCount > 0";
+        }
+        $limit = $this->getPage();
+        $logic = new Logic\UserLogic();
+        $result = $logic->getUserFriendCount($where, $twhere, $whereArr, $limit);
+        $this->assign("result", $result["rows"]);
+        $this->assign("page", $this->showPage($result["total"]));
+        $this->display("friendCountList");
+    }
+
+    /**
+     * 获取用户好友列表
+     */
+    public function getUserFriend() {
+        $par = I("request.");
+        $where = "";
+        $whereArr = array();
+        if (!is_null($par["id"]) && !empty($par["id"])) {
+            $where .= "AND A.userID='%s'";
+            $ulogic = new Logic\UserLogic();
+            $userInfo = $ulogic->getUser($par["id"]);
+            $this->assign('userInfo', $userInfo);
+            array_push($whereArr, $par["id"]);
+        }
+        if (!is_null($par["txtphone"]) && !empty($par["txtphone"])) {
+            $where .= "AND B.phone='%s'";
+            array_push($whereArr, $par["txtphone"]);
+        }
+        if (!is_null($par["txtrealName"]) && !empty($par["txtrealName"])) {
+            $where .= "AND B.nickname like '%s'";
+            array_push($whereArr, '%' . $par["txtrealName"] . '%');
+        }
+        if (!is_null($par["txtDateStart"]) && !empty($par["txtDateStart"])) {
+            $where .= "AND A.addDatetime >'%d'";
+            array_push($whereArr, strtotime($par["txtDateStart"]));
+        }
+        if (!is_null($par["txtDateEnd"]) && !empty($par["txtDateEnd"])) {
+            $where .= "AND A.addDatetime <'%d'";
+            array_push($whereArr, strtotime('+1 day', strtotime($par["txtDateEnd"])));
+        }
+        $limit = $this->getPage();
+        $logic = new Logic\UserFriendLogic();
+        $result = $logic->getUserFriendList($where, $whereArr, $limit);
+        $this->assign("result", $result["rows"]);
+        $this->assign("page", $this->showPage($result["total"]));
+        $this->display("friendList");
+    }
+
+    /**
+     * 用户好友申请列表
+     */
+    public function getFriendApply() {
+        $par = I("post.");
+        $where = "";
+        $whereArr = array();
+        if (!is_null($par["txtphone"]) && !empty($par["txtphone"])) {
+            $where .= "AND B.phone='%s'";
+            array_push($whereArr, $par["txtphone"]);
+        }
+        if (!is_null($par["txtrealName"]) && !empty($par["txtrealName"])) {
+            $where .= "AND B.nickname like '%s'";
+            array_push($whereArr, '%' . $par["txtrealName"] . '%');
+        }
+        if (!is_null($par["txtfphone"]) && !empty($par["txtfphone"])) {
+            $where .= "AND C.phone='%s'";
+            array_push($whereArr, $par["txtfphone"]);
+        }
+        if (!is_null($par["txtfname"]) && !empty($par["txtfname"])) {
+            $where .= "AND C.nickname like '%s'";
+            array_push($whereArr, '%' . $par["txtfname"] . '%');
+        }
+        if (!is_null($par["status"]) && !empty($par["status"])) {
+            $where .= "AND A.status ='%s'";
+            array_push($whereArr, $par["status"]);
+        }
+        $limit = $this->getPage();
+        $logic = new Logic\UserLogic();
+        $result = $logic->getFriendApplyList($where, $whereArr, $limit);
+        $this->assign("result", $result["rows"]);
+        $this->assign("page", $this->showPage($result["total"]));
+        $this->display("friendApplyList");
+    }
+
+    /**
+     * 导出excel
+     */
+    public function exportUserInfo() {
+        $dir = "cache/";
+        $fileName = $dir . "UserInfoList_" . date('Ymdhis') . ".csv";
+        $par = I("post.par");
+        $where = "";
+        $whereArr = array();
+        if (!is_null($par["txtphone"]) && !empty($par["txtphone"])) {
+            $where.=" AND A.phone='%s' ";
+            array_push($whereArr, $par["txtphone"]);
+        }
+
+
+        if (!is_null($par["txtuserSex"]) && !empty($par["txtuserSex"])) {
+            $where.=" AND B.userSex='%s' ";
+            array_push($whereArr, ($par["txtuserSex"]));
+        }
+        if (!is_null($par["txtuserType"]) && $par["txtuserType"] !== "") {
+            $where.=" AND A.userType='%s' ";
+            array_push($whereArr, ($par["txtuserType"]));
+        }
+        if (!is_null($par["txtDateStart"]) && !empty($par["txtDateStart"])) {
+            $where.=" AND A.regDatetime>%d ";
+            array_push($whereArr, strtotime($par["txtDateStart"]));
+        }
+        if (!is_null($par["txtDateEnd"]) && !empty($par["txtDateEnd"])) {
+            $where.=" AND A.regDatetime<%d ";
+            array_push($whereArr, strtotime('+1 day', strtotime($par["txtDateEnd"])));
+        }
+
+
+
+        if (empty($where)) {
+            $where .= " AND A.regDatetime>%d ";
+            array_push($whereArr, strtotime(date('Y-m-d', strtotime('-7 days'))));
+        }
+        $where .= "AND A.userType <>20 AND A.userType <>21";
+        $limit = "0,50000";
+        $logic = new Logic\UserLogic();
+        $result = $logic->getUserList($where, $whereArr, $limit);
+        if (empty($result['rows'])) {
+            $this->jsonReturn(0, "导出失败,没有所要导出的数据");
+        }
+        $title = array(
+            "手机",
+            "注销",
+            "公司名字",
+            "用户名字",
+            "职位",
+            "性别",
+            "行业",
+            "所在城市",
+            "注册时间",
+            "终端",
+        );
+        $data = "";
+        $k = 0;
+        $userTypeArr = $logic->getUserType();
+        foreach ($result["rows"] as $val) {
+            $data[$k][] = $val["phone"];
+            $data[$k][] = $val["userStatus"] == 1 ? "正常" : "不正常";
+            $data[$k][] = $val["companyName"] ? "尚无" : $val["companyName"];
+            $data[$k][] = $val["name"] ? "尚无" : $val["name"];
+            $data[$k][] = $val["job"] ? "尚无" : $val["job"];
+            $data[$k][] = $val["userSex"] ? "尚未" : formatSex($val["userSex"]);
+            $data[$k][] = $val["workMajorName"] ? "尚无" : $val["workMajorName"];
+            $data[$k][] = $val["cityName"] ? "尚无" : $val["cityName"];
+            $data[$k][] = empty($userTypeArr[$val["userType"]]) ? "未知" : $userTypeArr[$val["userType"]];
+            $data[$k][] = $val["clientSource"];
+            $data[$k][] = formatlongDate($val["regDatetime"]);
+            $data[$k][] = formatterminal($val["regTerminal"]);
+            $k++;
+        }
+        $fp = fopen($fileName, "a+");
+        //添加表头
+        foreach ($title as $key => $item) {
+            $title[$key] = iconv('utf-8', 'GBK', $item);
+        }
+        fputcsv($fp, $title);
+        $arr = array();
+        foreach ($data as $value) {
+            foreach ($value as $keys => $info) {
+                $arr[$keys] = iconv('utf-8', 'GBK', $info);
+            }
+            fputcsv($fp, $arr);
+        }
+        fclose($fp);
+        $this->jsonReturn(1, "导出成功，请点击Dowonload下载", $fileName);
+    }
+
+    public function editUser() {
+        $key = I("get.key");
+        if ($key * 1 > 0) {
+            $logic = new Logic\UserLogic();
+            $result = $logic->getUserfo($key);
+            $userTypeArr = $logic->getUserType();
+            $this->assign('userTypeArr', $userTypeArr);
+            $this->assign('data', $result);
+            $conso = new ConsoleUserLogic();
+            $Service = $conso->getAllService();
+            $this->assign('Service', $Service);
+        }
+        $this->display("userEdit");
+    }
+
+    /**
+     * 用户登录查询
+     */
+    public function getLogin() {
+        $par = I("post.");
+        $where = "";
+        $whereArr = array();
+        if (!is_null($par["txtphone"]) && !empty($par["txtphone"])) {
+            $where .= "AND B.phone='%s'";
+            array_push($whereArr, $par["txtphone"]);
+        }
+        if (!is_null($par["txtDateStart"]) && !empty($par["txtDateStart"])) {
+            $where .= "AND A.lastLoginDatetime>'%d'";
+            array_push($whereArr, strtotime($par["txtDateStart"]));
+        }
+        if (!is_null($par["txtDateEnd"]) && !empty($par["txtDateEnd"])) {
+            $where .= "AND A.lastLoginDatetime<'%d'";
+            array_push($whereArr, strtotime('+1 day', strtotime($par["txtDateEnd"])));
+        }
+
+        if (!is_null($par["second"]) && !empty($par["second"])) {
+            if ($par["second"] == 1) {
+                $where .= "AND A.loginTimes>='%s'";
+                array_push($whereArr, $par["second"]);
+                $where .= "AND A.loginTimes<'%s'";
+                array_push($whereArr, 3);
+            }
+            if ($par["second"] == 3) {
+                $where .= "AND A.loginTimes>='%s'";
+                array_push($whereArr, $par["second"]);
+                $where .= "AND A.loginTimes<'%s'";
+                array_push($whereArr, 5);
+            }
+            if ($par["second"] == 5) {
+                $where .= "AND A.loginTimes>='%s'";
+                array_push($whereArr, $par["second"]);
+                $where .= "AND A.loginTimes<'%s'";
+                array_push($whereArr, 8);
+            }
+            if ($par["second"] == 8) {
+                $where .= "AND A.loginTimes>='%s'";
+                array_push($whereArr, $par["second"]);
+            }
+        }
+//        $console = new ConsoleUserLogic();
+//        $suser = $console->existsService(C("userID"));
+//        if ($suser !== false) {
+//            $user[] = $suser;
+//            $where .= " AND B.attendantID='%s' ";
+//            array_push($whereArr, $suser["userID"]);
+//            $this->assign("serinfo", $user);
+//        } else {
+//            $serinfo = $console->getAllService();
+//            $this->assign("serinfo", $serinfo);
+//        }
+        if (empty($where)) {//默认查询一个星期的短信验证码
+            $where .= "AND A.lastLoginDatetime>'%d'";
+            array_push($whereArr, strtotime("-7 day"));
+        }
+        $limit = $this->getPage();
+        $logic = new Logic\UserLogLogic();
+        $result = $logic->getUserLog($where, $whereArr, $limit);
+        $this->assign("result", $result["rows"]);
+        $this->assign("page", $this->showPage($result["total"]));
+        $this->display("loginLog");
+    }
+
+    /**
+     * 数据导出
+     */
+    public function exportLogin() {
+        $par = I("post.data");
+        $where = "";
+        $whereArr = array();
+        if (!is_null($par["txtphone"]) && !empty($par["txtphone"])) {
+            $where.="AND A.phone='%s'";
+            array_push($whereArr, $par["txtphone"]);
+        }
+        if (!is_null($par["txtDateStart"]) && !empty($par["txtDateStart"])) {
+            $where.="AND A.lastLoginDatetime>'%d'";
+            array_push($whereArr, strtotime($par["txtDateStart"]));
+        }
+        if (!is_null($par["txtDateEnd"]) && !empty($par["txtDateEnd"])) {
+            $where.="AND A.lastLoginDatetime<'%d'";
+            array_push($whereArr, strtotime('+1 day', strtotime($par["txtDateEnd"])));
+        }
+//        if (!is_null($par["serviceID"]) && !empty($par["serviceID"])) {
+//            $where.="AND B.attendantID='%s'";
+//            array_push($whereArr, $par["serviceID"]);
+//        }
+        if (!is_null($par["second"]) && !empty($par["second"])) {
+            if ($par["second"] == 1) {
+                $where.="AND A.loginTimes>='%s'";
+                array_push($whereArr, $par["second"]);
+                $where.="AND A.loginTimes<'%s'";
+                array_push($whereArr, 3);
+            }
+            if ($par["second"] == 3) {
+                $where.="AND A.loginTimes>='%s'";
+                array_push($whereArr, $par["second"]);
+                $where.="AND A.loginTimes<'%s'";
+                array_push($whereArr, 5);
+            }
+            if ($par["second"] == 5) {
+                $where.="AND A.loginTimes>='%s'";
+                array_push($whereArr, $par["second"]);
+                $where.="AND A.loginTimes<'%s'";
+                array_push($whereArr, 8);
+            }
+            if ($par["second"] == 8) {
+                $where.="AND A.loginTimes>='%s'";
+                array_push($whereArr, $par["second"]);
+            }
+        }
+//        $console = new ConsoleUserLogic();
+//        $suser = $console->existsService(C("userID"));
+//        if ($suser !== false) {
+//            $user = array();
+//            $user[] = $suser;
+//            $where.=" AND B.attendantID='%s' ";
+//            array_push($whereArr, $suser["userID"]);
+//        }
+        if (empty($where)) {//默认查询一个星期的短信验证码
+            $where.="AND A.lastLoginDatetime>'%d'";
+            array_push($whereArr, strtotime("-7 day"));
+        }
+        $limit = "0,50000";
+        $logic = new Logic\UserLogLogic();
+        $result = $logic->getUserLog($where, $whereArr, $limit);
+        if (empty($result["rows"])) {
+            $this->jsonReturn(0, "导出失败，没有数据！");
+        }
+        $title = array("手机号", "用户姓名", "登录次数", "手机次数", "微信次数", "PC次数", "最后IP", "最后登录时间");
+        $fileName = "cache/LoginLog_" . date("Ymdhis") . ".csv";
+        $fp = fopen($fileName, "a+");
+        $arr = array();
+        $data = array();
+        $mes = array();
+        foreach ($title as $v) {
+            $arr[] = iconv("UTF-8", "GBK", $v);
+        }
+        fputcsv($fp, $arr);
+        foreach ($result["rows"] as $k => $val) {
+            $data[$k]["phone"] = iconv("UTF-8", "GBK", $val["phone"]);
+            $data[$k]["realName"] = iconv("UTF-8", "GBK", aes($val["realName"], 'DECODE'));
+            $data[$k]["loginTimes"] = iconv("UTF-8", "GBK", $val["loginTimes"]);
+            $data[$k]["mobileTimes"] = iconv("UTF-8", "GBK", $val["mobileTimes"]);
+            $data[$k]["weChatTimes"] = iconv("UTF-8", "GBK", $val["weChatTimes"]);
+            $data[$k]["pcTimes"] = iconv("UTF-8", "GBK", $val["pcTimes"]);
+            $data[$k]["lastLoginIP"] = iconv("UTF-8", "GBK", $val["lastLoginIP"]);
+            $data[$k]["lastLoginDatetime"] = iconv("UTF-8", "GBK", formatlongDate($val["lastLoginDatetime"]));
+        }
+        foreach ($data as $l) {
+            foreach ($l as $key => $m) {
+                $mes[$key] = $m;
+            }
+            fputcsv($fp, $mes);
+        }
+        fclose($fp);
+        $this->jsonReturn(1, "导出成功请点击Dowonload下载", $fileName);
+    }
+
+    /**
+     * 获取登录明细
+     */
+    public function getLogItem() {
+        $key = I("get.key");
+        $where.="AND A.userID = '%d'";
+        $whereArr = array();
+        array_push($whereArr, $key);
+        $limit = '0,15';
+        $logic = new Logic\UserLogLogic();
+        $result = $logic->getLogItem($where, $whereArr, $limit);
+        $this->assign("result", $result["rows"]);
+        $this->display("loginItem");
+    }
+
+    /**
+     * 获取邀请记录
+     */
+    public function getInvite() {
+        $par = I("post.");
+        $where = "";
+        $whereArr = array();
+        if (!is_null($par["txtphone"]) && !empty($par["txtphone"])) {
+            $where.=" AND A.invitePhone='%s'";
+            array_push($whereArr, $par["txtphone"]);
+        }
+        if (!is_null($par["txtDateStart"]) && !empty($par["txtDateStart"])) {
+            $where.=" AND A.addDatetime>'%d'";
+            array_push($whereArr, strtotime($par["txtDateStart"]));
+        }
+        if (!is_null($par["status"]) && !empty($par["status"])) {
+            $where.=" AND A.status='%s'";
+            array_push($whereArr, $par["status"]);
+        }
+        if (!is_null($par["txtDateEnd"]) && !empty($par["txtDateEnd"])) {
+            $where.=" AND A.addDatetime<'%d'";
+            array_push($whereArr, strtotime('+1 day', strtotime($par["txtDateEnd"])));
+        }
+        if (!is_null($par["yqphone"]) && !empty($par["yqphone"])) {
+            $where.=" AND A.phone='%s'";
+            array_push($whereArr, $par["yqphone"]);
+        }
+        if (!is_null($par["inviteType"]) && !empty($par["inviteType"])) {
+            $where.=" AND A.inviteType= %d";
+            array_push($whereArr, $par["inviteType"]);
+        }
+        if (empty($where)) {
+            $where .= " AND A.addDatetime>'%d'";
+            $startDate = date('Y-m-d', strtotime('-7 days'));
+            array_push($whereArr, strtotime($startDate));
+            $_POST["txtDateStart"] = $startDate;
+            $_POST["txtDateEnd"] = date('Y-m-d', time());
+        }
+        $limit = $this->getPage();
+        $logic = new Logic\UserInviteLogic();
+        $result = $logic->getInvite($where, $whereArr, $limit);
+        $this->assign("result", $result["rows"]);
+        $this->assign("inviteTypeArr", $logic->getInviteType());
+        $this->assign("page", $this->showPage($result["total"]));
+        $this->display("inviteList");
+    }
+
+    /*
+     *   手动添加邀请记录
+     */
+
+    public function addInvite() {
+        $data = I('post.par');
+        $userPhone = $data['userPhone'];  //邀请人电话
+        $invitePhone = $data['invitelPhone']; //被邀请人电话
+        if (empty($userPhone) || empty($invitePhone)) {
+            $this->jsonReturn(0, "信息填充不完整");
+        }
+        $invite = new Logic\UserInviteLogic();    //查询是否存在邀请记录了
+        $where['phone'] = $invitePhone;
+        $info = $invite->getInviteDetail($where);
+        if (!empty($info)) {
+            $this->jsonReturn(0, "用户已经被邀请过的");
+        }
+        $userlogic = new Logic\UserLogic();
+        $userInfo = $userlogic->getByPhone($userPhone);  //邀请人信息
+        if (empty($userInfo)) {
+            $this->jsonReturn(0, "邀请人信息不存在");
+        }
+        $inviteUserInfo = $userlogic->getByPhone($invitePhone); //被邀请人信息
+        if (empty($inviteUserInfo)) {
+            $this->jsonReturn(0, "被邀请人信息不存在");
+        }
+        $res = $userlogic->addInviterHM($userInfo, $inviteUserInfo);  //添加邀请记录
+        if ($res) {
+            $this->jsonReturn(1, '操作成功');
+        }
+        $this->jsonReturn(0, '数据库插入失败');
+    }
+
+    /*
+     *  显示添加弹窗界面
+     */
+
+    public function addInvitelView() {
+        $this->display();
+    }
+
+    /**
+     * 导出邀请记录
+     */
+    public function expInvite() {
+        $par = I("post.data");
+        $where = "";
+        $whereArr = array();
+        if (!is_null($par["txtphone"]) && !empty($par["txtphone"])) {
+            $where.="AND A.phone='%s'";
+            array_push($whereArr, $par["txtphone"]);
+        }
+        if (!is_null($par["txtDateStart"]) && !empty($par["txtDateStart"])) {
+            $where.="AND A.addDatetime>'%d'";
+            array_push($whereArr, strtotime($par["txtDateStart"]));
+        }
+        if (!is_null($par["txtDateEnd"]) && !empty($par["txtDateEnd"])) {
+            $where.="AND A.addDatetime<'%d'";
+            array_push($whereArr, strtotime('+1 day', strtotime($par["txtDateEnd"])));
+        }
+        if (!is_null($par["rewardType"]) && !empty($par["rewardType"])) {
+            $where.="AND A.rewardType='%s'";
+            array_push($whereArr, $par["rewardType"]);
+        }
+        if (!is_null($par["yqphone"]) && !empty($par["yqphone"])) {
+            $where.="AND A.inviteUserPhone='%s'";
+            array_push($whereArr, $par["yqphone"]);
+        }
+        if (!is_null($par["inviteType"]) && !empty($par["inviteType"])) {
+            $where.=" AND A.inviteType= %d";
+            array_push($whereArr, $par["inviteType"]);
+        }
+        if (empty($where)) {//默认查询一个星期
+            $where.="AND A.addDatetime>'%d'";
+            array_push($whereArr, strtotime("-7 day"));
+        }
+        $logic = new Logic\UserInviteLogic();
+        $limit = "0,50000";
+        $result = $logic->getInvite($where, $whereArr, $limit);
+        if (!empty($result)) {
+            $expLogic = new CollectiveLogic();
+            $title = array("被邀请人用户名", "被邀请人电话", "邀请人用户名", "邀请人电话", "奖励类型名称", "邀请时间", "是否处理");
+            $fileName = "cache/Invite_" . date("Ymdhis") . ".csv";
+            $data = array();
+            foreach ($result["rows"] as $k => $v) {
+                $data[$k]["userName"] = iconv("UTF-8", "GBK", $v["userName"]);
+                $data[$k]["phone"] = iconv("UTF-8", "GBK", $v["phone"]);
+                $data[$k]["inviteUserName"] = iconv("UTF-8", "GBK", ($v["inviteUserName"]));
+                $data[$k]["inviteUserPhone"] = iconv("UTF-8", "GBK", ($v["inviteUserPhone"]));
+                $data[$k]["rewardName"] = iconv("UTF-8", "GBK", ($v["rewardName"]));
+                $data[$k]["addDatetime"] = iconv("UTF-8", "GBK", formatlongDate($v["addDatetime"]));
+                switch ($v["rewardStutas"]) {
+                    case 0 :
+                        $data[$k]["rewardStutas"] = iconv("UTF-8", "GBK", "未发放");
+                        break;
+                    case 1 :
+                        $data[$k]["rewardStutas"] = iconv("UTF-8", "GBK", "已发放");
+                        break;
+                    default :
+                        $data[$k]["rewardStutas"] = iconv("UTF-8", "GBK", "未知");
+                        break;
+                }
+            }
+            $expLogic->export($fileName, $title, $data);
+            $this->jsonReturn(1, "", $fileName);
+        } else {
+            $this->jsonReturn(0, "没有可导出的数据！");
+        }
+    }
+
+    /**
+     * 评论信息列表
+     */
+    public function getEvaluate() {
+        $par = I("post.");
+        $where = "";
+        $whereArr = array();
+        if (!is_null($par["txtphone"]) && !empty($par["txtphone"])) {
+            $where .= "AND C.phone='%s'";
+            array_push($whereArr, $par["txtphone"]);
+        }
+        if (!is_null($par["txtrealName"]) && !empty($par["txtrealName"])) {
+            $where .= "AND C.nickname like '%s'";
+            array_push($whereArr, '%' . $par["txtrealName"] . '%');
+        }
+        if (!is_null($par["txtfphone"]) && !empty($par["txtfphone"])) {
+            $where .= "AND A.evaPhone='%s'";
+            array_push($whereArr, $par["txtfphone"]);
+        }
+        if (!is_null($par["txtDateStart"]) && !empty($par["txtDateStart"])) {
+            $where .= "AND A.addDatetime>'%d'";
+            array_push($whereArr, strtotime($par["txtDateStart"]));
+        }
+        if (!is_null($par["txtDateEnd"]) && !empty($par["txtDateEnd"])) {
+            $where .= "AND A.addDatetime<'%d'";
+            array_push($whereArr, strtotime('+1 day', strtotime($par["txtDateEnd"])));
+        }
+        if (empty($where)) {
+            $where .= "AND A.addDatetime>'%d'";
+            $startDate = date('Y-m-d', strtotime('-7 days'));
+            array_push($whereArr, strtotime($startDate));
+            $_POST["txtDateStart"] = $startDate;
+            $_POST["txtDateEnd"] = date('Y-m-d', time());
+        }
+        $limit = $this->getPage();
+        $logic = new Logic\UserLogic();
+        $result = $logic->getEvaluate($where, $whereArr, $limit);
+        $this->assign("result", $result["rows"]);
+        $this->assign("page", $this->showPage($result["total"]));
+        $this->display("evaluateList");
+    }
+
+    /**
+     * 用户评分
+     */
+    public function getEvaluateData() {
+        $par = I("post.");
+        $where = "";
+        $whereArr = array();
+        if (!is_null($par["txtphone"]) && !empty($par["txtphone"])) {
+            $where .= " AND A.evaPhone='%s'";
+            array_push($whereArr, $par["txtphone"]);
+        }
+        $limit = $this->getPage();
+        $logic = new Logic\UserLogic();
+        $result = $logic->getEvaluateData($where, $whereArr, $limit);
+        $this->assign("result", $result["rows"]);
+        $this->assign("page", $this->showPage($result["total"]));
+        $this->display("evaluateData");
+    }
+
+    /**
+     * 用户举报
+     */
+    public function getProseList() {
+        $par = I("post.");
+        $where = "";
+        $whereArr = array();
+        if (!is_null($par["txtphone"]) && !empty($par["txtphone"])) {
+            $where .= " AND B.phone='%s'";
+            array_push($whereArr, $par["txtphone"]);
+        }
+        if (!is_null($par["txtfphone"]) && !empty($par["txtfphone"])) {
+            $where .= " AND C.phone='%s'";
+            array_push($whereArr, $par["txtfphone"]);
+        }
+        if (!is_null($par["type"]) && !empty($par["type"])) {
+            $where .= " AND A.type= %d";
+            array_push($whereArr, $par["type"]);
+        }
+        if (!is_null($par["status"]) && !empty($par["status"])) {
+            $where .= " AND A.status= %d";
+            array_push($whereArr, $par["status"]);
+        }
+        if (!is_null($par["txtDateStart"]) && !empty($par["txtDateStart"])) {
+            $where .= " AND A.addDatetime>'%d'";
+            array_push($whereArr, strtotime($par["txtDateStart"]));
+        }
+        if (!is_null($par["txtDateEnd"]) && !empty($par["txtDateEnd"])) {
+            $where .= " AND A.addDatetime<'%d'";
+            array_push($whereArr, strtotime('+1 day', strtotime($par["txtDateEnd"])));
+        }
+        if (empty($where)) {
+            $where .= " AND A.addDatetime>'%d'";
+            $startDate = date('Y-m-d', strtotime('-7 days'));
+            array_push($whereArr, strtotime($startDate));
+            $_POST["txtDateStart"] = $startDate;
+            $_POST["txtDateEnd"] = date('Y-m-d', time());
+        }
+        $limit = $this->getPage();
+        $logic = new Logic\UserLogic();
+        $result = $logic->getProseList($where, $whereArr, $limit);
+        $this->assign('proseType', $logic->getProseType());
+        $this->assign('proseStatus', $logic->getProseStatus());
+        $this->assign("result", $result["rows"]);
+        $this->assign("page", $this->showPage($result["total"]));
+        $this->display("proseList");
+    }
+
+    /**
+     * 处理举报
+     */
+    public function editProse() {
+        $key = I("get.key");
+        $logic = new Logic\UserLogic();
+        if ($key * 1 > 0) {
+            $result = $logic->getProseInfo($key);
+            $this->assign('data', $result);
+        }
+        $this->assign('proseType', $logic->getProseType());
+        $status = $logic->getProseStatus();
+        unset($status[1]);
+        $this->assign('proseStatus', $status);
+        $this->display("editProse");
+    }
+
+    /**
+     * 保存处理
+     */
+    public function saveProse() {
+        $par = I("post.par");
+        if (count($par)) {
+            $logic = new Logic\UserLogic();
+            $result = $logic->saveProse($par);
+            if ($result * 1 > 0) {
+                return $this->jsonReturn(1, "保存成功!", $result);
+            } else {
+                return $this->jsonReturn(0, $result);
+            }
+        }
+        return $this->jsonReturn(0, '保存失败!');
+    }
+
+
+    /**
+     * 推荐屏蔽
+     */
+    public function shielding() {
+        $par = I("post.");
+        $where = array();
+        if (!is_null($par["txtphone"]) && !empty($par["txtphone"])) {
+            $where['phoneOne'] = $par["txtphone"];
+        }
+        if (!is_null($par["txtrealName"]) && !empty($par["txtrealName"])) {
+            $where['realname'] = $par['txtrealName'];
+        }
+        if (!is_null($par["txtIsRecommend"]) && !empty($par["txtIsRecommend"])) {
+            $where['isRecommend'] =  $par['txtIsRecommend'];
+        }
+
+        $card = new CardLogic();
+        $limit = $this->getPage();
+        $info = $card->getClearCard($where,$limit);
+        $total = $card->getAllNum($where);
+        $this->assign("active",1);
+        $this->assign("result",$info);
+        $this->assign("page", $this->showPage($total));
+        $this->display("shieldList");
+    }
+
+
+
+    /**
+     * 推荐
+     */
+    public function ajaxRecommend() {
+        if(!IS_AJAX) {
+            echo json_encode(array('code'=>1,'msg'=>"非法请求"));
+            die();
+        }
+        $phone = I("phone");
+        $type = I("user");
+        if($type) {
+            $model = new Logic\UserLogic();
+            $res = $model->updateRecommend(1,$phone);
+        } else {
+            $model = new CardLogic();
+            $res = $model->updateRecommend(1,$phone);
+        }
+        if($res) {
+            echo json_encode(array('code'=>0,'msg'=>"操作成功"));
+            die();
+        } else {
+            echo json_encode(array('code'=>1,'msg'=>'操作失败'));
+            die();
+        }
+
+    }
+
+
+    /**
+     * 不推荐
+     */
+    public function ajaxNoRecommend() {
+        if(!IS_AJAX) {
+            echo json_encode(array('code'=>1,'msg'=>"非法请求"));
+            die();
+        }
+        $phone = I("phone");
+
+        $type = I("user");
+        if($type) {
+            $model = new Logic\UserLogic();
+            $res = $model->updateRecommend(2,$phone);
+        } else {
+            $model = new CardLogic();
+            $res = $model->updateRecommend(2,$phone);
+        }
+        if($res) {
+            echo json_encode(array('code'=>0,'msg'=>"操作成功"));
+            die();
+        } else {
+            echo json_encode(array('code'=>1,'msg'=>'操作失败'));
+            die();
+        }
+    }
+
+
+
+    /**
+     * 职业认证
+     */
+    public function jobauth() {
+        $par = I("post.");
+        $where = array();
+        if (!is_null($par["txtphone"]) && !empty($par["txtphone"])) {
+            $where['u.phone'] = $par["txtphone"];
+        }
+        if (!is_null($par["txtrealName"]) && !empty($par["txtrealName"])) {
+            $where['uc.name'] = $par['uc.name'];
+        }
+        if (!is_null($par["txtIsRecommend"]) && !empty($par["txtIsRecommend"])) {
+            $where['uj.authStatus'] =  $par['txtIsRecommend'];
+        }
+        $logic  = new Logic\authLogic();
+        $limit = $this->getPage();
+        $list  = $logic->getAuthList($where,$limit);
+        $total = $logic->getAuthCount($where);
+
+        $this->assign("page", $this->showPage($total));
+        $this->assign("list", $list);
+        $this->display("authlist");
+    }
+
+
+    /**
+     * 职业认证
+     */
+    public function ajaxAuthHanld() {
+        if(!IS_AJAX) {
+            echo json_encode(array('code'=>1,'msg'=>"非法请求"));
+            die();
+        }
+        $id = I("id");
+        $status = I("status");
+        $logic = new Logic\authLogic();
+        $res = $logic->ajaxAuthHanld($id,$status);
+        if($res) {
+            echo json_encode(array('code'=>0,'msg'=>"操作成功"));
+            die();
+        } else {
+            echo json_encode(array('code'=>1,'msg'=>'操作失败'));
+            die();
+        }
+    }
+
+
+
+
+}

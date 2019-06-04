@@ -1,0 +1,34 @@
+<include file="Common:header" />
+<style>
+	.refusal .nodata {width: 100%;height: 100%;background: #fff;position: fixed;padding: 0;margin: 0;}
+	.refusal .nodata > div {width: 19.85rem;height: 13.71rem;background: url(/Public/wechat/images/user/refusal.png) no-repeat;background-size: 100% 100%;margin: 3.28rem auto 0;}
+	.refusal .list li {padding: 1.07rem 1.21rem 0;}
+	.refusal .list li .portrait img {width: 3.57rem;height: 3.57rem;}
+	.refusal .list li .del {background: #f2f2f2;border: 1px solid #94969E;border-radius: 3px;padding:.15rem .64rem;}
+</style>
+<div class="refusal">
+	<!--无数据状态-->
+	<!--<div class="nodata"><div></div></div>-->
+	<div class="list mt-10">
+		<ul>
+
+			<foreach name="list" item="v">
+			<li class="clearfix bg-white">
+				<div class="fl portrait"><img src="{$v.userHeadUrl}"></div>
+				<div class="fl pl-15" style="width: 85.2%;">
+					<p class="fs-16 mb-5">{$v.name}</p>
+					<div class="color-deep clearfix">
+						<div class="fl">{$v.job}</div>
+						<div class="fr" style="margin-top: -6px;">
+							<a href="javascript:;" class="del fs-13 color-deep">移除</a>
+						</div>
+					</div>	
+					<p class="color-deep">{$v.companyName}</p>
+				</div>
+			</li>
+			</foreach>
+		</ul>
+	</div>
+</div>
+</body>
+</html>

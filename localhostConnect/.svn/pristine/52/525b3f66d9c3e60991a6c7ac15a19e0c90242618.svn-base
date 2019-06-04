@@ -1,0 +1,41 @@
+/*
+Navicat MySQL Data Transfer
+
+Source Server         : 钱盒子测试
+Source Server Version : 50631
+Source Host           : 120.25.85.171:3306
+Source Database       : devmbox_hx
+
+Target Server Type    : MYSQL
+Target Server Version : 50631
+File Encoding         : 65001
+
+Date: 2018-08-08 14:30:26
+*/
+
+SET FOREIGN_KEY_CHECKS=0;
+
+-- ----------------------------
+-- Table structure for d_app_info
+-- ----------------------------
+DROP TABLE IF EXISTS `d_app_info`;
+CREATE TABLE `d_app_info` (
+  `infoID` int(11) NOT NULL AUTO_INCREMENT,
+  `equipmentID` varchar(80) NOT NULL COMMENT '设备ID',
+  `type` tinyint(4) DEFAULT '0' COMMENT '类型 1 安装 2 活跃',
+  `jphRegId` varchar(50) DEFAULT '' COMMENT '极光推送ID',
+  `versions` varchar(50) NOT NULL COMMENT '客户端APP的版本号',
+  `phoneInfo` varchar(100) DEFAULT NULL COMMENT '手机信息 手机的系统 机型信息',
+  `latitude` varchar(10) DEFAULT NULL COMMENT '纬度',
+  `longitude` varchar(10) DEFAULT NULL COMMENT '经度',
+  `terminal` tinyint(4) NOT NULL DEFAULT '0' COMMENT '终端  2 安卓 3 IOS',
+  `province` varchar(50) DEFAULT NULL COMMENT '省份',
+  `city` varchar(50) DEFAULT NULL COMMENT '城市',
+  `area` varchar(100) DEFAULT NULL COMMENT '区',
+  `place` varchar(150) DEFAULT NULL COMMENT '地址详细',
+  `chanKey` varchar(50) NOT NULL DEFAULT '' COMMENT 'APP来源渠道KEY',
+  `channel` varchar(50) NOT NULL DEFAULT '' COMMENT 'APP来源渠道',
+  `addDatetime` int(11) NOT NULL COMMENT '发生时间',
+  PRIMARY KEY (`infoID`),
+  KEY `app_addDatetime` (`addDatetime`) USING BTREE
+) ENGINE=InnoDB AUTO_INCREMENT=913947 DEFAULT CHARSET=utf8 COMMENT='手机信息数据表';

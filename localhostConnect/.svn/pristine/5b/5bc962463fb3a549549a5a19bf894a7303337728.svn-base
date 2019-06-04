@@ -1,0 +1,163 @@
+<?php
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+namespace MobileApi\Api;
+
+use MobileApi\Common\MobileApiBase;
+use Service\Spread\Logic\HomeBannerLogic;
+
+/**
+ * Description of ApiUser
+ *
+ * @author Administrator
+ */
+class ApiBanner extends MobileApiBase {
+
+    public function getRules() {
+        return array(
+            'index' => array(
+                'type' => array('name' => 'type', 'type' => 'int', 'require' => false, 'desc' => '广告类型（169：首页广告 179：活动中心广告 180：积分商城）', 'default' => 169),
+            ),
+            'getStartList' => array(
+                "type" => array('name' => 'type', 'type' => 'int', 'require' => false, 'desc' => '广告类型', 'default' => 168)
+            ),
+            'getAPPAreaImg' => array(
+                "type" => array('name' => 'type', 'type' => 'int', 'require' => false, 'desc' => '广告类型', 'default' => 188)
+            ),
+            'getIndexSuspen' => array(
+                "type" => array('name' => 'type', 'type' => 'int', 'require' => false, 'desc' => '191 首页悬浮图  194 首页背景图', 'default' => 191)
+            )
+        );
+    }
+
+    /**
+     * 广告接口。
+     * @desc 广告图片
+     * @return 数组 info 用户信息对象
+     * @return string info.bannerUrl 图片路径
+     * @return string info.linkUrl  链接地址
+     * @return string info.bannerTitle 标题
+     */
+    public function index() {
+        $type = $this->type;
+        if ($type * 1 == 169) {
+            $type = 86;
+        }
+        $logic = new HomeBannerLogic();
+        $imgList = $logic->getImg($type);
+        $data = array("code" => 0, "msg" => "", "info" => array());
+        $info = array();
+        foreach ($imgList as $k => $v) {
+            $info[$k]['bannerUrl'] = UPLOAD . $v['bannerUrl'];
+            $info[$k]['linkUrl'] = trim($v['linkUrl']);
+            $info[$k]['bannerTitle'] = $v['bannerTitle'];
+            if ($type * 1 == 180)
+                break;
+        }
+        $res = $logic->handleImg($info, $this->version, $this->terminal);
+        $data["info"] = $res;
+        return $data;
+    }
+
+    /**
+     * APP广告启动页
+     * @desc                            APP广告启动页
+     * @return 数组 info                用户信息对象
+     * @return int    code              操作码，0表示成功， 1表示失败
+     * @return string info.bannerUrl    图片路径
+     * @return string info.linkUrl      链接地址
+     * @return string info.bannerTitle  标题
+     * @return string info.version      图片版本号
+     * @return string msg               提示信息
+     */
+    public function getStartList() {
+        $type = $this->type;
+        $logic = new HomeBannerLogic();
+        $imgList = $logic->getImg($type);
+        $data = array('code' => 0, 'msg' => '', 'info' => array());
+        $info = array();
+        if (empty($imgList)) {
+            $data["code"] = 1;
+            $data["msg"] = "没有启动图";
+        }
+        foreach ($imgList as $k => $v) {
+            $info[$k]['bannerUrl'] = UPLOAD . $v['bannerUrl'];
+            $info[$k]['version'] = md5(UPLOAD . $v['bannerUrl']);
+            $info[$k]['linkUrl'] = $v['linkUrl'];
+            $info[$k]['bannerTitle'] = $v['bannerTitle'];
+        }
+        $data["info"] = $info;
+        return $data;
+    }
+
+    /**
+     * 获取APP首页展示区图片。
+     * @desc APP首页展示区图片
+     * @return 数组 info 图片信息
+     * @return string info.bannerUrl 图片路径
+     * @return string info.linkUrl  链接地址
+     * @return string info.bannerTitle 标题
+     * @return string info.version   图片版本号
+     */
+    public function getAPPAreaImg() {
+        $type = $this->type;
+        $data = array("code" => 0, "msg" => "", "info" => array());
+        $logic = new HomeBannerLogic();
+        $imgList = $logic->getImgListInfo($type);
+        if (empty($imgList)) {
+            $data["code"] = 1;
+            $data["msg"] = "不在活动时间范围内！";
+        } else {
+            $info = array();
+            if (count($imgList) * 1 > 3) {
+                foreach ($imgList as $k => $v) {
+                    if ($k * 1 > 3) {
+                        break;
+                    }
+                    $info[$k]['bannerUrl'] = $v['bannerUrl'];
+                    $info[$k]['linkUrl'] = $v['linkUrl'];
+                    $info[$k]['bannerTitle'] = $v['bannerTitle'];
+                }
+            } else {
+                $data["code"] = 1;
+            }
+            $data["info"]["info"] = $info;
+            $data["info"]["version"] = md5($info[0]['bannerUrl']);
+        }
+        return $data;
+    }
+
+    /**
+     * 获取APP首页悬浮图片
+     * @desc 获取悬浮图片信息
+     * @return 数组 info 悬浮图片信息
+     * @return string info.bannerUrl 图片路径
+     * @return string info.linkUrl  链接地址
+     * @return string info.version   图片版本号
+     */
+    public function getIndexSuspen() {
+        $data = array('code' => 0, 'msg' => '', 'info' => array());
+        $type = $this->type;
+        $logic = new HomeBannerLogic();
+        $result = $logic->getImgInfo($type);
+        if (empty($result)) {
+            $data["code"] = 1;
+            $data["msg"] = "不在活动时间范围内！";
+        } else {
+            $arr = array(
+                'linkUrl' => $result["linkUrl"],
+                "bannerUrl" => $result["bannerUrl"],
+                'title' => $result["bannerName"],
+                'version' => md5($result["bannerUrl"])
+            );
+            $data["info"] = $arr;
+        }
+        return $data;
+    }
+
+}

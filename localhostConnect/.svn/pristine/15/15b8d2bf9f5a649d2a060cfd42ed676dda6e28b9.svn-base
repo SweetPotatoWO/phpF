@@ -1,0 +1,178 @@
+<?php
+
+namespace Service\Api\Response;
+
+require_once dirname(__FILE__) . DIRECTORY_SEPARATOR . '../Common/function.php';
+
+/**
+ * 响应类
+ *
+ * - 拥有各种结果返回状态 ，以及对返回结果 的格式化
+ * - 其中：200成功，400非法请求，500服务器错误
+ *
+ */
+abstract class BaseResponse {
+
+    /**
+     * @var int $ret 返回状态码，其中：200成功，400非法请求，500服务器错误
+     */
+    protected $ret = 200;
+
+    /**
+     * @var string $sign 签名
+     */
+    protected $sign = '';
+
+    /**
+     * @var array 待返回给客户端的数据
+     */
+    protected $data = '';
+
+    /**
+     * @var string $error 错误返回信息
+     */
+    protected $error = '';
+
+    /**
+     * 需要跳转的目标地址。
+     */
+    protected $jmpurl = '';
+
+    /**
+     * @var array $headers 响应报文头部
+     */
+    protected $headers = array();
+
+    /** ------------------ setter ------------------ * */
+
+    /**
+     * 设置返回签名
+     * @param string $sign 对数据包data部分进行签名
+     * @return BaseResponse
+     */
+    public function setSign($sign) {
+        $this->sign = $sign;
+        return $this;
+    }
+
+    /**
+     * 设置返回状态码
+     * @param int $ret 返回状态码，其中：200成功，400非法请求，500服务器错误
+     * @return BaseResponse
+     */
+    public function setRet($ret) {
+        $this->ret = $ret;
+        return $this;
+    }
+
+    /**
+     * 设置返回数据
+     * @param array/string $data 待返回给客户端的数据，建议使用数组，方便扩展升级
+     * @return BaseResponse
+     */
+    public function setData($data) {
+        if (DI()->config->get('app.apiEnabledEncrypt', false)) {
+            $key = DI()->config->get('app.api3DesKey', '');
+            $data = DI()->api3des->encrypt($data, $key);
+        }
+        $this->data = $data;
+        return $this;
+    }
+
+    /**
+     * 设置错误信息
+     * @param string $error 错误信息
+     * @return BaseResponse
+     */
+    public function setError($error) {
+        $this->error = $error;
+        return $this;
+    }
+
+    /**
+     * 设置跳转的目标地址。
+     * @param type $url
+     * @return $this
+     */
+    public function setJmpUrl($url) {
+        $this->jmpurl = $url;
+        return $this;
+    }
+
+    /**
+     * 添加报文头部
+     * @param string $key 名称
+     * @param string $content 内容
+     */
+    public function addHeaders($key, $content) {
+        $this->headers[$key] = $content;
+    }
+
+    /** ------------------ 结果输出 ------------------ * */
+
+    /**
+     * 结果输出
+     */
+    public function output() {
+        $this->handleHeaders($this->headers);
+        $rs = $this->getResult();
+        echo $this->formatResult($rs);
+    }
+
+    /** ------------------ getter ------------------ * */
+    public function getResult() {
+        $rs = array(
+            'ret' => $this->ret,
+            'sign' => $this->sign,
+            'data' => $this->data,
+            'timestamp' => time(),
+            'error' => $this->error,
+        );
+        if (DI()->config->get('app.apiEnabledSign', false))
+            $rs['sign'] = $this->sign = $this->signature($rs);
+        return $rs;
+    }
+
+    /**
+     * 获取头部
+     * 
+     * @param string $key 头部的名称
+     * @return string/array 对应的内容，不存在时返回NULL，$key为NULL时返回全部
+     */
+    public function getHeaders($key = null) {
+        if ($key === null) {
+            return $this->headers;
+        }
+        return isset($this->headers[$key]) ? $this->headers[$key] : null;
+    }
+
+    /** ------------------ 内部方法 ------------------ * */
+    protected function handleHeaders($headers) {
+        foreach ($headers as $key => $content) {
+            @header($key . ': ' . $content);
+        }
+    }
+
+    /**
+     * 签名。
+     * @param type $data
+     */
+    protected function signature($data) {
+        unset($data['sign']);
+        $signStr = getSignStr($data);
+        $rsaprikey = DI()->config->get('app.apiRsaPrikeyPath', '');
+        if (!empty($rsaprikey) && strlen($signStr) > 0) {
+            return DI()->apirsa->encrypt($signStr, $rsaprikey);
+        }
+        return "";
+    }
+
+    /**
+     * 格式化需要输出返回的结果
+     *
+     * @param array $result 待返回的结果数据
+     *
+     * @see BaseResponse::getResult()
+     */
+    abstract protected function formatResult($result);
+}

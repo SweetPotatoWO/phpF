@@ -1,0 +1,101 @@
+<div class="modal-body">
+    <input  type="hidden" name="hidAction" id="hidAction" value="view" >
+    <form class="form-horizontal" id="form-Menu">       
+        <input type="hidden" name='majobID' id='majobID' value="{$data.majobID}"/>
+        <div class="form-group has-info">
+            <label class="control-label col-sm-2" for="inputInfo">名称：</label>
+            <div class=" col-sm-7">
+                <input type="text" id="jobname" name="jobname" value="{$data.jobname}" class="form-control"  >          
+            </div>
+        </div>
+        <div class="form-group has-info">
+            <label class="control-label col-sm-2" for="inputInfo">是否显示：</label>
+            <div class="col-sm-7">
+                <select name="status" id="menuDisplay">
+                    <option value="1"<eq name="data.status" value="1">selected</eq>>显示</option>
+                    <option value="0" <eq name="data.status" value="0">selected</eq>>不显示</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-group has-info">
+            <label class="control-label col-sm-2" for="inputInfo">父菜单：</label>
+            <div class="col-sm-7">
+                <select name="parentID"  id="parentID">
+                    <option value="1">&nbsp;&nbsp;--请选择--</option>
+                    <volist name="majoyType" id="vo">
+                        <option value="{$vo.majobID}" <eq name="vo.majobID" value="$data['parentID']">selected</eq>>{$vo.jobname}</option>
+                        <volist name="vo.children" id="item">
+                            <option value="{$item.majobID}" <eq name="item.majobID" value="$data['parentID']">selected</eq> >&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├&nbsp;&nbsp;{$item.jobname}</option>
+                            <volist name="item.children" id="tid">
+                                <option name="{$tid.majobID}" >&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├&nbsp;&nbsp;{$tid.jobname}</option>
+                            </volist>
+                        </volist>
+                    </volist>
+                </select>&nbsp;<span class='text-warning'>不填则默认为一级菜单</span>
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="control-label col-sm-2" for="inputInfo">描述：</label>
+            <div class="col-sm-7">
+                <textarea name="remark" id="remark" rows="4" cols="60">{$data.remark} </textarea>
+            </div>
+        </div>
+    </form>
+</div>
+<div class="modal-footer">
+    <button type="button" id="butCancel" class="btn btn-default" data-dismiss="modal">关闭</button>
+    <button type="button" id="butSavemenu" class="btn btn-primary" >保存</button>
+</div>  
+<script type="text/javascript" >
+    $(function($) {
+        menuvalid();
+        $("#butSavemenu").click(function() {
+            var isOK = $("#form-Menu").valid();
+            if (isOK) {
+                saveMenu()
+            }
+        });
+    });
+    function saveMenu() {
+        var data = $Util.getData($("#form-Menu"));
+        $.ajax({
+            type: "post",
+            url: "/Backend/System/saveMajoy/",
+            data: {"par": data},
+            dataType: "json",
+            beforeSend: function(XMLHttpRequest) {
+                $(".sub-content").showLoading();
+            },
+            success: function(data, textStatus) {
+                $(".sub-content").hideLoading();
+                if (data.status == 1) {
+                    $("#menuID").val(data.data);
+                    $("#hidAction").val("edit");
+                    $win.confirm(data.msg + ",是否关闭窗口？").on(function() {
+                        $('#butCancel').trigger("click");
+                    });
+                } else {
+                    $win.warn(data.msg);
+                }
+            },
+            complete: function(XMLHttpRequest, textStatus) {
+                $(".sub-content").hideLoading();
+            },
+            error: function() {
+                $(".sub-content").hideLoading();
+            }
+        });
+    }
+    function menuvalid() {
+        $("#form-Menu").validate({
+            rules: {
+                jobname: {required: true},
+                parentID: {required: true}
+            },
+            messages: {
+                jobname: {required: "菜单名称不能为空"},
+                parentID: {required: "父菜单不能为空"}
+            }
+        });
+    }
+</script>

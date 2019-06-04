@@ -1,0 +1,213 @@
+<?php
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+/**
+ * Description of ReportController
+ *
+ * @author DREAM
+ */
+
+namespace Backend\Controller;
+
+use Service\Statistic\Logic;
+
+/**
+ * Description of IndexController
+ *
+ * @author Administrator
+ */
+class ReportController extends BaseEndController {
+
+    /**
+     * 站点用户数统计
+     */
+    public function getUser() {
+        $logic = new Logic\ReportLogic();
+        $result = $logic->getUserCount();
+        $this->assign('dataSum', $result);
+        $this->display("userCount");
+    }
+
+    /**
+     * 月度数据统计
+     */
+    public function getMonthDatas() {
+        $par = I("post.");
+        if (is_null($par["txtDateStart"]) || empty($par["txtDateStart"])) {
+            $par["txtDateStart"] = strtotime(date('Y-m-d', mktime(0, 0, 0, date("m") - 5, 1, date("Y"))));
+        } else {
+            $par["txtDateStart"] = strtotime($par["txtDateStart"]);
+        }
+        if (is_null($par["txtDateEnd"]) || empty($par["txtDateEnd"])) {
+            $par["txtDateEnd"] = strtotime(date('Y-m-d', mktime(0, 0, 0, date("m") + 1, 1, date("Y"))));
+        } else {
+            $par["txtDateEnd"] = strtotime($par["txtDateEnd"]);
+        }
+        $start = $par["txtDateStart"];
+        $end = $par["txtDateEnd"];
+        $logic = new Logic\ReportLogic();
+        $result = $logic->getMonthDataList($start, $end);
+
+        $this->assign("list", $result);
+        array_pop($result);
+        $this->charsMonth($result);
+
+        $this->assign("startDate", date("Y-m-d", $start));
+        $this->assign("endDate", date("Y-m-d", $end));
+        $this->display("monthCount");
+    }
+
+    /**
+     * 周数据统计
+     */
+    public function getWeekDatas() {
+        $par = I("post.");
+        if (is_null($par["txtDateStart"]) || empty($par["txtDateStart"])) {
+            $par["txtDateStart"] = strtotime(date('Y-m-d', mktime(0, 0, 0, date("m"), date("d") - 7, date("Y"))));
+        } else {
+            $par["txtDateStart"] = strtotime($par["txtDateStart"]);
+        }
+        if (is_null($par["txtDateEnd"]) || empty($par["txtDateEnd"])) {
+            $par["txtDateEnd"] = strtotime(date('Y-m-d', mktime(0, 0, 0, date("m"), date("d"), date("Y"))));
+        } else {
+            $par["txtDateEnd"] = strtotime($par["txtDateEnd"]);
+        }
+        $start = $par["txtDateStart"];
+        $end = $par["txtDateEnd"];
+        $logic = new Logic\ReportLogic();
+        $result = $logic->getWeekDataList($start, $end);
+
+        $this->assign("list", $result);
+        array_pop($result);
+        $this->charsMonth($result);
+
+        $this->assign("startDate", date("Y-m-d", $start));
+        $this->assign("endDate", date("Y-m-d", $end));
+        $this->display("weekCount");
+    }
+
+    /**
+     * 注册登录统计 
+     */
+    public function getRstCollect() {
+        $par = I("post.");
+        if (!is_null($par["txtDateStart"]) && !empty($par["txtDateStart"])) {
+            $par["txtDateStart"] = strtotime($par["txtDateStart"]);
+        } else {
+            $par["txtDateStart"] = strtotime(date("Y-m-d") . "-1 month");
+        }
+        if (!is_null($par["txtDateEnd"]) && !empty($par["txtDateEnd"])) {
+            $par["txtDateEnd"] = strtotime($par["txtDateEnd"]);
+        } else {
+            $par["txtDateEnd"] = strtotime(date("Y-m-d") . "+1day");
+        }
+        $logic = new Logic\ReportLogic();
+        $result = $logic->getRstCollect($par["txtDateStart"], $par["txtDateEnd"]);
+        $this->assign("list", $result);
+        array_pop($result);
+        $this->charsRst($result);
+        $startTime = date("Y-m-d", $par["txtDateStart"]);
+        $endTime = date("Y-m-d", $par["txtDateEnd"]);
+        $this->assign("startDate", $startTime);
+        $this->assign("endDate", $endTime);
+        $this->display("RstCount");
+    }
+
+    /**
+     * 注册统计
+     * @param type $result
+     */
+    private function charsRst($result) {
+        $newResult = array_reverse($result);
+        $horizontal = $this->getArrayStr($newResult, 'date', true);
+        $datalist .= $this->groupStr($newResult, "登录人数", "loginCount", "line");
+        $datalist .= $this->groupStr($newResult, "完善资料人数", "realnameCount", "line");
+        $datalist .= $this->groupStr($newResult, "注册人数", "registerCount", "line");
+        $this->assign("horizontal", $horizontal);
+        $this->assign("datalist", $datalist);
+    }
+
+    /**
+     * 月数据统计图
+     * @param type $result
+     */
+    private function charsMonth($result) {
+        $newResult = array_reverse($result);
+        $horizontal = $this->getArrayStr($newResult, 'date', true);
+        $datalist .=$this->groupStr($newResult, "登录人数", "loginCount", "line");
+        $datalist .=$this->groupStr($newResult, "完善资料人数", "realnameCount", "line");
+        $datalist .=$this->groupStr($newResult, "注册人数", "registerCount", "line");
+
+        $this->assign("horizontal", $horizontal);
+        $this->assign("datalist", $datalist);
+    }
+
+    /**
+     * 组合数据
+     * @param type $newResult
+     * @param type $name
+     * @param type $type
+     * @param type $index
+     * @return string
+     */
+    private function groupStr($newResult, $name, $field, $type = "line", $index = "0") {
+        $datalist .="{";
+        $datalist .="name: '" . $name . "',";
+        $datalist .="type: '" . $type . "',";
+        $datalist .="yAxisIndex: '" . $index . "',";
+        $datalist .="stack : '" . $name . "',";
+        $datalist .="data: [" . $this->getArrayStr($newResult, $field) . "]";
+        $datalist .="},";
+        return $datalist;
+    }
+
+    /**
+     * 将结果集中某列转化为以逗号分隔的字符串
+     * @param type $array
+     * @param type $column_key
+     * @return string
+     */
+    public function getArrayStr($array, $column_key, $isString = false) {
+        $newArry = $this->array_column($array, $column_key);
+        if ($isString) {
+            $arryStr = implode("','", $newArry);
+            $arryStr = "'" . $arryStr . "'";
+            return $arryStr;
+        } else {
+            $arryStr = implode(",", $newArry);
+            return $arryStr;
+        }
+    }
+
+    private function array_column($input, $columnKey, $indexKey = null) {
+        $columnKeyIsNumber = (is_numeric($columnKey)) ? true : false;
+        $indexKeyIsNull = (is_null($indexKey)) ? true : false;
+        $indexKeyIsNumber = (is_numeric($indexKey)) ? true : false;
+        $result = array();
+        foreach ((array) $input as $key => $row) {
+            if ($columnKeyIsNumber) {
+                $tmp = array_slice($row, $columnKey, 1);
+                $tmp = (is_array($tmp) && !empty($tmp)) ? current($tmp) : null;
+            } else {
+                $tmp = isset($row[$columnKey]) ? $row[$columnKey] : null;
+            }
+            if (!$indexKeyIsNull) {
+                if ($indexKeyIsNumber) {
+                    $key = array_slice($row, $indexKey, 1);
+                    $key = (is_array($key) && !empty($key)) ? current($key) : null;
+                    $key = is_null($key) ? 0 : $key;
+                } else {
+                    $key = isset($row[$indexKey]) ? $row[$indexKey] : 0;
+                }
+            }
+            $result[$key] = $tmp;
+        }
+        return $result;
+    }
+
+}

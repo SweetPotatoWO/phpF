@@ -1,0 +1,295 @@
+<?php
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+namespace MobileApi\Api;
+
+use MobileApi\Common\MobileApiBase;
+use Common\Common;
+use Service\JavaService\Logic\SiteLogic;
+use Service\News\Logic\NewsLogic;
+use Service\Spread\Logic\AppInfoLogic;
+use Service\System\Logic\SysMajobLogic;
+use Service\System\Logic\SysRegionLogic;
+use Service\System\Model\SysRegionModel;
+use Service\User\Logic\UserFriendLogic;
+use Service\User\Logic\UserLogic;
+use Service\Spread\Logic\AppVersionsLogic;
+use Service\Spread\Logic\HomeBannerLogic;
+use Service\User\Logic\UserInviteLogic;
+use Common\Common\Redis;
+use Service\User\Logic\userMaillistLogic;
+
+/**
+ * Description of ApiCommon
+ *
+ * @author Administrator
+ */
+class ApiCommon extends MobileApiBase {
+
+    private $return = array('code' => 1, 'msg' => '', 'info' => array());
+    public function getRules() {
+        return array(
+            'timestamp' => array(),
+            'versionInfo' => array(),
+            'url' => array(),
+            "getCityData" => array(
+                "parentID" => array("name" => "parentID", "type" => "int", "require" => true, "desc" => "父类ID", "default" => 1)
+            ),
+            "getMajorData"=>array(
+                "parentID" => array("name" => "parentID", "type" => "int", "require" => true, "desc" => "父类ID", "default" => 1)
+            ),
+            "saveAppInfo"=>array(
+                "equipmentID"=>array("name" => "equipmentID", "type" => "string", "require" => true, "desc" => "设备ID", "default" => 1),
+                "versions"=>array("name" => "versions", "type" => "string", "require" => true, "desc" => "版本号", "default" => 1),
+                "phoneInfo"=>array("name" => "phoneInfo", "type" => "string", "require" => true, "desc" => "手机型号信息", "default" => 1),
+                "channel"=>array("name" => "channel", "type" => "string", "require" => true, "desc" => "渠道", "default" => 1),
+                "channelKey"=>array("name" => "channel", "type" => "string", "require" => true, "desc" => "渠道来源KEY", "default" => 1),
+            ),
+        );
+    }
+
+    /**
+     * 获取服务器时间。
+     * @desc 用于APP与服务器对时。
+     * @return   int       code                          操作码，0表示成功， 1表示失败
+     * @return   object    info 
+     * @return   int       info.timestamp                服务器当前时间 
+     * @return   string    msg                           提示信息
+     */
+    public function timestamp() {
+        $data = array('code' => 0, 'msg' => '操作成功', 'info' => array());
+        $data['info']['timestamp'] = time();
+        return $data;
+    }
+
+    /**
+     * 获取APP版本信息。
+     * @desc 用于获取最新APP版本的相关信息，用于APP更新
+     * @return   int       code                          操作码，0表示成功， 1表示失败
+     * @return   object    info 
+     * @return   string    info.versionName    版本名称（IOS版本号/安卓版本名称） 
+     * @return   string    info.updateDesc     更新说明 
+     * @return   string    info.appSize        APP包大小（单位MB） 
+     * @return   string    info.isForced       是否强制更新（0：不强制 1：强制） 
+     * @return   string    info.versionCode    版本号 
+     * @return   string    info.updateUrl      更新地址（用于安卓，IOS不返回该字段） 
+     * @return   array     info.codes          MD5集合（用于安卓，IOS不返回该字段） 
+     * @return   string    msg                 提示信息
+     */
+    public function versionInfo() {
+        $data = array('code' => 1, 'msg' => '当前版本为最新版本', 'info' => array());
+
+        if ($this->terminal == 2 || $this->terminal == 3) {
+            $logic = new AppVersionsLogic();
+            $verInfo = $logic->getInfo($this->terminal);
+            if (!empty($verInfo)) {
+                $data['code'] = 0;
+                $data['msg'] = '获取成功！';
+                $data['info']['versionName'] = $verInfo['versionName'];
+                $data['info']['versionCode'] = $verInfo['versionCode'];
+                $data['info']['updateDesc'] = $verInfo['updateDesc'];
+                $data['info']['isForced'] = $verInfo['isForced'];
+                $data['info']['appSize'] = $verInfo['appSize'];
+                if ($this->terminal == 2) {
+                    $data['info']['updateUrl'] = $verInfo['updateUrl'];
+                    $codes = $logic->getCheckCodes();
+                    $data['info']['codes'] = array_column($codes, 'checkCode');
+                }
+            }
+        }
+        return $data;
+    }
+
+    
+
+    
+
+    
+
+    
+
+    
+
+ 
+    /**
+     * 公共URL地址信息。
+     * @desc 用于获取公共URL地址信息
+     * @return  int code                       操作码，0表示成功， 1获取数据失败
+     * @return  object info                    URL地址信息
+     * @return  stirng info.type               URL地址类型
+     * @return  stirng info.desc               URL地址描述
+     * @return  string info.url                URL地址
+     * @return string msg                      提示信息
+     */
+    public function url() {
+        $data = array('code' => 0, 'msg' => '', 'info' => array());
+        $data['info'] = array(
+            array('type' => 'agreement', 'desc' => '用户注册协议', 'url' =>SITE.'wechat/user/registerText'),
+            array('type' => 'invite', 'desc' => '邀请好友', 'url' => SITE.'wechat/user/inviteFriend'),
+            array('type' => 'secret', 'desc' => '隐私协议', 'url' => SITE.'wechat/user/secretText'),
+            array('type' => 'cardAssistant', 'desc' => '名片助手', 'url' => SITE.'wechat/user/cardAssistant'),
+            array('type' => 'explain', 'desc' => '举报说明', 'url' => SITE.'wechat/user/explain'),
+        );
+        return $data;
+    }
+
+
+    /**
+     * 热门搜索
+     * @desc 热门搜索
+     * @return  string  key     键值
+     * @return  string  value    热门内容
+     * @return  int type    1是人 2是公司 3是法人
+     */
+
+    public function hotSearchValue() {
+        $data = array('code' => 0, 'msg' => '', 'info' => array());
+        $data['code'] = 0;
+        $data['msg'] = "";
+        $service = new SiteLogic();
+        $info = $service->hotSearchWorld();
+        if(empty($info['list'])) {
+            $data['info'] = array(
+                array("key"=>"code","value"=>"产品经理",'type'=>1),
+                array("key"=>"code","value"=>"华为",'type'=>2),
+                array("key"=>"code","value"=>"百度",'type'=>2),
+                array("key"=>"code","value"=>"腾讯",'type'=>2),
+                array("key"=>"code","value"=>"人工智能",'type'=>2),
+                array("key"=>"code","value"=>"夏铁军",'type'=>1),
+                array("key"=>"code","value"=>"销售",'type'=>1),
+                array("key"=>"code","value"=>"产品",'type'=>1),
+                array("key"=>"code","value"=>"生物基因",'type'=>2),
+            );
+            return $data;
+        } else {
+            $data['info'] = $info['list'];
+            return $data;
+        }
+    }
+
+
+    /**
+     * 地区信息
+     * @desc 获取地区信息
+     * @return  string   name        地区名称
+     * @return  int      regionID    地区ID
+     * @return  int      parentID    地区父类ID
+     */
+    public function getCityData() {
+        $data = array('code' => 0, 'msg' => '', 'info' => array());
+        $parentID = $this->parentID;
+        $SysRegionLogic = new SysRegionLogic();
+        $regionList = $SysRegionLogic->getDicRegList($parentID);
+        if (!empty($regionList)) {
+            $data["info"] = $regionList;
+        } else {
+            $data["code"] = 1;
+            $data["msg"] = "没有此信息！";
+        }
+        return $data;
+    }
+
+    /**
+     * 获取到行业的信息
+     * @desc 获取到行业信息
+     * @return int code 操作码，0表示成功， 1表示失败
+     * @return int majobID 每个节点对应的ID
+     * @return int parentID 每个节点对应的父类ID
+     * @return string jobname 每个节点对应的内容
+     * @return string level 每个节点对应的级别
+     * @return string msg 提示信息
+     */
+    public function getMajorData() {
+        $data = array('code' => 0, 'msg' => '', 'info' => array());
+        $parentID = $this->parentID;
+        $SysRegionLogic = new SysMajobLogic();
+        $regionList = $SysRegionLogic->getDicRegList($parentID);
+        if (!empty($regionList)) {
+            $data["info"] = $regionList;
+        } else {
+            $data["code"] = 1;
+            $data["msg"] = "没有此信息！";
+        }
+        return $data;
+    }
+
+
+    /**
+     * 好友申请数量和系统消息提示数目统一获取接口
+     * @desc 气泡统计 0表示不用统计 其中包括 系统消息 好友申请数目 通讯录好友 好友数量 谁看过我 名片数量
+     * @return int code 操作码，0表示成功， 1表示失败
+     * @return int  info.new.num  数量
+     * @return string  info.new.desc  解释
+     * @return string  info.new.content 内容 最新显示的内容
+     * @return string msg 提示信息
+     */
+    public function bubbleData() {
+        $this->userCheck();
+        $newlogic = new NewsLogic();
+        $newsnum = $newlogic->getCountNoRead($this->userID);
+        $info['news'] = array(
+            'num'=>($newsnum['count'])?$newsnum['count']:0,
+            'desc'=>"系统消息",
+            "content"=>($newsnum['content'])?$newsnum['content']:"暂无系统消息",
+        );
+        $applylogic = new UserFriendLogic();
+        $applynum = $applylogic->applyCount($this->userID);
+        $info['apply'] = array(
+            'num'=> $applynum,
+            'desc'=>"好友申请数目",
+            "content"=>"",
+        );
+        $mailnum = $applylogic->getMailCount($this->userID);
+        $info['mailFriendNum'] = array(
+            'num'=>$mailnum,
+            'desc'=>"通讯录好友的数量",
+            "content"=>"",
+        );
+        $friendnum = $applylogic->getFriendCount($this->userID);
+        $info['friendNum'] = array(
+            'num'=>$friendnum,
+            'desc'=>"好友的数量",
+            "content"=>"",
+        );
+        $borowseNum = $applylogic->getBorowse($this->userID);
+        $info['browseNum'] = array(
+            'num'=>$borowseNum,
+            'desc'=>'谁看过我',
+            'content'=>'',
+        );
+        $cardNum = $applylogic->getCardNum($this->userID);
+        $info['cardNum'] = array(
+            'num'=>$cardNum,
+            'desc'=>'名片数量',
+            'content'=>'',
+        );
+        $logic = new userMaillistLogic();
+        $shieldNum = $logic->getShieldNum($this->userID);
+        $info['shieldNum']=array(
+            'num'=>$shieldNum,
+            'desc'=>'屏蔽人数',
+            'content'=>"",
+        );
+
+
+        $this->return['code'] = 0;
+        $this->return['info'] = $info;
+        return $this->return;
+    }
+
+
+
+
+
+    
+
+    
+
+    
+
+}

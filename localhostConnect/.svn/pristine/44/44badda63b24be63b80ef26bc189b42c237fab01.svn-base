@@ -1,0 +1,93 @@
+<?php
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+namespace Service\User\Model;
+
+use Think\Model;
+use Common\Model\SlaveModel;
+
+/**
+ * 用户登录次数合计
+ *
+ * @author DREAM
+ */
+class UserLoginCountModel extends SlaveModel {
+
+    /**
+     * 用户登录日志
+     * @param type $where
+     * @param type $whereArr
+     * @param type $limit
+     * @return type
+     */
+    public function getUserLog($where, $whereArr, $limit) {
+        $sqlcount = "SELECT COUNT(1) AS count FROM d_user_login_count AS A 
+                      INNER JOIN d_user AS B ON  A.userID=B.userID
+                     WHERE (1=1)" . $where . " ";
+        $total = $this->SlaveDB()->query($sqlcount, $whereArr);
+        $result["total"] = $total[0]["count"];
+        $sql = "SELECT A.userID,B.phone,B.nickname,A.loginTimes,A.mobileTimes,A.weChatTimes,A.pcTimes,
+                 A.lastLoginIP,A.lastLoginDatetime FROM d_user_login_count AS A 
+                 INNER JOIN d_user AS B ON  A.userID=B.userID
+                WHERE (1=1)" . $where . " ORDER BY lastLoginDatetime DESC LIMIT %s;";
+        array_push($whereArr, $limit);
+        $result["rows"] = $this->SlaveDB()->query($sql, $whereArr);
+        return $result;
+    }
+
+    /**
+     * 获取最近的15条数据
+     * @param type $where
+     * @param type $whereArr
+     * @param type $limit
+     * @return type
+     */
+    public function getLogItem($where, $whereArr, $limit) {
+        $sql = "SELECT A.userID,A.phone,A.equipment,A.loginIP,A.loginDatetime,A.terminal FROM d_user_login_log AS A 
+                WHERE (1=1)" . $where . " ORDER BY loginDatetime DESC LIMIT %s;";
+        array_push($whereArr, $limit);
+        $result["rows"] = $this->SlaveDB()->query($sql, $whereArr);
+        return $result;
+    }
+
+    public function getLogCount($where) {
+        $sql = "select count(DISTINCT FROM_UNIXTIME(loginDatetime,'%Y-%m-%d')) as total from d_user_login_log where equipment<>' '" . $where;
+        $result = $this->SlaveDB()->query($sql);
+        return $result[0]["total"];
+    }
+
+    /**
+     * 登录日志
+     * @param type $userID
+     * @param type $phone
+     * @param type $terminal 终端
+     * @param type $equipment 终端信息
+     * @param type $operateIP IP
+     * @return type
+     */
+    public function AddLoginLog($userID, $phone, $terminal, $equipment, $operateIP) {
+        $model = new Model();
+        $result = $model->query("CALL sp_Login_log('%d','%s','%d','%s','%s')", $userID, $phone, $terminal, $equipment, $operateIP);
+        return $result;
+    }
+
+
+    /**
+     * 获取到登录日志
+     * @param $phone
+     * @return mixed
+     */
+    public function getLog($where) {
+        if(empty($where)) {
+            return false;
+        }
+        $info = M('UserLoginLog')->where($where)->field("logID,userID,phone")->select();
+        return $info ;
+    }
+
+}

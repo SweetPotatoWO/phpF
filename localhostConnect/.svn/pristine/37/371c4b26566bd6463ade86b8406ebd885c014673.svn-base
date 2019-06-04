@@ -1,0 +1,458 @@
+<?php
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+namespace Backend\Controller;
+
+use Service\Integral\Logic;
+use Service\Common\CollectiveLogic;
+
+/**
+ * Description of IntegralController
+ *
+ * @author DREAM
+ */
+class IntegralController extends BaseEndController {
+
+    /**
+     * 启币类型列表
+     */
+    public function getType() {
+        $par = I("post.");
+        $where.="";
+        $whereArr = array();
+        if (!is_null($par["typeName"]) && !empty($par["typeName"])) {
+            $where.="AND typeName ='%s'";
+            array_push($whereArr, $par["typeName"]);
+        }
+        if (!is_null($par["statusMark"]) && !empty($par["statusMark"])) {
+            $where.="AND statusMark = %d";
+            array_push($whereArr, $par["statusMark"] - 1);
+        }
+        $limit = $this->getPage();
+        $logic = new Logic\IntegralLogic();
+        $result = $logic->getType($where, $whereArr, $limit);
+        $this->assign("result", $result["rows"]);
+        $this->assign("pageHtml", $this->showPage($result["total"]));
+        $this->display("integralType");
+    }
+
+    /**
+     * 查询单个启币类型 
+     */
+    public function editType() {
+        $key = I("get.key");
+        if ($key * 1 > 0) {
+            if ($key * 1 > 0) {
+                $logic = new Logic\IntegralLogic();
+                $result = $logic->getSinType($key);
+                $this->assign('data', $result);
+            }
+        }
+        $this->display("editType");
+    }
+
+    /**
+     * 保存启币类型 
+     */
+    public function saveType() {
+        $par = I("post.par");
+        if (count($par)) {
+            $logic = new Logic\IntegralLogic();
+            $result = $logic->saveType($par);
+            if ($result * 1 > 0) {
+                return $this->jsonReturn(1, "保存成功!", $result);
+            }
+        }
+        return $this->jsonReturn(0, '保存失败!');
+    }
+
+    /**
+     * 删除启币类型 
+     */
+    public function delType() {
+        $key = I("post.key");
+        if ($key * 1 > 0) {
+            $logic = new Logic\IntegralLogic();
+            $result = $logic->delType($key);
+            if ($result * 1 > 0) {
+                $this->jsonReturn(1, "删除成功", $result);
+            }
+        }
+        $this->jsonReturn(0, "删除失败");
+    }
+
+    /**
+     * 用户余额明细
+     */
+    public function getBalanceDetail() {
+        $par = I("post.");
+        $where = "";
+        $whereArr = array();
+        if (!is_null($par["txtrealName"]) && !empty($par["txtrealName"])) {
+            $where .= " AND B.nickname like '%s'";
+            array_push($whereArr, '%' . $par["txtrealName"] . '%');
+        }
+        if (!is_null($par["txtphone"]) && !empty($par["txtphone"])) {
+            $where.= " AND B.phone = '%s'";
+            array_push($whereArr, $par["txtphone"]);
+        }
+        //获取券的时间
+        if (!is_null($par["txtDateStart"]) && !empty($par["txtDateStart"])) {
+            $where.=" AND A.addDatetime>='%d'";
+            array_push($whereArr, strtotime($par["txtDateStart"]));
+        }
+        if (!is_null($par["txtDateEnd"]) && !empty($par["txtDateEnd"])) {
+            $where.=" AND A.addDatetime < '%d'";
+            array_push($whereArr, strtotime("+1day", strtotime($par["txtDateEnd"])));
+        }
+        $limit = $this->getPage();
+        $logic = new Logic\IntegralLogic();
+        $result = $logic->getBalanceItem($where, $whereArr, $limit);
+        $this->assign("result", $result["rows"]);
+        $this->assign("pageHtml", $this->showPage($result["total"]));
+        $this->display("balanceItem");
+    }
+
+    /**
+     * 导出余额流水
+     */
+    public function exportBalanceDetail() {
+        $par = I("post.data");
+        $where = "";
+        $whereArr = array();
+        if (!is_null($par["txtrealName"]) && !empty($par["txtrealName"])) {
+            $where .= " AND B.nickname like '%s'";
+            array_push($whereArr, '%' . $par["txtrealName"] . '%');
+        }
+        if (!is_null($par["txtphone"]) && !empty($par["txtphone"])) {
+            $where.= " AND B.phone = '%s'";
+            array_push($whereArr, $par["txtphone"]);
+        }
+        //获取券的时间
+        if (!is_null($par["txtDateStart"]) && !empty($par["txtDateStart"])) {
+            $where.=" AND A.addDatetime>='%d'";
+            array_push($whereArr, strtotime($par["txtDateStart"]));
+        }
+        if (!is_null($par["txtDateEnd"]) && !empty($par["txtDateEnd"])) {
+            $where.=" AND A.addDatetime < '%d'";
+            array_push($whereArr, strtotime("+1day", strtotime($par["txtDateEnd"])));
+        }
+        $limit = "0,50000";
+        if (empty($where)) { //默认导出前100条
+            $limit = "0,100";
+        }
+        $logic = new Logic\IntegralLogic();
+        $result = $logic->getBalanceItem($where, $whereArr, $limit);
+        if (!empty($result["rows"])) {
+            $expLogic = new CollectiveLogic();
+            $title = array("姓名", "手机号", "类型", "原有余额", "现有余额", '变化余额', '变更时间');
+            $fileName = "cache/IntegAccount_" . date("Ymdhis") . ".csv";
+            $data = array();
+            foreach ($result["rows"] as $k => $v) {
+                $data[$k]["userName"] = iconv("UTF-8", "GBK", $v["nickname"]);
+                $data[$k]["phone"] = iconv("UTF-8", "GBK", ($v["phone"]));
+                $type = '';
+                switch ($v['type']) {
+                    case '1':
+                        $type = '私信额度';
+                        break;
+                    case '2':
+                        $type = '申请额度';
+                        break;
+                }
+                $data[$k]["type"] = iconv("UTF-8", "GBK", $type);
+                $data[$k]["originalBalance"] = iconv("UTF-8", "GBK", $v['originalBalance']);
+                $data[$k]["changeBalance"] = iconv("UTF-8", "GBK", $v["changeBalance"]);
+                $str = $v['symbol'] > 0 ? '+' : '-';
+                $data[$k]["changeValue"] = iconv("UTF-8", "GBK", $str . $v['changeValue']);
+                $data[$k]["addDatetime"] = iconv("UTF-8", "GBK", formatlongDate($v['addDatetime']));
+            }
+            $expLogic->export($fileName, $title, $data);
+            $this->jsonReturn(1, "导出成功点击DownLoad下载！", $fileName);
+        } else {
+            $this->jsonReturn(1, "没有可导出的数据");
+        }
+    }
+
+    /**
+     * 启币账户
+     */
+    public function getAccount() {
+        $par = I("post.");
+        $where = "";
+        $whereArr = array();
+        if (!is_null($par["txtuserName"]) && !empty($par["txtuserName"])) {
+            $where.= " AND B.nickname like '%s'";
+            array_push($whereArr, '%' . $par["txtuserName"] . '%');
+        }
+        if (!is_null($par["txtphone"]) && !empty($par["txtphone"])) {
+            $where.= " AND B.phone = '%s'";
+            array_push($whereArr, $par["txtphone"]);
+        }
+        if (!is_null($par["integralTotal"]) && !empty($par["integralTotal"])) {
+            $where.="AND A.totalIntegral>='%d'";
+            array_push($whereArr, $par["integralTotal"]);
+        }
+        if (!is_null($par["availableTotal"]) && !empty($par["availableTotal"])) {
+            $where.="AND A.availableIntegral>='%d'";
+            array_push($whereArr, $par["availableTotal"]);
+        }
+        $limit = $this->getPage();
+        $logic = new Logic\IntegralLogic();
+        $result = $logic->getAccountList($where, $whereArr, $limit);
+        $this->assign("result", $result["rows"]);
+        $this->assign("pageHtml", $this->showPage($result["total"]));
+        $this->display("integralAccount");
+    }
+
+    /**
+     * 导出用户持券信息
+     */
+    public function expIntegAccount() {
+        $par = I("post.data");
+        $where = "";
+        $whereArr = array();
+        if (!is_null($par["txtuserName"]) && !empty($par["txtuserName"])) {
+            $where.= " AND B.nickname like '%s'";
+            array_push($whereArr, '%' . $par["txtuserName"] . '%');
+        }
+        if (!is_null($par["txtphone"]) && !empty($par["txtphone"])) {
+            $where.= " AND B.phone = '%s'";
+            array_push($whereArr, $par["txtphone"]);
+        }
+        if (!is_null($par["integralTotal"]) && !empty($par["integralTotal"])) {
+            $where.="AND A.totalIntegral>='%d'";
+            array_push($whereArr, $par["integralTotal"]);
+        }
+        if (!is_null($par["availableTotal"]) && !empty($par["availableTotal"])) {
+            $where.="AND A.availableIntegral>='%d'";
+            array_push($whereArr, $par["availableTotal"]);
+        }
+        $limit = "0,50000";
+        if (empty($where)) { //默认导出前100条
+            $limit = "0,100";
+        }
+        $logic = new Logic\IntegralLogic();
+        $result = $logic->getAccountList($where, $whereArr, $limit);
+        if (!empty($result["rows"])) {
+            $expLogic = new CollectiveLogic();
+            $title = array("用户名", "电话号码", "总启币", "可用启币", "冻结启币", '已使用启币', '私信余额', '朋友余额');
+            $fileName = "cache/IntegAccount_" . date("Ymdhis") . ".csv";
+            $data = array();
+            foreach ($result["rows"] as $k => $v) {
+                $data[$k]["userName"] = iconv("UTF-8", "GBK", $v["nickname"]);
+                $data[$k]["phone"] = iconv("UTF-8", "GBK", ($v["phone"]));
+                $data[$k]["integralTotal"] = iconv("UTF-8", "GBK", subOnlyMoney($v["totalIntegral"]));
+                $data[$k]["integralAvailable"] = iconv("UTF-8", "GBK", subOnlyMoney($v["availableIntegral"]));
+                $data[$k]["frozenIntegral"] = iconv("UTF-8", "GBK", subOnlyMoney($v["frozenIntegral"]));
+                $data[$k]["useIntegral"] = iconv("UTF-8", "GBK", subOnlyMoney($v["useIntegral"]));
+                $data[$k]["letterBalance"] = iconv("UTF-8", "GBK", subOnlyMoney($v["letterBalance"]));
+                $data[$k]["applyBalance"] = iconv("UTF-8", "GBK", subOnlyMoney($v["applyBalance"]));
+            }
+            $expLogic->export($fileName, $title, $data);
+            $this->jsonReturn(1, "导出成功，点击downLoad下载", $fileName);
+        } else {
+            $this->jsonReturn(1, "没有可导出的数据");
+        }
+    }
+
+    /**
+     * 后台增加启币
+     */
+    public function addIntegral() {
+        $key = I("GET.key");
+        $logic = new Logic\IntegralLogic();
+        $result = $logic->getIntegralType($key);
+        if (!empty($key)) {
+            $this->assign("data", $result["integral"][0]);
+        } else {
+            $this->assign("isBatch", 1);
+        }
+        $this->assign("integralType", $result["integralType"]);
+        $this->display("addIntegral");
+    }
+
+    /**
+     * 异步上传
+     */
+    public function saveFile() {
+        $fileName = $_FILES["file"]["name"];
+        $filePsn = $_FILES["file"]["tmp_name"];
+        $logic = new CollectiveLogic();
+        $fileFmt = $logic->checkFile($fileName);
+        if (!empty($fileFmt)) {
+            $result = $logic->importExcel($filePsn, $fileFmt);
+            $this->jsonReturn(1, $fileName, $result);
+        }
+        $this->jsonReturn(0, "上传失败请检查文件格式是否正确！");
+    }
+
+    /**
+     * 保存后台
+     * 增加的启币
+     */
+    public function saveIntegral() {
+        $logic = new Logic\IntegralLogic();
+        $par = I("post.par");
+        $integralTypeInfo = $logic->getTypeValue($par["type"]);
+        $result = $logic->saveIntegral($par, $integralTypeInfo);
+        if ($result["status"] * 1 > 0) {
+            $this->jsonReturn(1, "增加启币成功！");
+        } else {
+            $this->jsonReturn(0, $result["msg"]);
+        }
+        $this->jsonReturn(0, "操作失败！");
+    }
+
+    /**
+     * 启币明细
+     */
+    public function getItem() {
+        $par = I("post.");
+        $where.="";
+        $whereArr = array();
+        if (!is_null($par["txtrealName"]) && !empty($par["txtrealName"])) {
+            $where .= " AND B.nickname like '%s'";
+            array_push($whereArr, '%' . $par["txtrealName"] . '%');
+        }
+        if (!is_null($par["txtphone"]) && !empty($par["txtphone"])) {
+            $where.= " AND B.phone = '%s'";
+            array_push($whereArr, $par["txtphone"]);
+        }
+        //获取时间
+        if (!is_null($par["txtDateStart"]) && !empty($par["txtDateStart"])) {
+            $startTime = strtotime($par["txtDateStart"]);
+            $where.=" AND A.addDatetime>='%d'";
+            array_push($whereArr, $startTime);
+        } else {
+            $startTime = strtotime(date("Y-m-d", strtotime("-1 month")));
+            $where.=" AND A.addDatetime>='%d'";
+            array_push($whereArr, $startTime);
+        }
+        if (!is_null($par["txtDateEnd"]) && !empty($par["txtDateEnd"])) {
+            $endTime = strtotime($par["txtDateEnd"]);
+            $where.=" AND A.addDatetime < '%d'";
+            array_push($whereArr, strtotime("+1day", strtotime($par["txtDateEnd"])));
+        } else {
+            $endTime = strtotime(date("Y-m-d"));
+            $where.=" AND A.addDatetime < '%d'";
+            array_push($whereArr, strtotime("+1day", strtotime(date("Y-m-d"))));
+        }
+        $limit = $this->getPage();
+        $logic = new Logic\IntegralLogic();
+        $result = $logic->getItem($where, $whereArr, $limit);
+        $this->assign("startTime", $startTime);
+        $this->assign("endTime", $endTime);
+        $this->assign("result", $result["rows"]);
+        $this->assign("pageHtml", $this->showPage($result["total"]));
+        $this->display("integralItem");
+    }
+
+    /**
+     * 导出启币记录
+     */
+    public function expItem() {
+        $par = I("post.data");
+        $where.="";
+        $whereArr = array();
+        if (!is_null($par["txtrealName"]) && !empty($par["txtrealName"])) {
+            $where .= " AND B.nickname like '%s'";
+            array_push($whereArr, '%' . $par["txtrealName"] . '%');
+        }
+        if (!is_null($par["txtphone"]) && !empty($par["txtphone"])) {
+            $where.= " AND B.phone = '%s'";
+            array_push($whereArr, $par["txtphone"]);
+        }
+        //获取时间
+        if (!is_null($par["txtDateStart"]) && !empty($par["txtDateStart"])) {
+            $startTime = strtotime($par["txtDateStart"]);
+            $where.=" AND A.addDatetime>='%d'";
+            array_push($whereArr, $startTime);
+        } else {
+            $startTime = strtotime(date("Y-m-d", strtotime("-1 month")));
+            $where.=" AND A.addDatetime>='%d'";
+            array_push($whereArr, $startTime);
+        }
+        if (!is_null($par["txtDateEnd"]) && !empty($par["txtDateEnd"])) {
+            $endTime = strtotime($par["txtDateEnd"]);
+            $where.=" AND A.addDatetime < '%d'";
+            array_push($whereArr, strtotime("+1day", strtotime($par["txtDateEnd"])));
+        } else {
+            $endTime = strtotime(date("Y-m-d"));
+            $where.=" AND A.addDatetime < '%d'";
+            array_push($whereArr, strtotime("+1day", strtotime(date("Y-m-d"))));
+        }
+        $limit = "0,50000";
+        $logic = new Logic\IntegralLogic();
+        $result = $logic->getItem($where, $whereArr, $limit);
+        if (!empty($result["rows"])) {
+            $expLogic = new CollectiveLogic();
+            $title = array("姓名", "手机号", "启币代码", "原有启币", "变化后启币", "变化值", "备注", "领取时间");
+            $fileName = "cache/Item_" . date("Ymdhis") . ".csv";
+            $data = array();
+            foreach ($result["rows"] as $k => $v) {
+                $data[$k]["nickname"] = iconv("UTF-8", "GBK", $v["nickname"]);
+                $data[$k]["phone"] = iconv("UTF-8", "GBK", $v["phone"]);
+                $data[$k]["typeCode"] = iconv("UTF-8", "GBK", ($v["typeCode"]));
+                $data[$k]["originalIntegral"] = iconv("UTF-8", "GBK", ($v["originalIntegral"]));
+                $data[$k]["changeIntegral"] = iconv("UTF-8", "GBK", ($v["changeIntegral"]));
+                $data[$k]["changeValue"] = iconv("UTF-8", "GBK", ($v["changeValue"]));
+                $data[$k]["remark"] = iconv("UTF-8", "GBK", ($v["remark"]));
+                $data[$k]["addDatetime"] = iconv("UTF-8", "GBK", formatlongDate($v["addDatetime"]));
+            }
+            $expLogic->export($fileName, $title, $data);
+            $this->jsonReturn(1, "", $fileName);
+        } else {
+            $this->jsonReturn(1, "没有可导出的数据");
+        }
+    }
+
+    /**
+     * 启币兑换记录
+     */
+    public function getExc() {
+        $par = I("post.");
+        $where = "";
+        $whereArr = array();
+        $where.=$this->getWhere($par, $whereArr);
+        if (!is_null($par["exchangeValue"]) && !empty($par["exchangeValue"])) {
+            $where.="AND A.exchangeValue>='%d'";
+            array_push($whereArr, $par["exchangeValue"]);
+        }
+        $limit = $this->getPage();
+        $logic = new Logic\IntegralLogic();
+        $result = $logic->getExc($where, $whereArr, $limit);
+        $this->assign("result", $result["rows"]);
+        $this->assign("pageHtml", $this->showPage($result["total"]));
+        $this->display("exchange");
+    }
+
+    /**
+     * 获取查询条件
+     * @param type $par
+     * @param type $whereArr
+     * @return string
+     */
+    private function getWhere($par, &$whereArr) {
+        $where = "";
+        if (!is_null($par["txtuserName"]) && !empty($par["txtuserName"])) {
+            $where.= " AND A.userName = '%s'";
+            array_push($whereArr, $par["txtuserName"]);
+        }
+        if (!is_null($par["txtrealName"]) && !empty($par["txtrealName"])) {
+            $where .= " AND B.realName = '%s'";
+            array_push($whereArr, aes($par["txtrealName"]));
+        }
+        if (!is_null($par["txtphone"]) && !empty($par["txtphone"])) {
+            $where.= " AND B.phone = '%s'";
+            array_push($whereArr, $par["txtphone"]);
+        }
+        return $where;
+    }
+
+}

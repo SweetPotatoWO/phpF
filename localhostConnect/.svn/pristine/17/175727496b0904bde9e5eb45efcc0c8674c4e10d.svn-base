@@ -1,0 +1,50 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: Administrator
+ * Date: 2018/8/14 0014
+ * Time: 9:50
+ */
+
+namespace Service\UserCenter\Model;
+use Common\Model\SlaveModel;
+
+class UserEducationalModel extends SlaveModel {
+
+
+    /**获取到用户的教育
+     * @param $userID
+     */
+    public function getUserEd($userID) {
+        $field = array("ed.userEdExID","ed.diploma","ed.schoolName","s.logo","ed.major","FROM_UNIXTIME(ed.startDatetime,'%Y-%m') as startDatetime",
+            "FROM_UNIXTIME(ed.endDatetime,'%Y-%m') as endDatetime","FROM_UNIXTIME(ed.addDatetime,'%Y-%m-%d') as addDatetime");
+        return $this->alias("ed")->join("left join d_sys_school s on s.schoolID=ed.schoolID ")->where(array("userID"=>$userID))->field($field)->select();
+    }
+
+
+    /**
+     * 获取当前用户的学校信息
+     */
+    public function getUserSchoolEd($userID,$schoolID,$field="") {
+        $model =  $this->where(array('userID'=>$userID,'schoolID'=>$schoolID));
+        if(!empty($field)) {
+            $model = $model->field($field);
+        }
+        return $model->find();
+    }
+
+
+    /**
+     * 根据教育经历的ID获取到信息
+     */
+    public function getEdOneByID($ID,$field="") {
+        $model = $this->where(array("userEdExID"=>$ID));
+        if(!empty($field)) {
+            $model = $model->field($field);
+        }
+        return $model->find();
+    }
+
+
+
+}

@@ -1,0 +1,142 @@
+<div class="modal-body">
+    <script type="text/javascript" charset="utf-8" src="{$Think.BPATH}js/uploader/webuploader.min.js"></script>
+    <script type="text/javascript" charset="utf-8" src="{$Think.BPATH}js/uploader/uploader.js"></script>
+    <input  type="hidden" name="hidAction" id="hidAction" value="view" >
+    <form class="form-horizontal" id="form-Type">       
+        <input type="hidden" name='wid' id='wid' value="{$data.wid}"/>
+<!--        <div class="form-group has-info">
+            <label class="control-label col-sm-2" for="inputInfo">系统热搜词：</label>
+            <div class=" col-sm-7">
+                <select id='sysword' class="form-control">
+                    <option>--请选择--</option>
+                    <volist name='hotList' id='vo'>
+                        <option  value ="{$vo.value}-{$vo.type}">{$vo.value}</option>
+                    </volist>
+                </select>       
+            </div>
+        </div>-->
+        <div class="form-group has-info">
+            <label class="control-label col-sm-2" for="inputInfo">热搜词：</label>
+            <div class=" col-sm-7">
+                <input type="text" id="word" name="word" value="{$data.word}" class="form-control">          
+            </div>
+        </div>
+        <div class="form-group has-info">
+            <label class="control-label col-sm-2" for="inputInfo">词类型：</label>
+            <div class=" col-sm-7">
+                <select  name="searchType" id="searchType" class="form-control">
+                    <option  value ="1" <eq name='data.searchType' value='1'>selected="selected"</eq>>公司</option>
+                    <option  value ="2" <eq name='data.searchType' value='2'>selected="selected"</eq>>法人</option>
+                    <option  value ="3" <eq name='data.searchType' value='3'>selected="selected"</eq>>用户</option>
+                </select>       
+            </div>
+        </div>
+        <div class="form-group has-info">
+            <label class="control-label col-sm-2" for="inputInfo">排序：</label>
+            <div class=" col-sm-7">
+                <input type="text" id="sort" name="sort" value="{$data.sort}" class="form-control" >         
+            </div>
+        </div>
+        <div class="form-group has-info">
+            <label class="control-label col-sm-2" for="inputInfo">是否启用：</label>
+            <div class=" col-sm-7">
+                <select  name="status" id="status" class="form-control">
+                    <option  value ="2" <eq name='data.status' value='2'>selected="selected"</eq>>启用</option>
+                    <option  value ="1" <eq name='data.status' value='1'>selected="selected"</eq>>禁用</option>                        
+                </select>        
+            </div>
+        </div>
+        <div class="form-group has-info">
+            <label class="control-label col-sm-2" for="inputInfo">有效期：</label>
+            <div class="col-sm-7">
+                <div class="col-sm-5" style="padding:0;">
+                    <input type="text" class="form-control" id='startTime' name='startTime'  onclick="WdatePicker({dateFmt: 'yyyy-MM-dd', isShowClear: true, readOnly: true})" <if condition="$data['startTime'] eq ''"><else/> value="{$data.startTime|formatshortDate}" </if> name="startTime" placeholder="开始时间(不选则当天开始)"> 
+                </div>
+                <div class="col-sm-2 text-center" style='font-size: 24px;'>～</div>
+                <div class="col-sm-5" style="padding:0;">
+                    <input type="text" class="form-control" id='endTime' name='endTime' onclick="WdatePicker({dateFmt: 'yyyy-MM-dd', isShowClear: true, readOnly: true})" <if condition="$data['endTime'] eq ''"><else/> value="{$data.endTime|formatshortDate}" </if>  name="endTime" placeholder="结束时间(不选则长期有效)"> 
+                </div>
+            </div>
+        </div>
+</div>
+</form>
+</div>
+<div class="modal-footer">
+    <button type="button" id="butCancel" class="btn btn-default" data-dismiss="modal">关闭</button>
+    <button type="button" id="butSaveType" class="btn btn-primary" >保存</button>
+</div>  
+<script type="text/javascript" >
+    $(function ($) {
+//        $('#sysword').change(function () {
+//            var value = $(this).val();
+//            if (value == '') {
+//                return false;
+//            }
+//            var sval = value.split('-');
+//            $('#word').val(sval[0]);
+//            $('#searchType').val(sval[1]);
+//        });
+        formDataValid();
+        $("#butSaveType").click(function () {
+            var isOK = $("#form-Type").valid();
+            if (isOK) {
+                saveData();
+            }
+        });
+    });
+    function saveData() {
+        var data = $Util.getData($("#form-Type"));
+        $.ajax({
+            type: "post",
+            url: "/Backend/Business/saveWord",
+            data: {'par': data},
+            dataType: "json",
+            beforeSend: function (XMLHttpRequest) {
+                $(".sub-content").showLoading();
+            },
+            success: function (data, textStatus) {
+                $(".sub-content").hideLoading();
+                if (data.status == 1) {
+                    $("#hidAction").val("edit");
+                    $win.confirm(data.msg + ",是否关闭窗口？").on(function () {
+                        $('#butCancel').trigger("click");
+                    });
+                } else {
+                    $win.warn(data.msg);
+                }
+            },
+            complete: function (XMLHttpRequest, textStatus) {
+                $(".sub-content").hideLoading();
+            },
+            error: function () {
+                $(".sub-content").hideLoading();
+            }
+        });
+    }
+    $.validator.addMethod("validtime", function (value, element) {
+        if (value == '') {
+            return true;
+        }
+        var startTime = $('#startTime').val() ? new Date($('#startTime').val()).getTime() / 1000 : Math.round(new Date().getTime() / 1000);
+        var endTime = new Date(value).getTime() / 1000;
+        return  endTime > startTime;
+    }, "验证时间");
+    $.validator.addMethod("Integer", function (value, element) {
+        var regexp = /^(0|\+?[1-9][0-9]*)$/;
+        return   this.optional(element) || (regexp.test(value));
+    }, "正整数");
+    function formDataValid() {
+        $("#form-Type").validate({
+            rules: {
+                word: {required: true, minlength: 2},
+                sort: {required: true, Integer: true},
+                endTime: {required: false, validtime: true}
+            },
+            messages: {
+                word: {required: "热搜词不能为空!", minlength: "最少2个字符"},
+                sort: {required: "排序不能为空!", Integer: '应该为正整数'},
+                endTime: {validtime: '结束时间因大于开始时间'}
+            }
+        });
+    }
+</script>

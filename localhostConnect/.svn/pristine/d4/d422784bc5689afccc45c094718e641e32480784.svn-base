@@ -1,0 +1,54 @@
+<?php
+namespace Service\User\Logic;
+
+use Service\Connect\Logic\ConnectRelationLogic;
+use Service\Connect\Logic\OperationLogic;
+use Service\User\Model\UserModel;
+use Service\UserCenter\Model\companyModel;
+use Service\UserCenter\Model\UserCompanyModel;
+
+class IndexLogic {
+
+
+
+    /**
+     * 搜索人
+     */
+    public function searchPeople($value) {
+        $logic = new UserModel();
+        $info = $logic->search($value);
+        $logic = new UserFriendLogic();
+        $info = $logic->getUserListLabel($info);
+        return $info;
+    }
+
+    /**
+     * 搜索公司
+     */
+    public function searchCompany($value) {
+        $model = new companyModel();
+        return $model->searchCompany($value);
+    }
+
+
+    /**
+     * 更具ID的列表传递
+     */
+    public function getUserIndex($list,$str,$userID) {
+        $logic = new UserFriendLogic();
+        $info = $logic->getUserListLabel($list);
+        $logic = new userModel();
+        $applyUserID = $logic->UserApplyInfo($str,$userID);
+        $applyUserID = array_column($applyUserID,'friendID');
+        foreach ($info as $k=>$v) {
+            $info[$k]['status'] = (in_array($info[$k]['userID'],$applyUserID))?1:0;  //获取到好友状态
+//            if(!in_array($info[$k]['userID'],$applyUserID)) {
+//                $return[] = $info[$k];
+//            }
+        }
+        return $info;
+    }
+
+
+
+}

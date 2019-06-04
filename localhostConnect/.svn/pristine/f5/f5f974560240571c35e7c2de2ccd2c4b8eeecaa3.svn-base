@@ -1,0 +1,138 @@
+<div id="sub_count_list">
+    <input type="hidden" name="hidrefurl" id="hidrefurl" value="{:U(ACTION_NAME,$_GET)}">
+    <h4 class="title">用户充值提现投资合计</h4>
+    <form class="form-inline" id="query_count">       
+        <div class="form-group ">
+            <label class="control-label">基本信息:</label>
+            <input type="text" class="form-control ipt mr-10" value="{$Think.post.txtphone}" name="txtphone" id="txtphone" placeholder="手机号"> 
+            <input type="text" class="form-control ipt mr-10" value="{$Think.post.txtrealName}" name="txtrealName" id="txtrealName" placeholder="姓名">       
+        </div>    
+        <div class="form-group">
+            <label class="control-label">客服:</label>
+            <select name="serviceID" id="serviceID" class="form-control">
+                <option value="">--请选择--</option>
+                <volist name="serinfo" id="vo">
+                    <option value="{$vo.userID}" >{$vo.cusName}</option>
+                </volist>
+            </select>
+            <label class="control-label">充值金额:</label>
+            <select name="rechargeMoney" id="rechargeMoney" class="form-control">
+                <option value="">--请选择--</option>
+                <option value="1" <eq name="Think.post.rechargeMoney" value="1">selected="selected"</eq>>10万以下</option>
+                <option value="2" <eq name="Think.post.rechargeMoney" value="2">selected="selected"</eq>>10-20万</option>
+                <option value="3" <eq name="Think.post.rechargeMoney" value="3">selected="selected"</eq>>20-50万</option>
+                <option value="4" <eq name="Think.post.rechargeMoney" value="4">selected="selected"</eq>>50-100万</option>
+                <option value="5" <eq name="Think.post.rechargeMoney" value="5">selected="selected"</eq>>100万以上</option>
+            </select>
+            <label class="control-label">投资金额:</label>
+            <select name="tenderMoney" id="tenderMoney" class="form-control">
+                <option value="">--请选择--</option>
+                <option value="1" <eq name="Think.post.tenderMoney" value="1">selected="selected"</eq>>10万以下</option>
+                <option value="2" <eq name="Think.post.tenderMoney" value="2">selected="selected"</eq>>10-20万</option>
+                <option value="3" <eq name="Think.post.tenderMoney" value="3">selected="selected"</eq>>20-50万</option>
+                <option value="4" <eq name="Think.post.tenderMoney" value="4">selected="selected"</eq>>50-100万</option>
+                <option value="5" <eq name="Think.post.tenderMoney" value="5">selected="selected"</eq>>100万以上</option>
+            </select>
+            <label class="control-label">提现金额:</label>
+            <select name="cashMoney" id="cashMoney" class="form-control">
+                <option value="">--请选择--</option>
+                <option value="1" <eq name="Think.post.cashMoney" value="1">selected="selected"</eq>>10万以下</option>
+                <option value="2" <eq name="Think.post.cashMoney" value="2">selected="selected"</eq>>10-20万</option>
+                <option value="3" <eq name="Think.post.cashMoney" value="3">selected="selected"</eq>>20-50万</option>
+                <option value="4" <eq name="Think.post.cashMoney" value="4">selected="selected"</eq>>50-100万</option>
+                <option value="5" <eq name="Think.post.cashMoney" value="5">selected="selected"</eq>>100万以上</option>
+            </select>
+        </div>      
+        <div class="form-group">
+            <label class="control-label">VIP等级:</label>
+            <select id="vipLerver" name="vipLerver"  class="form-control mr-10">
+                <option value="">请选择</option>
+                <foreach name="vipList" item="vo" >
+                    <option value="{$vo.level}" <eq name="vo.level" value="$Think.post.vipLerver">selected="selected"</eq>>{$vo.level}</option>
+                </foreach>
+            </select>
+            <label class="control-label">生日:</label>
+            <input type="text" class="form-control mr-5" onclick="WdatePicker({dateFmt: 'MM-dd', isShowClear: true, readOnly: true})" value="{$Think.post.birthdayStart}" id="birthdayStart" name="birthdayStart" placeholder="开始时间">     
+            <label class="control-label">～</label>
+            <input type="text" class="form-control mr-5" onclick="WdatePicker({dateFmt: 'MM-dd', isShowClear: true, readOnly: true})" value="{$Think.post.birthdayEnd}" id="birthdayEnd" name="birthdayEnd" placeholder="结束时间">   
+        </div> 
+        <div class="form-group">
+            <a href="{:U(ACTION_NAME,$_GET)}" onclick="$Util.openQuery(this, event, 'query_count')" class="btn btn-info"><i class="icon-search"></i>查询</a>
+            <input type="button" onclick="getUserCount()" id="missile" class="btn btn-primary" value="导出">
+            <a href="" id="dowonload"></a>
+        </div>
+    </form>
+    <table class="table table-striped table-bordered">
+        <thead>
+            <tr>
+                <th>手机号</th>
+                <th>姓名</th>
+                <th>充值金额</th>
+                <th>充值次数</th>
+                <th>提现金额</th>
+                <th>提现次数</th>
+                <th>投资金额</th>
+                <th>投资次数</th>
+                <th>创建时间</th>
+                <th>修改时间</th>
+            </tr>
+        </thead>
+        <tbody>
+        <volist name="result" id="vo">
+            <td>{$vo.phone}</td>
+            <td>{$vo.realName|aes='DECODE'}</td>
+            <td style="text-align: right">{$vo.rechargeMoney}</td>
+            <td style="text-align: right">{$vo.rechargeCount}</td>
+            <td style="text-align: right">{$vo.cashMoney}</td>
+            <td style="text-align: right">{$vo.cashCount}</td>
+            <td style="text-align: right">{$vo.tenderMoney}</td>
+            <td style="text-align: right">{$vo.tenderCount}</td>
+            <td>{$vo.addDatetime|formatlongDate}</td>
+            <td >{$vo.editDatetime|formatlongDate}</td>
+            </tr>
+        </volist>
+        </tbody>
+    </table>
+    <nav class=" pagination-centered">
+        <ul class="pagination">  
+            {$pageHtml}
+        </ul>
+    </nav>
+    <script>
+        $(function() {
+            $("#serviceID").val("{$Think.post.serviceID}");
+        });
+//        导出
+        function getUserCount() {
+            $win.confirm("确定要导出么？").on(function() {
+                var data = $Util.getData($("#query_count"));
+                $.ajax({
+                    type: "post",
+                    url: "/Backend/Service/exportCount",
+                    data: {"data": data},
+                    dataType: "json",
+                    beforeSend: function(XMLHttpRequest) {
+                        $(".sub-content").showLoading();
+                    },
+                    success: function(data) {
+                        $(".sub-content").hideLoading();
+                        if (data.status == 1) {
+                            $("#dowonload").text("Dowonload");
+                            $("#dowonload").attr("href", "/" + data.data);
+                            $win.message(data.msg);
+                        } else {
+                            $win.warn(data.msg);
+                        }
+                    },
+                    complete: function(XMLHttpRequest, textStatus) {
+                        $(".sub-content").hideLoading();
+                    },
+                    error: function() {
+                        $(".sub-content").hideLoading();
+                    }
+                });
+            });
+        }
+    </script>
+
+</div>

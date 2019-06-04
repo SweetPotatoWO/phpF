@@ -1,0 +1,53 @@
+<div id="sub-view-list" class="clearfix"> 
+    <script type="text/javascript" src="{$Think.BPATH}js/datejs/WdatePicker.js"></script> 
+    <input type="hidden" name="hidrefurl" id="hidrefurl" value="{:U(ACTION_NAME, $_GET)}">
+    <h4 class="title">页面点击量</h4>   
+    <form class="form-inline fl" id="query_view">      
+        <label class="control-label">页面名称：</label>
+        <input type="text" class="form-control mr-10" value="{$Think.post.pagename}" name="pagename" placeholder="请输入">   
+        <label class="control-label">日期: </label>
+        <input type="text" class="form-control" onclick="WdatePicker({isShowClear: true, readOnly: true, maxDate: '%y-%M-%d'})" value="{$Think.post.txtstart}" id="txtstart" name="txtstart" placeholder="请输入">     
+        <label class="control-label">- </label>
+        <input type="text" class="form-control" onclick="WdatePicker({isShowClear: true, readOnly: true, maxDate: '%y-%M-%d'})" value="{$Think.post.txtend}" id="txtend" name="txtend" placeholder="请输入">     
+        <a href="{:U(ACTION_NAME, $_GET)}"  onclick="$Util.openQuery(this, event, 'query_view')"  class="btn btn-info"><i class="icon-search"></i>查询</a>      
+
+          
+
+    </form>
+    <form class="form-inline fl pl-10" id="query_views">      
+        <input type="hidden" name="hiddays" id="hiddays" value="1" >   
+        <a href="{:U(ACTION_NAME, $_GET)}"  onclick="$Util.openQuery(this, event, 'query_views')"  class="btn btn-primary" id="days" ><i class="icon-search"></i>查询当天数据</a>  
+    </form>
+
+
+    <table class="table table-striped table-bordered">
+        <thead>
+            <tr>        
+                <th>页面名称</th>
+                <th>页面</th>
+                <th>页面Url</th>
+                <th>点击日期</th>
+                <th>点击次数</th>
+            </tr>
+        </thead>
+        <tbody>
+        <volist name="result" id="vo">
+            <tr>   
+                <td  style="text-align: left">{$vo.name|sub_str=0,15,'...'}</td>
+                <td>{$vo.newPage}</td>
+                <td  style="text-align: left">{$vo.page}</td>
+                <td>{$vo.date}</td>
+                <td>{$vo.times}</td>                
+            </tr>
+        </volist>
+        </tbody>
+    </table>
+    <nav class=" pagination-centered">
+        <ul class="pagination">  
+            {$page}
+        </ul>
+    </nav>  
+</div> 
+
+
+

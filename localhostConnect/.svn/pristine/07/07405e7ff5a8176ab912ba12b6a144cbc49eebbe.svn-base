@@ -1,0 +1,522 @@
+<?php
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+namespace Service\User\Logic;
+
+use Common\Common\CodeGenerator;
+use Common\Common\Redis;
+use Service\Connect\Logic\ConnectRelationLogic;
+use Service\Integral\Model\UserCardModel;
+use Service\System\Model\SysEvaluationModel;
+use Service\User\Model\FriendApplyModel;
+use Service\User\Model\UserEvaluateModel;
+use Service\User\Model\UserFriendModel;
+use Service\User\Model\UserInviteModel;
+use Service\User\Model\UserVisitorModel;
+use Service\UserCenter\Logic\labelLogic;
+
+/**
+ * Description of UserVisitor
+ *
+ * @author admin
+ */
+class UserFriendLogic {
+
+    private $model = '';
+
+    public function __construct() {
+        $this->model = new \Service\User\Model\UserFriendModel();
+    }
+
+
+    /**获取到用户的身份包括是VIP或者职业认证
+     * @param $list 包含对应信息的用户列表数据
+     */
+    public function getUserListLabel($list) {
+        $logic  = new labelLogic();
+        $labelList = $logic->labelList();
+        foreach ($list as $key=>$value) {
+            $list[$key]['label'] = array(); //  用户的认证
+            $list[$key]['userID'] =(empty($list[$key]['userID']))?"":$list[$key]['userID'] ;
+            $list[$key]['name'] =(empty($list[$key]['name']))?"陌生人":$list[$key]['name'] ;
+            $list[$key]['userName'] =(empty($list[$key]['name']))?"陌生人":$list[$key]['name'] ;
+            $list[$key]['job'] =(empty($list[$key]['job']))?"":$list[$key]['job'] ;
+            $list[$key]['userHeadUrl'] =(empty($list[$key]['userHeadUrl']))?"":UPLOAD.$list[$key]['userHeadUrl'] ;
+            $list[$key]['vip'] =(empty($list[$key]['vip']))?"":$list[$key]['vip'] ;
+            $list[$key]['jobAuth'] =(empty($list[$key]['jobAuth']))?"":$list[$key]['jobAuth'] ;
+            $list[$key]['companyName'] =(empty($list[$key]['companyName']))?"":$list[$key]['companyName'];
+            $list[$key]['addDatetime'] = (empty($list[$key]['addDatetime']))?"":$list[$key]['addDatetime'];
+            $codeGen = new CodeGenerator();
+            $list[$key]['userKey'] = $codeGen->createCode($list[$key]['userID']);
+            foreach ($labelList as $k=>$v) {
+                if($value['vip'] == $v['labelCode']) {
+                    $v['labelLogo'] = UPLOAD.$v['labelLogo'];
+                    $list[$key]['label'][] = $v;
+                }
+                if($value['jobAuth'] == $v['labelCode']) {
+                    $v['labelLogo'] = UPLOAD.$v['labelLogo'];
+                    $list[$key]['label'][] = $v;
+                }
+            }
+        }
+        if(empty($list)) $list = array();
+        return $list;
+    }
+
+
+
+    /**
+     * 处理浏览的数据
+     * @param $list 包含对应信息的用户列表数据
+     */
+    public function handleVisitorData($list) {
+        foreach ($list as $key=>$value) {
+            $list[$key]['label'] = array(); //  用户的认证
+            $list[$key]['userID'] =(empty($list[$key]['userID']))?"":$list[$key]['userID'] ;
+            $list[$key]['name'] =(empty($list[$key]['name']))?"陌生人":$list[$key]['name'] ;
+            $list[$key]['job'] =(empty($list[$key]['job']))?"":$list[$key]['job'] ;
+            $list[$key]['userHeadUrl'] =(empty($list[$key]['userHeadUrl']))?"":UPLOAD.$list[$key]['userHeadUrl'] ;
+            $list[$key]['vip'] =(empty($list[$key]['vip']))?"":$list[$key]['vip'] ;
+            $list[$key]['jobAuth'] =(empty($list[$key]['jobAuth']))?"":$list[$key]['jobAuth'] ;
+            $list[$key]['companyName'] =(empty($list[$key]['companyName']))?"":$list[$key]['companyName'];
+            $list[$key]['addDatetime'] = (empty($list[$key]['addDatetime']))?"":timeFormat($list[$key]['addDatetime']);
+            $codeGen = new CodeGenerator();
+            $list[$key]['userKey'] = $codeGen->createCode($list[$key]['userID']);
+        }
+        if(empty($list)) $list = array();
+        return $list;
+    }
+
+    /**
+     * 获取好友申请列表
+     */
+    public function getFriendApply($userID, $status, $limit = 10) {
+        $where = " A.friendID=%s AND A.status=%s";
+        $whereArr = array($userID, $status);
+        $result = $this->model->getApplyList($where, $whereArr, $limit);
+        if ($result['total'] < 1) {
+            return false;
+        }
+        $result['rows'] = $this->getUserListLabel($result['rows']);  //组合标签
+        return $result;
+    }
+
+    /**
+     * 获取到是否存在一条申请的记录
+     */
+    public function getFailOneApply($userID,$friendID) {
+        $model = new FriendApplyModel();
+        return $model->getFailOneApply($userID,$friendID);
+    }
+
+
+
+    /**
+     * 获取我的好友列表
+     */
+    public function getFriendList($userID, $limit = 10) {
+        $result = $this->model->getFriendList($userID, $limit);
+        $result['rows'] = $this->getUserListLabel($result['rows']);  //组合标签
+        return $result;
+    }
+
+    /**
+     * 获取我的好友数量
+     */
+    public function getFriendCount($userID) {
+        $result = $this->model->getFriendCount($userID);
+        return $result;
+    }
+
+
+    /**
+     *获取到谁访问了我的数量
+     */
+    public function  getBorowse($userID) {
+        $model = new UserVisitorModel();
+        return $model->getBorowse($userID);
+    }
+
+    /**
+     * 获取到名片的数量
+     */
+    public function getCardNum($userID) {
+        $model = new UserCardModel();
+        return $model->getCardNum($userID);
+    }
+    
+    /**
+     * 获取用户的好友
+     */
+    public function getUserFriendList($where,$whereArr,$limit){
+        $result = $this->model->getUserFriendList($where,$whereArr,$limit);
+        return $result;
+    }
+
+    /**
+     * 通讯录邀请联系人
+     */
+    public function getMailInvite($userID,$phone, $limit = 10) {
+        $total = $this->model->getMailUserTotal($userID); //通讯录好友已入平台人数和通讯录总人数
+        $data['totalMail'] = $total[0]['total'];
+        $data['totalMember'] = $total[1]['total'];
+        $result = $this->model->getMailList($userID,$phone,$limit);
+        $data['totalnum'] = $result['total'];
+
+        foreach ($result['rows'] as $key=>$value) {
+            $result['rows'][$key]['hidphone'] = hidPhone($result['rows'][$key]['phone']);
+        }
+        $data['list'] = $result['rows'];
+        return $data;
+    }
+
+    /**
+     * 通讯录中的加入平台的好友
+     */
+    public function mailFriendList($userID, $limit = 10) {
+        $total = $this->model->getMailUserTotal($userID);
+        $data['totalMember'] = $total[1]['total']; //通讯录中已加入平台的人数
+        $result = $this->model->mailFriendList($userID, $limit);
+
+        $data['totalNum'] = $result['total'];
+        $data['list'] = $this->getUserListLabel($result['rows']);   //获取到用户的标签列表
+        return $data;
+    }
+
+    /**
+     * 处理好友申请
+     */
+    public function dealApply($id, $status) {
+        if ($id * 1 < 1 || $status * 1 < 1) {
+            return false;
+        }
+        $where['id'] = $id;
+        $applyInfo = $this->model->getApplyInfo($where);
+        if ($applyInfo['status'] != 1) {
+            return false;
+        }
+        $isFriend = $this->model->isFriend($applyInfo['userID'],$applyInfo['friendID']);
+        if(!empty($isFriend)) {  //已经存在好友关系
+            return false;
+        }
+        $data['status'] = $status;
+        $otherWhere['friendID'] = $applyInfo['userID'];
+        $otherWhere['userID'] = $applyInfo['friendID'];
+        $this->model->editFriendApply($otherWhere,$data);   //修改另外一条 有就有 没有就没有
+        $result = $this->model->editFriendApply($where, $data);
+        if ($status == 2 && $result) {//同意
+            //新增好友
+            $entity[] = array('userID' => $applyInfo['friendID'], 'friendUserID' => $applyInfo['userID'], 'addDatetime' => time());
+            $entity[] = array('userID' => $applyInfo['userID'], 'friendUserID' => $applyInfo['friendID'], 'addDatetime' => time());
+            $result = $this->model->addFriend($entity);
+        }
+        return $result;
+    }
+
+    /**
+     * 处理过期的好友申请
+     */
+    public function dealApplyOuttime($outtime){
+        $this->model->dealApplyOuttime($outtime);
+    }
+
+
+    public function getAppyInfo($id) {
+        $where['id'] = $id;
+        return $this->model->getApplyInfo($where);
+    }
+
+
+
+
+    /**
+     * 获取到朋友的信息
+     * @param $userID
+     */
+    public function getFriendInfo($userID,$field="") {
+        $model = new UserFriendModel();
+        return $model->getFriendInfo($userID,$field);
+    }
+
+
+    /**
+     * 获取到当前用户的好友申请
+     */
+    public function applyCount($userID) {
+        $model = new FriendApplyModel();
+        return $model->applyCount($userID);
+    }
+
+
+    /**
+     * 获取到通讯录中好友的数量
+     */
+    public function getMailCount($userID) {
+        $total = $this->model->getMailUserFriendTotal($userID);
+        return $total[0]['total'];
+    }
+
+    /**
+     * 好友的数量
+     */
+    public function getFriendNum($userID) {
+        $model = new UserFriendModel();
+        return $model->getFriendNum($userID);
+    }
+
+    /**
+     * 获取的通讯录的好友列表
+     *
+     */
+    public function getMailEva($userID,$phone,$limit) {
+        $result = $this->model->getEvaMailUser($userID,$phone,$limit);
+        return $result;
+    }
+
+    /**
+     * 获取到列表
+     */
+    public function evaContentList() {
+        $model = new SysEvaluationModel();
+        return $model->evaContentList();
+    }
+
+    /**
+     * 添加评论
+     */
+    public function addEvaData($data) {
+        $model = new UserEvaluateModel();
+        return $model->addEvaData($data);
+    }
+
+    /**
+     * 是否存在评价
+     */
+    public function getOneEva($userID,$evaphone) {
+        $model = new UserEvaluateModel();
+        return $model->getOneEva($userID,$evaphone);
+    }
+
+    /**
+     * 是否存在邀请中的记录
+     */
+    public function getOneApply($userID,$friendID) {
+        $model = new FriendApplyModel();
+        return $model->getOneApply($userID,$friendID);
+    }
+
+
+    /**
+     * 保存一条申请记录
+     */
+    public function addFriendApply($data) {
+        $model = new FriendApplyModel();
+        return $model->addFriendApply($data);
+    }
+
+
+    public function  getNowTimeApplyConnt ($useID) {
+        $model = new FriendApplyModel();
+        return $model->getNowTimeApplyConnt($useID);
+    }
+
+
+    /**
+     * Redis 发私信的次数
+     */
+    public function saveRedisByletter($userID,$letterInfo="") {
+        $redis = Redis::GetInstance();
+        $redis = $redis->redisOtherMethods();
+        $redis->select(1);
+        $key = 'letter'.strtotime(date('Y-m-d'))."_".$userID."_".mt_rand(10000,99999);
+        return $redis->set($key,json_encode($letterInfo),86400);
+    }
+
+
+    /**
+     * 获取到发私信的次数
+     */
+    public function getNowTimeRedisByletter($userID) {
+        $redis = Redis::GetInstance();
+        $redis = $redis->redisOtherMethods();
+        $redis->select(1);
+        $key = 'letter'.strtotime(date('Y-m-d'))."_".$userID."_*";
+        $arr = $redis->keys($key);
+        if(empty($arr)) {
+            return 0;
+        }
+        return count($arr);
+    }
+
+
+    /**
+     * 获取到通讯录中全部的操作电弧数据
+     */
+    public function getMailNoInvitation($userID) {
+        $model = new UserFriendModel();
+        $sql = "select m.phone,i.invitePhone from d_user_maillist as m left join d_user_invite  as i ON m.phone=i.invitePhone and i.userID=".$userID." ";
+        $sql .= " where  m.userID = ".$userID." and invitePhone is null limit 1000";
+        return $model->query($sql);
+    }
+
+
+    /**
+     * 获取到通讯录中全部的操作电弧数据
+     */
+    public function getSenMailNoInvit($userID) {
+        $model = new UserFriendModel();
+        $sql = " select m.phone,i.invitePhone,m.isSensitive from d_user_maillist as m ";
+        $sql .= " left join d_user_invite  as i ON m.phone=i.invitePhone and i.userID=".$userID." ";
+        $sql .= " left join d_user as u ON m.phone=u.phone ";
+        $sql .= " where  m.userID = ".$userID." and u.userID is null and m.shieldStatus=0 and i.invitePhone is null and m.isSensitive=2 limit 1000";
+
+
+        return $model->query($sql);
+    }
+
+    /**
+     * 通知go去回调函数
+     * 一个发送短信的后端
+     */
+    public function noticeGoCall($userID,$phoneStr) {
+
+        $data['user_id']=$userID;
+        $data['phoneStr'] = $phoneStr;
+        $returnurl = SITE . "Callback/noticeMes";
+        $callLogic = new \Service\Common\CallBackLogic();
+        $callLogic->sendCallbackInfo($returnurl, $data);
+    }
+
+
+    /**
+     * 批量插入
+     */
+    public function insertInvitation($data) {
+        $userInvita = new UserInviteModel();
+        return $userInvita->InsertAll($data);
+    }
+
+
+    /**
+     * 判断是否为好友
+     */
+    public function isFriend($userID,$friendID) {
+        $model = new UserFriendModel();
+        return $model->isFriend($userID,$friendID);
+    }
+
+
+
+    /**
+     * 异步通知到导入通讯录
+     */
+    public function notifyImportMail($content,$userID,$myselfPhone) {
+        $phone_data["addDatetime"] = time();
+        $phone_data['userID'] = $userID;
+        $logic = new userMaillistLogic();
+        $repeat = array(); //去重的容器
+        foreach ($content as $key=>$value) {
+            $mobile = $value['phone'];
+            if($mobile){
+                $arr=[];
+                $arr_mobile = explode(',',$mobile);
+                foreach ($arr_mobile as $item_mobile) {
+                    if(verify_phone($item_mobile))
+                        $arr[] = $item_mobile;
+                    if(count($arr)>3)
+                        break;
+                }
+
+                $phone = $arr[0];
+                $mobile=implode(',',$arr);
+            }
+
+            if(!$phone)continue;
+            if($phone == $myselfPhone) continue;   //是自己的话 就停止
+            if(in_array($phone,$repeat)) continue;   //去重
+            $repeat[] = $phone;
+            $phone_data['phone'] = $phone;
+            $phone_data['originalStr'] = $mobile;
+            $phone_data['shortPhone'] = ($value['shortPhone'])? $value['shortPhone']:""; //短号
+            $phone_data['userName'] = ($value['userName'])? $value['userName']:"";
+            $phone_data['group'] = ($value['group'])? $value['group']:"";
+            if(empty($value['shieldStatus'])) {
+                $phone_data['shieldStatus'] = 0;    //不是屏蔽用户
+            } else {
+                $phone_data['shieldStatus'] = 1;   //屏蔽用户
+                $tmp_data['phone'] = $myselfPhone;
+                $tmp_data['userID'] = $userID;
+                $tmp_data['shieldPhone'] = $phone_data['phone'];
+                $tmp_data['shieldUserName'] = $phone_data['userName'];
+                $tmp_data['group'] = $phone_data['group'];
+                $shield_data[] = $tmp_data;
+            }
+            if(sensitive($phone_data['userName'])) {   //是否敏感
+                $phone_data['isSensitive'] = 1;
+            } else {
+                $phone_data['isSensitive'] = 2;
+            }
+            $insert_data[] = $phone_data;  //插入数据的集合
+        }
+        if($insert_data) {
+            $res = $logic->addAll($insert_data);  //批量插入
+            $logic->addShieldRecord($shield_data);   //插入屏蔽表中
+            if($res) {
+                $Connect = new ConnectRelationLogic();
+                $Connect->notifyImportContacts($userID);
+                return true;
+            } else  {
+                return false;
+            }
+        } else {
+            return false;
+        }
+    }
+
+
+    /**
+     * 添加导入的状态
+     */
+    public function addMailImportLog($userID,$num=50) {
+        $model = new UserFriendModel();
+        return $model->addMailImportLog($userID,$num);
+    }
+
+    /**
+     * 获取到导入状态
+     */
+    public function getMailImportStatus($userID) {
+        $model = new UserFriendModel();
+        return $model->getMailImportStatus($userID);
+    }
+
+    /**
+     * 获取到进行中的状态
+     * @param $userID
+     * @param $friendID
+     * @return mixed
+     */
+    public function getApplying($userID,$friendID) {
+        $model = new FriendApplyModel();
+        return $model->getOneApplying($userID,$friendID);
+    }
+
+
+    /**
+     * 删除好友
+     */
+    public function delFriend($otherID,$userID) {
+        $model = new UserFriendModel();
+        $model->delFriend($otherID,$userID);
+    }
+
+
+
+
+
+}

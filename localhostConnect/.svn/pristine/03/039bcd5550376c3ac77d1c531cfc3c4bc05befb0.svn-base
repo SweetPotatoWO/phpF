@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>测试</title>
+</head>
+<body>
+<a style="font-size: 100px;" onclick="openApps()" >点击唤醒APP</a>
+</body>
+</html>
+
+<script>
+
+
+    function openApps() {
+        if(navigator.userAgent.match(/Android/)) {
+            if(navigator.userAgent.match(/Chrome/)) {
+                setTimeout(function () {
+                    if(!document.webkitHidden) window.location = "market://***";
+                },1000);
+                window.location = "com.baidu.tieba://"; //打开自己的应用
+                alert("唤醒啥");
+            } else {
+                var iframe = document.createElement("iframe");
+                iframe.style.border = "none";
+                iframe.style.width = "1px";
+                iframe.style.height = "1px";
+                var t = setTimeout(function() {
+                    window.location = "market://***";//打开市场
+                }, 1000);
+                iframe.onload = function () {
+                    clearTimeout(t)
+                };
+                iframe.src = "myapp://custom_url";//打开自己的应用
+                document.body.appendChild(iframe);
+            }
+        } else if(navigator.userAgent.match(/iPhone|iPad|iPod/)) {  //ios
+            setTimeout(function () {
+                if (!document.webkitHidden) window.location = "itms://itunes.apple.com/****";
+            },1000);
+            window.location = "myapp://custom_url"; //打开自己的应用
+            alert("唤醒啥");
+        } else {
+            alert("请在手机端打开");
+        }
+    }
+</script>

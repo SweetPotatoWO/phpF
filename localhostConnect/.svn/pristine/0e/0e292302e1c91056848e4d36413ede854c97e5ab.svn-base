@@ -1,0 +1,196 @@
+<div id="sub-Adjust-edit">
+    <script type="text/javascript" src="{$Think.BPATH}js/borrow/ueditor.config.js?version={$Think.BNO}" ></script>    
+    <script type="text/javascript" charset="utf-8" src="/Public/plugins/ueditor/ueditor.all.min.js"></script>
+    <script type="text/javascript" charset="utf-8" src="{$Think.BPATH}js/uploader/webuploader.js"></script>
+    <script type="text/javascript" charset="utf-8" src="{$Think.BPATH}js/uploader/uploader.js"></script>
+    <script type="text/javascript" src="{$Think.BPATH}js/validate.extend.js?version={$Think.BNO}" ></script>     
+    <h4 class="title">用户信息</h4>
+    <form class="form-horizontal" id="form-Adjust">      
+        <ul id="myTab" class="nav nav-tabs">
+            <li class="active"><a href="#home" data-toggle="tab">用户信息</a></li>
+        </ul>
+        <div id="myTabContent" class="tab-content form-item">   
+            <input type="hidden" id="hidup" name="hidup" value="{$Think.UPLOAD}">
+            <input type="hidden" id="borrowID" name="borrowID" value="{$data.borrowID}">       
+            <input type="hidden" id="hidborrowNO" name="hidborrowNO" value="{$data.borrowNO}">
+            <div class="tab-pane fade in active" id="home">
+                <div style="position: absolute;top:120px;left:75%;margin-left: 10px;">
+                    <div class="uppic">	
+                        <if condition="strlen($info['headUrl']) gt 0">
+                            <img src="{$info.headUrl}" id="imgcard1" style="width: 240px;height: 180px;display: block;margin-bottom: 15px;" />
+                            <else /> <img src="/Public/backend/images/graybox.jpg" id="imgcard1" style="width: 240px;height: 180px;display: block;margin-bottom: 15px;" />
+                        </if>
+                        <div class="upfilebox">                      
+                            <label class="upload-box">用户头像</label>                    
+                        </div> 
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="span4">  
+                        <label class="col-sm-2 control-label" for="inputInfo">姓名：</label>
+                        <div class="col-sm-8">
+                            <label class="control-label" for="inputInfo">{$info.nickname}</label> 
+                        </div>
+                    </div>
+                    <div class="span4">
+                        <label class="col-sm-2 control-label" for="inputInfo">性别：</label>
+                        <div class="col-sm-8">
+                            <label class="control-label" for="inputInfo">{$info.userSex|formatSex}</label>      
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="span4">
+                        <label class="col-sm-2 control-label" for="inputInfo">手机号：</label>
+                        <div class="col-sm-8 ">
+                            <label class="control-label" for="inputInfo">{$info.phone}</label>      
+                        </div>
+                    </div>
+                    <div class="span4">  
+                        <label class="col-sm-2 control-label" for="inputInfo">手机号可见性：</label>
+                        <div class="col-sm-8">
+                            <label class="control-label" for="inputInfo">
+                                <switch name='info.phoneHide'>
+                                <case value='1'>仅自己可见</case>
+                                <case value='2'>仅好友可见</case>
+                                <case value='3'>所有人可见</case>
+                                </switch>
+                            </label>      
+                        </div>
+                    </div>
+                </div>               
+                <div class="row">
+                    <div class="span4">  
+                        <label class="col-sm-2 control-label" for="inputInfo">籍贯：</label>
+                        <div class="col-sm-8">
+                            <label class="control-label" for="inputInfo">{$info.provinceName} {$info.cityName} {$info.countyName}</label>      
+
+                        </div>
+                    </div>
+                    <div class="span4">
+                        <label class="col-sm-2 control-label" for="inputInfo">工作城市：</label>
+                        <div class="col-sm-8">
+                            <label class="control-label" for="inputInfo">{$info.workCity}</label> 
+                        </div>
+                    </div>
+                </div>     
+                <div class="row">
+                    <div class="span4">  
+                        <label class="col-sm-2 control-label" for="inputInfo">所在公司：</label>
+                        <div class="col-sm-8">
+                            <label class="control-label" for="inputInfo"><a href="https://www.qichacha.com/search?key={$info.companyName|urlencode=###}" title='企查查' class='text-info' target="_blank">{$info.companyName}</a></label>      
+
+                        </div>
+                    </div>
+                    <div class="span4">
+                        <label class="col-sm-2 control-label" for="inputInfo">行业描述：</label>
+                        <div class="col-sm-8">
+                            <label class="control-label" for="inputInfo">{$info.workMajorName}</label> 
+                        </div>
+                    </div>
+                </div>    
+                <div class="row">
+                    <div class="span4">
+                        <label class="col-sm-2 control-label" for="inputInfo">公司部门：</label>
+                        <div class="col-sm-8">
+                            <label class="control-label" for="inputInfo">{$info.group}</label> 
+                        </div>
+                    </div>
+                    <div class="span4">  
+                        <label class="col-sm-2 control-label" for="inputInfo">职业：</label>
+                        <div class="col-sm-8">
+                            <label class="control-label" for="inputInfo">{$info.job}</label>      
+
+                        </div>
+                    </div>
+                </div>
+                <hr/>
+                <hr/>
+                <div class="row">
+                    <div class="span4 has-info">
+                        <h4><label class="col-sm-2 control-label" for="inputInfo">教育经历：</label></h4>
+                    </div>
+                </div>
+                <volist name="eduList" id="vo" key='k'>
+                    <div class="row">
+                        <div class="span4">
+                            <label class="col-sm-2 control-label" for="inputInfo">学校：</label>
+                            <div class="col-sm-8">
+                                <label class="control-label" for="inputInfo"><a href="https://baike.baidu.com/item/{$vo.schoolName|urlencode=###}" title='百度百科' class='text-info' target="_blank">{$vo.schoolName}</a></label> 
+                            </div>
+                        </div>
+                        <div class="span4">
+                            <label class="col-sm-2 control-label" for="inputInfo">专业：</label>
+                            <div class="col-sm-8">
+                                <label class="control-label" for="inputInfo">{$vo.major}</label> 
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="span4">
+                            <label class="col-sm-2 control-label" for="inputInfo">学历：</label>
+                            <div class="col-sm-8">
+                                <label class="control-label" for="inputInfo">{$vo.diploma}</label> 
+                            </div>
+                        </div>
+                        <div class="span4">
+                            <label class="col-sm-2 control-label" for="inputInfo">时间段：</label>
+                            <div class="col-sm-8">
+                                <label class="control-label" for="inputInfo">{$vo.startDatetime|formatshortDate}~{$vo.endDatetime|formatshortDate}</label> 
+                            </div>
+                        </div>
+                    </div> <hr/>
+                </volist>
+                <hr/>
+                <div class="row">
+                    <div class="span4 has-info">
+                        <h4><label class="col-sm-2 control-label" for="inputInfo">工作经历：</label></h4>
+                    </div>
+                </div>
+                <volist name="workList" id="vo" key='k'>
+                    <div class="row">
+                        <div class="span4">
+                            <label class="col-sm-2 control-label" for="inputInfo">公司：</label>
+                            <div class="col-sm-8">
+                                <label class="control-label" for="inputInfo"><a href="https://www.qichacha.com/search?key={$vo.companyName|urlencode=###}" title='企查查' class='text-info' target="_blank">{$vo.companyName}</a></label> 
+                            </div>
+                        </div>
+                        <div class="span4">
+                            <label class="col-sm-2 control-label" for="inputInfo">部门：</label>
+                            <div class="col-sm-8">
+                                <label class="control-label" for="inputInfo">{$vo.group}</label> 
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="span4">
+                            <label class="col-sm-2 control-label" for="inputInfo">职位：</label>
+                            <div class="col-sm-8">
+                                <label class="control-label" for="inputInfo">{$vo.job}</label> 
+                            </div>
+                        </div>
+                        <div class="span4">
+                            <label class="col-sm-2 control-label" for="inputInfo">时间段：</label>
+                            <div class="col-sm-8">
+                                <label class="control-label" for="inputInfo">{$vo.startDatetime|formatshortDate}~{$vo.endDatetime|formatshortDate}</label> 
+                            </div>
+                        </div>
+                    </div>
+                    <hr/>
+                </volist>
+                <hr/>
+            </div>
+            <div class="row">
+                <div class="col-sm-8">    
+                    <a class="btn btn-info mt_10 butReturn" href="javascript:;">返回</a> 
+                </div>
+            </div>     
+        </div>
+    </form>
+    <script type="text/javascript" >
+        $(function () {
+            $(".butReturn").click(function () {
+                $Util.returnRefresh(); //返回
+            }); });
+    </script>
+</div>

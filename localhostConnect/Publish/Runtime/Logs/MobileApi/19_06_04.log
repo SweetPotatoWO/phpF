@@ -1,0 +1,262 @@
+[ 2019-06-04T19:35:36+08:00 ] 127.0.0.1 /MobileApi
+INFO: [ app_init ] --START--
+INFO: Run Behavior\BuildLiteBehavior [ RunTime:0.000007s ]
+INFO: [ app_init ] --END-- [ RunTime:0.000062s ]
+INFO: [ app_begin ] --START--
+INFO: Run Behavior\ReadHtmlCacheBehavior [ RunTime:0.000063s ]
+INFO: [ app_begin ] --END-- [ RunTime:0.000100s ]
+ERR: Class 'Service\System\Logic\SysParameterLogic' not found
+
+[ 2019-06-04T19:36:33+08:00 ] 127.0.0.1 /MobileApi
+INFO: [ app_init ] --START--
+INFO: Run Behavior\BuildLiteBehavior [ RunTime:0.000005s ]
+INFO: [ app_init ] --END-- [ RunTime:0.000048s ]
+INFO: [ app_begin ] --START--
+INFO: Run Behavior\ReadHtmlCacheBehavior [ RunTime:0.000024s ]
+INFO: [ app_begin ] --END-- [ RunTime:0.000038s ]
+
+[ 2019-06-04T19:37:09+08:00 ] 127.0.0.1 /MobileApi
+INFO: [ app_init ] --START--
+INFO: Run Behavior\BuildLiteBehavior [ RunTime:0.000006s ]
+INFO: [ app_init ] --END-- [ RunTime:0.000048s ]
+INFO: [ app_begin ] --START--
+INFO: Run Behavior\ReadHtmlCacheBehavior [ RunTime:0.000021s ]
+INFO: [ app_begin ] --END-- [ RunTime:0.000034s ]
+
+[ 2019-06-04T19:37:22+08:00 ] 127.0.0.1 /MobileApi
+INFO: [ app_init ] --START--
+INFO: Run Behavior\BuildLiteBehavior [ RunTime:0.000006s ]
+INFO: [ app_init ] --END-- [ RunTime:0.000050s ]
+INFO: [ app_begin ] --START--
+INFO: Run Behavior\ReadHtmlCacheBehavior [ RunTime:0.000036s ]
+INFO: [ app_begin ] --END-- [ RunTime:0.000059s ]
+NOTIC: [8] Undefined variable: commonRules /var/www/localhostConnect/App/Service/Api/Common/BaseApi.class.php 第 112 行.
+NOTIC: [8] Undefined variable: apiRules /var/www/localhostConnect/App/Service/Api/Common/BaseApi.class.php 第 112 行.
+NOTIC: [2] array_intersect_key(): Argument #1 is not an array /var/www/localhostConnect/App/Service/Api/Common/BaseApi.class.php 第 112 行.
+NOTIC: [2] Invalid argument supplied for foreach() /var/www/localhostConnect/App/Service/Api/Common/BaseApi.class.php 第 113 行.
+NOTIC: [8] Undefined index: mw /var/www/localhostConnect/App/Service/Api/Response/BaseResponse.class.php 第 74 行.
+INFO: [ app_end ] --START--
+INFO: Run Behavior\ShowPageTraceBehavior [ RunTime:0.000031s ]
+INFO: [ app_end ] --END-- [ RunTime:0.000054s ]
+
+[ 2019-06-04T19:37:57+08:00 ] 127.0.0.1 /MobileApi
+INFO: [ app_init ] --START--
+INFO: Run Behavior\BuildLiteBehavior [ RunTime:0.000004s ]
+INFO: [ app_init ] --END-- [ RunTime:0.000040s ]
+INFO: [ app_begin ] --START--
+INFO: Run Behavior\ReadHtmlCacheBehavior [ RunTime:0.000018s ]
+INFO: [ app_begin ] --END-- [ RunTime:0.000029s ]
+NOTIC: [8] Undefined variable: commonRules /var/www/localhostConnect/App/Service/Api/Common/BaseApi.class.php 第 112 行.
+NOTIC: [8] Undefined variable: apiRules /var/www/localhostConnect/App/Service/Api/Common/BaseApi.class.php 第 112 行.
+NOTIC: [2] array_intersect_key(): Argument #1 is not an array /var/www/localhostConnect/App/Service/Api/Common/BaseApi.class.php 第 112 行.
+NOTIC: [2] Invalid argument supplied for foreach() /var/www/localhostConnect/App/Service/Api/Common/BaseApi.class.php 第 113 行.
+NOTIC: [8] Undefined index: mw /var/www/localhostConnect/App/Service/Api/Response/BaseResponse.class.php 第 74 行.
+INFO: [ app_end ] --START--
+INFO: Run Behavior\ShowPageTraceBehavior [ RunTime:0.000035s ]
+INFO: [ app_end ] --END-- [ RunTime:0.000057s ]
+
+[ 2019-06-04T19:38:29+08:00 ] 127.0.0.1 /MobileApi
+INFO: [ app_init ] --START--
+INFO: Run Behavior\BuildLiteBehavior [ RunTime:0.000006s ]
+INFO: [ app_init ] --END-- [ RunTime:0.000047s ]
+INFO: [ app_begin ] --START--
+INFO: Run Behavior\ReadHtmlCacheBehavior [ RunTime:0.000025s ]
+INFO: [ app_begin ] --END-- [ RunTime:0.000044s ]
+NOTIC: [8] Undefined variable: commonRules /var/www/localhostConnect/App/Service/Api/Common/BaseApi.class.php 第 112 行.
+NOTIC: [8] Undefined variable: apiRules /var/www/localhostConnect/App/Service/Api/Common/BaseApi.class.php 第 112 行.
+NOTIC: [2] array_intersect_key(): Argument #1 is not an array /var/www/localhostConnect/App/Service/Api/Common/BaseApi.class.php 第 112 行.
+NOTIC: [2] Invalid argument supplied for foreach() /var/www/localhostConnect/App/Service/Api/Common/BaseApi.class.php 第 113 行.
+NOTIC: [8] Undefined index: mw /var/www/localhostConnect/App/Service/Api/Response/BaseResponse.class.php 第 74 行.
+INFO: [ app_end ] --START--
+INFO: Run Behavior\ShowPageTraceBehavior [ RunTime:0.000041s ]
+INFO: [ app_end ] --END-- [ RunTime:0.000068s ]
+
+[ 2019-06-04T19:38:32+08:00 ] 127.0.0.1 /MobileApi
+INFO: [ app_init ] --START--
+INFO: Run Behavior\BuildLiteBehavior [ RunTime:0.000005s ]
+INFO: [ app_init ] --END-- [ RunTime:0.000042s ]
+INFO: [ app_begin ] --START--
+INFO: Run Behavior\ReadHtmlCacheBehavior [ RunTime:0.000021s ]
+INFO: [ app_begin ] --END-- [ RunTime:0.000034s ]
+NOTIC: [8] Undefined variable: commonRules /var/www/localhostConnect/App/Service/Api/Common/BaseApi.class.php 第 112 行.
+NOTIC: [8] Undefined variable: apiRules /var/www/localhostConnect/App/Service/Api/Common/BaseApi.class.php 第 112 行.
+NOTIC: [2] array_intersect_key(): Argument #1 is not an array /var/www/localhostConnect/App/Service/Api/Common/BaseApi.class.php 第 112 行.
+NOTIC: [2] Invalid argument supplied for foreach() /var/www/localhostConnect/App/Service/Api/Common/BaseApi.class.php 第 113 行.
+NOTIC: [8] Undefined index: mw /var/www/localhostConnect/App/Service/Api/Response/BaseResponse.class.php 第 74 行.
+INFO: [ app_end ] --START--
+INFO: Run Behavior\ShowPageTraceBehavior [ RunTime:0.000022s ]
+INFO: [ app_end ] --END-- [ RunTime:0.000039s ]
+
+[ 2019-06-04T19:38:35+08:00 ] 127.0.0.1 /MobileApi
+INFO: [ app_init ] --START--
+INFO: Run Behavior\BuildLiteBehavior [ RunTime:0.000007s ]
+INFO: [ app_init ] --END-- [ RunTime:0.000063s ]
+INFO: [ app_begin ] --START--
+INFO: Run Behavior\ReadHtmlCacheBehavior [ RunTime:0.000026s ]
+INFO: [ app_begin ] --END-- [ RunTime:0.000042s ]
+NOTIC: [8] Undefined variable: commonRules /var/www/localhostConnect/App/Service/Api/Common/BaseApi.class.php 第 112 行.
+NOTIC: [8] Undefined variable: apiRules /var/www/localhostConnect/App/Service/Api/Common/BaseApi.class.php 第 112 行.
+NOTIC: [2] array_intersect_key(): Argument #1 is not an array /var/www/localhostConnect/App/Service/Api/Common/BaseApi.class.php 第 112 行.
+NOTIC: [2] Invalid argument supplied for foreach() /var/www/localhostConnect/App/Service/Api/Common/BaseApi.class.php 第 113 行.
+NOTIC: [8] Undefined index: mw /var/www/localhostConnect/App/Service/Api/Response/BaseResponse.class.php 第 74 行.
+INFO: [ app_end ] --START--
+INFO: Run Behavior\ShowPageTraceBehavior [ RunTime:0.000031s ]
+INFO: [ app_end ] --END-- [ RunTime:0.000053s ]
+
+[ 2019-06-04T19:40:14+08:00 ] 127.0.0.1 /MobileApi
+INFO: [ app_init ] --START--
+INFO: Run Behavior\BuildLiteBehavior [ RunTime:0.000005s ]
+INFO: [ app_init ] --END-- [ RunTime:0.000050s ]
+INFO: [ app_begin ] --START--
+INFO: Run Behavior\ReadHtmlCacheBehavior [ RunTime:0.000040s ]
+INFO: [ app_begin ] --END-- [ RunTime:0.000064s ]
+NOTIC: [8] Undefined variable: commonRules /var/www/localhostConnect/App/Service/Api/Common/BaseApi.class.php 第 112 行.
+NOTIC: [8] Undefined variable: apiRules /var/www/localhostConnect/App/Service/Api/Common/BaseApi.class.php 第 112 行.
+NOTIC: [2] array_intersect_key(): Argument #1 is not an array /var/www/localhostConnect/App/Service/Api/Common/BaseApi.class.php 第 112 行.
+NOTIC: [2] Invalid argument supplied for foreach() /var/www/localhostConnect/App/Service/Api/Common/BaseApi.class.php 第 113 行.
+NOTIC: [8] Undefined index: mw /var/www/localhostConnect/App/Service/Api/Response/BaseResponse.class.php 第 74 行.
+INFO: [ app_end ] --START--
+INFO: Run Behavior\ShowPageTraceBehavior [ RunTime:0.000028s ]
+INFO: [ app_end ] --END-- [ RunTime:0.000048s ]
+
+[ 2019-06-04T19:41:16+08:00 ] 127.0.0.1 /MobileApi?service=index.a
+INFO: [ app_init ] --START--
+INFO: Run Behavior\BuildLiteBehavior [ RunTime:0.000005s ]
+INFO: [ app_init ] --END-- [ RunTime:0.000047s ]
+INFO: [ app_begin ] --START--
+INFO: Run Behavior\ReadHtmlCacheBehavior [ RunTime:0.000025s ]
+INFO: [ app_begin ] --END-- [ RunTime:0.000039s ]
+NOTIC: [8] Undefined variable: commonRules /var/www/localhostConnect/App/Service/Api/Common/BaseApi.class.php 第 112 行.
+NOTIC: [8] Undefined variable: apiRules /var/www/localhostConnect/App/Service/Api/Common/BaseApi.class.php 第 112 行.
+NOTIC: [2] array_intersect_key(): Argument #1 is not an array /var/www/localhostConnect/App/Service/Api/Common/BaseApi.class.php 第 112 行.
+NOTIC: [2] Invalid argument supplied for foreach() /var/www/localhostConnect/App/Service/Api/Common/BaseApi.class.php 第 113 行.
+NOTIC: [8] Undefined index: mw /var/www/localhostConnect/App/Service/Api/Response/BaseResponse.class.php 第 74 行.
+INFO: [ app_end ] --START--
+INFO: Run Behavior\ShowPageTraceBehavior [ RunTime:0.000045s ]
+INFO: [ app_end ] --END-- [ RunTime:0.000074s ]
+
+[ 2019-06-04T19:41:44+08:00 ] 127.0.0.1 /MobileApi?service=index.a
+INFO: [ app_init ] --START--
+INFO: Run Behavior\BuildLiteBehavior [ RunTime:0.000005s ]
+INFO: [ app_init ] --END-- [ RunTime:0.000045s ]
+INFO: [ app_begin ] --START--
+INFO: Run Behavior\ReadHtmlCacheBehavior [ RunTime:0.000032s ]
+INFO: [ app_begin ] --END-- [ RunTime:0.000051s ]
+NOTIC: [8] Undefined variable: commonRules /var/www/localhostConnect/App/Service/Api/Common/BaseApi.class.php 第 112 行.
+NOTIC: [8] Undefined variable: apiRules /var/www/localhostConnect/App/Service/Api/Common/BaseApi.class.php 第 112 行.
+NOTIC: [2] array_intersect_key(): Argument #1 is not an array /var/www/localhostConnect/App/Service/Api/Common/BaseApi.class.php 第 112 行.
+NOTIC: [2] Invalid argument supplied for foreach() /var/www/localhostConnect/App/Service/Api/Common/BaseApi.class.php 第 113 行.
+NOTIC: [8] Undefined index: mw /var/www/localhostConnect/App/Service/Api/Response/BaseResponse.class.php 第 74 行.
+INFO: [ app_end ] --START--
+INFO: Run Behavior\ShowPageTraceBehavior [ RunTime:0.000026s ]
+INFO: [ app_end ] --END-- [ RunTime:0.000043s ]
+
+[ 2019-06-04T19:42:46+08:00 ] 127.0.0.1 /MobileApi/doc
+INFO: [ app_init ] --START--
+INFO: Run Behavior\BuildLiteBehavior [ RunTime:0.000012s ]
+INFO: [ app_init ] --END-- [ RunTime:0.000090s ]
+INFO: [ app_begin ] --START--
+INFO: Run Behavior\ReadHtmlCacheBehavior [ RunTime:0.000049s ]
+INFO: [ app_begin ] --END-- [ RunTime:0.000084s ]
+ERR: 非法操作:index
+
+[ 2019-06-04T19:43:06+08:00 ] 127.0.0.1 /MobileApi/Doc/apiList
+INFO: [ app_init ] --START--
+INFO: Run Behavior\BuildLiteBehavior [ RunTime:0.000007s ]
+INFO: [ app_init ] --END-- [ RunTime:0.000061s ]
+INFO: [ app_begin ] --START--
+INFO: Run Behavior\ReadHtmlCacheBehavior [ RunTime:0.000036s ]
+INFO: [ app_begin ] --END-- [ RunTime:0.000057s ]
+INFO: [ view_parse ] --START--
+INFO: [ template_filter ] --START--
+INFO: Run Behavior\ContentReplaceBehavior [ RunTime:0.000054s ]
+INFO: [ template_filter ] --END-- [ RunTime:0.000085s ]
+NOTIC: [8] Undefined variable: apiDirName /var/www/localhostConnect/Publish/Runtime/Cache/MobileApi/b478bd3010e610479afdce79d66edd15.php 第 5 行.
+INFO: Run Behavior\ParseTemplateBehavior [ RunTime:0.002536s ]
+INFO: [ view_parse ] --END-- [ RunTime:0.002590s ]
+INFO: [ view_filter ] --START--
+INFO: Run Behavior\WriteHtmlCacheBehavior [ RunTime:0.000035s ]
+INFO: [ view_filter ] --END-- [ RunTime:0.000045s ]
+INFO: [ app_end ] --START--
+INFO: Run Behavior\ShowPageTraceBehavior [ RunTime:0.000021s ]
+INFO: [ app_end ] --END-- [ RunTime:0.000030s ]
+
+[ 2019-06-04T19:43:50+08:00 ] 127.0.0.1 /MobileApi?service=index.a
+INFO: [ app_init ] --START--
+INFO: Run Behavior\BuildLiteBehavior [ RunTime:0.000007s ]
+INFO: [ app_init ] --END-- [ RunTime:0.000055s ]
+INFO: [ app_begin ] --START--
+INFO: Run Behavior\ReadHtmlCacheBehavior [ RunTime:0.000034s ]
+INFO: [ app_begin ] --END-- [ RunTime:0.000085s ]
+NOTIC: [8] Undefined variable: commonRules /var/www/localhostConnect/App/Service/Api/Common/BaseApi.class.php 第 112 行.
+NOTIC: [8] Undefined variable: apiRules /var/www/localhostConnect/App/Service/Api/Common/BaseApi.class.php 第 112 行.
+NOTIC: [2] array_intersect_key(): Argument #1 is not an array /var/www/localhostConnect/App/Service/Api/Common/BaseApi.class.php 第 112 行.
+NOTIC: [2] Invalid argument supplied for foreach() /var/www/localhostConnect/App/Service/Api/Common/BaseApi.class.php 第 113 行.
+NOTIC: [8] Undefined index: mw /var/www/localhostConnect/App/Service/Api/Response/BaseResponse.class.php 第 74 行.
+INFO: [ app_end ] --START--
+INFO: Run Behavior\ShowPageTraceBehavior [ RunTime:0.000024s ]
+INFO: [ app_end ] --END-- [ RunTime:0.000040s ]
+
+[ 2019-06-04T19:45:33+08:00 ] 127.0.0.1 /MobileApi/Doc/apiList
+INFO: [ app_init ] --START--
+INFO: Run Behavior\BuildLiteBehavior [ RunTime:0.000005s ]
+INFO: [ app_init ] --END-- [ RunTime:0.000038s ]
+INFO: [ app_begin ] --START--
+INFO: Run Behavior\ReadHtmlCacheBehavior [ RunTime:0.000018s ]
+INFO: [ app_begin ] --END-- [ RunTime:0.000028s ]
+INFO: [ view_parse ] --START--
+INFO: [ template_filter ] --START--
+INFO: Run Behavior\ContentReplaceBehavior [ RunTime:0.000030s ]
+INFO: [ template_filter ] --END-- [ RunTime:0.000046s ]
+NOTIC: [8] Undefined variable: apiDirName /var/www/localhostConnect/Publish/Runtime/Cache/MobileApi/b478bd3010e610479afdce79d66edd15.php 第 5 行.
+INFO: Run Behavior\ParseTemplateBehavior [ RunTime:0.001127s ]
+INFO: [ view_parse ] --END-- [ RunTime:0.001138s ]
+INFO: [ view_filter ] --START--
+INFO: Run Behavior\WriteHtmlCacheBehavior [ RunTime:0.000028s ]
+INFO: [ view_filter ] --END-- [ RunTime:0.000034s ]
+INFO: [ app_end ] --START--
+INFO: Run Behavior\ShowPageTraceBehavior [ RunTime:0.000017s ]
+INFO: [ app_end ] --END-- [ RunTime:0.000024s ]
+
+[ 2019-06-04T19:45:52+08:00 ] 127.0.0.1 /MobileApi/Doc/apiList
+INFO: [ app_init ] --START--
+INFO: Run Behavior\BuildLiteBehavior [ RunTime:0.000005s ]
+INFO: [ app_init ] --END-- [ RunTime:0.000047s ]
+INFO: [ app_begin ] --START--
+INFO: Run Behavior\ReadHtmlCacheBehavior [ RunTime:0.000052s ]
+INFO: [ app_begin ] --END-- [ RunTime:0.000075s ]
+INFO: [ view_parse ] --START--
+INFO: [ template_filter ] --START--
+INFO: Run Behavior\ContentReplaceBehavior [ RunTime:0.000042s ]
+INFO: [ template_filter ] --END-- [ RunTime:0.000068s ]
+NOTIC: [8] Undefined variable: apiDirName /var/www/localhostConnect/Publish/Runtime/Cache/MobileApi/b478bd3010e610479afdce79d66edd15.php 第 5 行.
+INFO: Run Behavior\ParseTemplateBehavior [ RunTime:0.002720s ]
+INFO: [ view_parse ] --END-- [ RunTime:0.002737s ]
+INFO: [ view_filter ] --START--
+INFO: Run Behavior\WriteHtmlCacheBehavior [ RunTime:0.000035s ]
+INFO: [ view_filter ] --END-- [ RunTime:0.000044s ]
+INFO: [ app_end ] --START--
+INFO: Run Behavior\ShowPageTraceBehavior [ RunTime:0.000022s ]
+INFO: [ app_end ] --END-- [ RunTime:0.000031s ]
+
+[ 2019-06-04T19:46:25+08:00 ] 127.0.0.1 /MobileApi/Doc/apiList
+INFO: [ app_init ] --START--
+INFO: Run Behavior\BuildLiteBehavior [ RunTime:0.000005s ]
+INFO: [ app_init ] --END-- [ RunTime:0.000043s ]
+INFO: [ app_begin ] --START--
+INFO: Run Behavior\ReadHtmlCacheBehavior [ RunTime:0.000023s ]
+INFO: [ app_begin ] --END-- [ RunTime:0.000037s ]
+INFO: [ view_parse ] --START--
+INFO: [ template_filter ] --START--
+INFO: Run Behavior\ContentReplaceBehavior [ RunTime:0.000039s ]
+INFO: [ template_filter ] --END-- [ RunTime:0.000057s ]
+NOTIC: [8] Undefined variable: apiDirName /var/www/localhostConnect/Publish/Runtime/Cache/MobileApi/b478bd3010e610479afdce79d66edd15.php 第 5 行.
+INFO: Run Behavior\ParseTemplateBehavior [ RunTime:0.001481s ]
+INFO: [ view_parse ] --END-- [ RunTime:0.001497s ]
+INFO: [ view_filter ] --START--
+INFO: Run Behavior\WriteHtmlCacheBehavior [ RunTime:0.000028s ]
+INFO: [ view_filter ] --END-- [ RunTime:0.000038s ]
+INFO: [ app_end ] --START--
+INFO: Run Behavior\ShowPageTraceBehavior [ RunTime:0.000020s ]
+INFO: [ app_end ] --END-- [ RunTime:0.000028s ]
+

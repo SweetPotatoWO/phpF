@@ -1,0 +1,125 @@
+<?php
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+namespace Backend\Controller;
+
+use Service\Search\Logic\SearchLogic;
+
+class InterFaceController extends BaseEndController {
+
+    /**
+     * 接口请求详情
+     */
+    public function requestDetail() {
+        $par = I("post.");
+        $where = "";
+        $whereArr = array();
+        if (!is_null($par["txtDateStart"]) && !empty($par["txtDateStart"])) {
+            $where.=" AND requestDatetime >='%s'";
+            array_push($whereArr, $par["txtDateStart"]);
+        }
+        if (!is_null($par["txtDateEnd"]) && !empty($par["txtDateEnd"])) {
+            $where.=" AND requestDatetime <'%s'";
+            array_push($whereArr, $par["txtDateEnd"]);
+        }
+        if (!is_null($par["status"]) && !empty($par["status"])) {
+            $where.=" AND isSuccess ='%s'";
+            array_push($whereArr, $par["status"]);
+        }
+        if (empty($where)) {
+            $where .= "AND requestDatetime>'%d'";
+            $startDate = date('Y-m-d', strtotime('-7 days'));
+            array_push($whereArr, strtotime($startDate));
+            $_POST["txtDateStart"] = $startDate;
+            $_POST["txtDateEnd"] = date('Y-m-d', time());
+        }
+        $limit = $this->getPage();
+        $logic = new SearchLogic();
+        $result = $logic->getRequestList($where, $whereArr, $limit);
+        $this->assign("result", $result["rows"]);
+        $this->assign("pageHtml", $this->showPage($result["total"]));
+        $this->display("requestList");
+    }
+
+    /**
+     * 用户历史搜索
+     */
+    public function userSearchHistory() {
+        $par = I("post.");
+        $where = "";
+        $whereArr = array();
+        if (!is_null($par["txtDateStart"]) && !empty($par["txtDateStart"])) {
+            $where.=" AND A.lastSearchTime >='%s'";
+            array_push($whereArr, $par["txtDateStart"]);
+        }
+        if (!is_null($par["txtDateEnd"]) && !empty($par["txtDateEnd"])) {
+            $where.=" AND A.lastSearchTime <'%s'";
+            array_push($whereArr, $par["txtDateEnd"]);
+        }
+        if (!is_null($par["stype"]) && !empty($par["stype"])) {
+            $where.=" AND A.searchType ='%s'";
+            array_push($whereArr, $par["stype"]);
+        }
+        if (!is_null($par["userName"]) && !empty($par["userName"])) {
+            $where.=" AND B.nickname ='%s'";
+            array_push($whereArr, $par["userName"]);
+        }
+        if (!is_null($par["userPhone"]) && !empty($par["userPhone"])) {
+            $where.=" AND B.phone ='%s'";
+            array_push($whereArr, $par["userPhone"]);
+        }
+        if (empty($where)) {
+            $where .= "AND A.lastSearchTime >'%d'";
+            $startDate = date('Y-m-d', strtotime('-7 days'));
+            array_push($whereArr, strtotime($startDate));
+            $_POST["txtDateStart"] = $startDate;
+            $_POST["txtDateEnd"] = date('Y-m-d', time());
+        }
+        $limit = $this->getPage();
+        $logic = new SearchLogic();
+        $result = $logic->userSearchList($where, $whereArr, $limit);
+        $this->assign("result", $result["rows"]);
+        $this->assign("pageHtml", $this->showPage($result["total"]));
+        $this->display("userSearchList");
+    }
+
+    /**
+     * 历史搜索
+     */
+    public function searchHistory() {
+        $par = I("post.");
+        $where = "";
+        $whereArr = array();
+        if (!is_null($par["txtDateStart"]) && !empty($par["txtDateStart"])) {
+            $where.=" AND lastSearchTime >='%s'";
+            array_push($whereArr, $par["txtDateStart"]);
+        }
+        if (!is_null($par["txtDateEnd"]) && !empty($par["txtDateEnd"])) {
+            $where.=" AND lastSearchTime <'%s'";
+            array_push($whereArr, $par["txtDateEnd"]);
+        }
+        if (!is_null($par["stype"]) && !empty($par["stype"])) {
+            $where.=" AND searchType ='%s'";
+            array_push($whereArr, $par["stype"]);
+        }
+        if (empty($where)) {
+            $where .= "AND lastSearchTime >'%d'";
+            $startDate = date('Y-m-d', strtotime('-7 days'));
+            array_push($whereArr, strtotime($startDate));
+            $_POST["txtDateStart"] = $startDate;
+            $_POST["txtDateEnd"] = date('Y-m-d', time());
+        }
+        $limit = $this->getPage();
+        $logic = new SearchLogic();
+        $result = $logic->searchList($where, $whereArr, $limit);
+        $this->assign("result", $result["rows"]);
+        $this->assign("pageHtml", $this->showPage($result["total"]));
+        $this->display("searchList");
+    }
+
+}

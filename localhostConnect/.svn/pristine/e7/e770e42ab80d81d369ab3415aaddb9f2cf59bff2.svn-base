@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<title></title>	
+	<link rel="stylesheet" href="{$Think.FPATH}css/bootstrap.min.css">
+	<link rel="stylesheet" href="{$Think.FPATH}css/index.css">
+	<script type="text/javascript" src="{$Think.FPATH}js/jquery.min.js"></script>
+</head>
+<body>
+<style>
+	.notFound {width: 100%;height: 100%;position: fixed;top: 0;}
+	.notFound footer {position: fixed;bottom: 0;width: 100%;}
+	.notFound .content {width: 100%;height: 100%;background: #e9eefa;position: fixed;}
+	.notFound .box {width: 680px;height: 574px;position: fixed;left: 0;right: 0;top: 0;bottom: 0;margin: auto;}
+	.notFound .hd {width: 680px;margin: 0 auto;display: flex;}
+	.notFound .num {flex:0 0 29.71%;color: #477bff;font-weight: bold;font-size: 346px;height:446px;line-height:600px;text-shadow: 0 3px 4px rgba(71,123,255,.45);}
+	.notFound .hd .plant {flex:0 0 40.58%;max-width:40.58%;height: 446px;background: url(/Public/frontend/images/home/earth.png) no-repeat center bottom;}
+	.notFound .hd .plant .top {width: 100%;height: 446px;background:url(/Public/frontend/images/home/plant-01.png) no-repeat center bottom;background-size: 100%;animation: ufo 2s infinite linear;
+    -moz-animation: ufo 2s infinite linear;
+    -ms-animation: ufo 2s infinite linear;
+    -webkit-animation: ufo 2s infinite ease-in;
+    position: relative;}
+	.notFound .bd p {font-size: 24px;color: #777777;margin-bottom: 20px;padding-top: 25px;}
+	.notFound .bd a {color:#fff;border-radius: 26px;font-size:20px;width: 172px;height: 40px;line-height: 40px;padding: 0;border: none;outline: none;box-shadow: 0 6px 21px rgba(63,132,255,.36);}
+	.notFound .bd a:hover,.notFound .bd a:focus {color:#fff;outline: none;border: none;box-shadow: none;}
+	/*@-moz-keyframes ufo{
+		0%,100%{background-size: 100%;}
+		50%{background-size: 103%;}
+	}
+	@-ms-keyframes ufo{
+		0%,100%{background-size: 100%;}
+		50%{background-size: 103%;}
+	}
+	@-webkit-keyframes ufo{
+		0%,100%{background-size: 100%;}
+		50%{background-size: 103%;}
+	}
+	@keyframes ufo{
+		0%,100%{background-size: 100%;}
+		50%{background-size: 103%;}
+	}*/
+</style>	
+<div class="notFound">
+<div class="header">
+	<div class="container">
+		<div class="clearfix">
+			<a href="/" class="block fl">
+				<img src="/Public/frontend/images/home/logo.png" title="职场社交APP" alt="启脉官网" class="logo" />
+				<img src="/Public/frontend/images/home/tips.png" title="职场社交APP" alt="启脉app" class="tips" />
+			</a>
+			<nav class="navigation fr">
+				<ul>
+					<li><a rel="nofollow" title="首页" href="/">返回首页</a></li>
+				</ul>
+			</nav>
+		</div>	
+	</div>	
+</div>
+<div class="content">
+	<div class="box">
+		<div class="hd">
+			<div class="num text-center">4</div>
+			<div class="plant">
+				<div class="top"></div>
+			</div>
+			<div class="num text-center">4</div>
+		</div>
+		<div class="bd text-center">
+			<p>抱歉！您访问的页面失联啦...</p>
+			<a onclick="history.go(-1)" class="btn btn-primary">返回上一级</a>
+		</div>
+	</div>
+</div>
+<footer class="text-center">
+	<h4>深圳市合伙人网络科技有限公司</h4>
+	<p><a rel="nofollow" target="_blank" href="http://www.miitbeian.gov.cn/">粤ICP备17077695号&nbsp;|&nbsp;<a rel="nofollow" target="_blank" href="http://www.qimai360.com/wechat/user/secretText">隐私政策</a></p>
+</footer>
+</div>
+</body>
+</html>

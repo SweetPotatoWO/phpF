@@ -1,0 +1,59 @@
+<?php
+
+namespace Service\Spread\Model;
+
+use Think\Model;
+use Common\Model\SlaveModel;
+use Think\Exception;
+
+class HomePatchModel extends SlaveModel {
+
+    /**
+     *  获取文字碎片  查询从库
+     * @param type $where
+     * @param type $whereArr
+     * @param type $limit
+     * @return type
+     */
+    public function getPatch($where, $whereArr, $limit) {
+        $result["total"] = $this->SlaveDB()->table("d_home_patch")->where($where, $whereArr)->count();
+        $field = "pID,pName,pContent,pKey,addUserName,addDatetime";
+        $result["rows"] = $this->SlaveDB()->table("d_home_patch")->field($field)
+                        ->where($where, $whereArr)->order("addDatetime desc")->limit($limit)->select();
+        return $result;
+    }
+
+    /**
+     *  删除文字碎片
+     *  添加文字碎片
+     * @param type $data
+     * @param type $where
+     * @return type
+     */
+    public function savePatch($data, $where) {
+        try {
+            $model = M("HomePatch");
+            if (is_array($where) && count($where) > 0) {
+                $result = $model->where($where)->data($data)->save();
+                return $result * 1 > 0 ? $where["pID"] : FALSE;
+            } else {
+                return $model->add($data);
+            }
+            return false;
+        } catch (Exception $ex) {
+            logger(__METHOD__, $ex->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * 查询编辑文字碎片时信息
+     * @param type $where
+     * @return type
+     */
+    public function getSinPatch($where) {
+        $result = $this->SlaveDB()->table("d_home_patch")->where($where)->find();
+        return $result;
+    }
+
+}

@@ -1,0 +1,64 @@
+<?php
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+namespace Service\User\Logic;
+use Think\Model;
+
+
+/**
+ * RealName 
+ *
+ * @author DREAM
+ */
+class userMaillistLogic {
+
+    public function addAll($data) {
+        if(!is_array($data[0]) || empty($data)) {
+            return false;
+        } else {
+            return M("userMaillist")->addAll($data);
+        }
+    }
+
+    /**批量更新
+     * @param $data
+     */
+    public function saveAll($data) {
+        foreach ($data as $key=>$value) {
+            M("UserMaillist")->where(array('userName'=>$value['userName']))->save($value);
+        }
+        return true;
+    }
+
+    /**获取到同学的电话
+     * @param $userID
+     * @return mixed
+     */
+    public function getPhoneList($userID) {
+        $field = array("userName","phone","group");
+        return M("UserMaillist")->field("phone")->field($field)->where(array('userID'=>$userID ))->select();
+    }
+
+
+    /**
+     * 获取到电话号码根据名字
+     */
+    public function getPhoneByName($userID,$arr) {
+        $where['userName'] = array('in',$arr);
+        $field = array("userName","phone","group");
+        return M("UserMaillist")->where($where)->where(array('userID'=>$userID))->field($field)->select();
+    }
+
+
+
+
+
+
+
+
+}

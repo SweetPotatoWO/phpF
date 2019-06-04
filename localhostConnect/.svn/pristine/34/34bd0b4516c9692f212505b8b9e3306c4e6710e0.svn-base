@@ -1,0 +1,5 @@
+User-agent: *
+Disallow: /logs/
+Disallow: /Runtime/
+Disallow: /Public/
+Disallow: /upload/

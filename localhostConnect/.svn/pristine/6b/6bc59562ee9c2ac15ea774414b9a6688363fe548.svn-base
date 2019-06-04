@@ -1,0 +1,24 @@
+<?php
+
+namespace Frontend\Controller;
+
+use Common\Common\CodeGenerator;
+
+/**
+ * Class IndexController pc端首页
+ * @package Home\Controller
+ */
+class IndexController extends BaseFrontController {
+
+    /**
+     * 主入口
+     */
+    public function index() {
+          $codel = new CodeGenerator();
+          $a =  $codel->decode(I('key'));
+          echo "dd";
+    }
+
+    
+
+}

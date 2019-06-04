@@ -1,0 +1,50 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: Administrator
+ * Date: 2018/8/14 0014
+ * Time: 9:50
+ */
+
+namespace Service\UserCenter\Model;
+use Common\Model\SlaveModel;
+
+class UserWorkexperienceModel extends SlaveModel {
+
+
+    /**获取到用户的工作经历
+     * @param $userID
+     */
+    public function getUserEx($userID) {
+        $sql = "SELECT ex.companyName,ex.userWorkExID,c.companyLogo,ex.companyID,ex.job,ex.group,"
+                . "(case ex.startDatetime when 0 then '' else  FROM_UNIXTIME(ex.startDatetime,'%Y-%m') end) as startDatetime,"
+                . "(case ex.endDatetime when 0 then '' else  FROM_UNIXTIME(ex.endDatetime,'%Y-%m') end) as endDatetime,"
+                . "FROM_UNIXTIME(ex.addDatetime,'%Y-%m-%d')  as addDatetime "
+                . "FROM d_user_workexperience ex left join d_company c on c.companyID=ex.companyID where ex.userID=" . $userID;
+        return $this->SlaveDB()->query($sql);
+    }
+
+    /**
+     * 获取当前用户的学校信息
+     */
+    public function getUserCompanyEd($userID,$companyID,$field="") {
+        $model =  $this->where(array('userID'=>$userID,'companyID'=>$companyID));
+        if(!empty($field)) {
+            $model = $model->field($field);
+        }
+        return $model->find();
+    }
+
+
+    /**
+     * 根据教育经历的ID获取到信息
+     */
+    public function getWorkOneByID($ID,$field="") {
+        $model = $this->where(array("userWorkExID"=>$ID));
+        if(!empty($field)) {
+            $model = $model->field($field);
+        }
+        return $model->find();
+    }
+
+}

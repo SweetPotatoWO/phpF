@@ -1,0 +1,67 @@
+<include file="Common:header" />
+<div class="tipsOff">
+	<div class="container fs-12 clearfix">
+		<div class="fl color-deep pt-10 pb-10">请选择举报原因</div>
+		<div class="fr pt-10 pb-10"><a href="explain.html" class="color-blue">举报说明</a></div>
+	</div>
+	<form>
+		<div class="bg-white mb-10">
+			<div class="weui-cells weui-cells_checkbox mt-0">
+        		<label class="weui-cell weui-check__label mb-0" for="s11">
+          			<div class="weui-cell__bd">色情，淫秽信息（包含言语和信息等）</div>
+          			<div class="weui-cell__hd pr-0">            			           			
+            			<input type="checkbox" name="checkbox1" class="weui-check" id="s11">
+            			<i class="weui-icon-checked"></i>
+          			</div>
+        		</label>        		
+        		<label class="weui-cell weui-check__label mb-0" for="s12">
+        			<div class="weui-cell__bd">违法/政治敏感</div>
+          			<div class="weui-cell__hd pr-0">
+            			<input type="checkbox" name="checkbox1" class="weui-check" id="s12">
+            			<i class="weui-icon-checked"></i>
+          			</div>
+        		</label>
+        		<label class="weui-cell weui-check__label mb-0" for="s13">
+        			<div class="weui-cell__bd">虚假个人信息（姓名/公司/职位冒用等）</div>
+          			<div class="weui-cell__hd pr-0">
+            			<input type="checkbox" name="checkbox1" class="weui-check" id="s13">
+            			<i class="weui-icon-checked"></i>
+          			</div>
+        		</label>
+        		<label class="weui-cell weui-check__label mb-0" for="s14">
+        			<div class="weui-cell__bd">个人销售广告（微商类/理财类等）</div>
+          			<div class="weui-cell__hd pr-0">
+            			<input type="checkbox" name="checkbox1" class="weui-check" id="s14">
+            			<i class="weui-icon-checked"></i>
+          			</div>
+        		</label>
+        		<label class="weui-cell weui-check__label mb-0" for="s15">
+        			<div class="weui-cell__bd">其他原因</div>
+          			<div class="weui-cell__hd pr-0">
+            			<input type="checkbox" name="checkbox1" class="weui-check" id="s15">
+            			<i class="weui-icon-checked"></i>
+          			</div>
+        		</label>
+      		</div>
+		</div>
+		
+		<div class="bg-white container fillText">
+			<div class="pt-10 pb-10 clearfix">
+				<div class="fl">
+					<textarea placeholder="使用文字或图片来作证你的举报更容易通过哦（最多50字）" maxlength="50"></textarea>
+				</div>
+				<div class="fr">
+					<div class="trigger fs-12 color-deep text-center">附上图片</div>
+					<!--<select>
+						<option>拍摄照片</option>
+						<option>选择图片</option>
+					</select>-->
+				</div>
+			</div>
+		</div>
+		
+		<input class="btn btn-block" value="提交" />
+	</form>
+</div>
+</body>
+</html>

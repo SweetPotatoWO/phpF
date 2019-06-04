@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+        <meta name = "format-detection" content="telephone = no" />
+        <title>启脉_开启你的人脉和机遇</title>
+        <meta name="keywords" content="启脉,启脉APP,启脉官网,qimai,职场社交,找人APP,隐私社交,qimai360" />
+		<meta name="description" content="启脉是一款免费的专注职场隐私的社交app，旨在帮助用户开启自己的人脉和发现新的机遇。目前提供职场社交、找人、找公司、名片云端管理等功能。增强职场人士的社交圈子同时，我们也会注重用户的隐私保护。" />
+        <link rel="stylesheet" type="text/css" href="{$Think.WXPATH}css/bootstrap.min.css" />
+        <link rel="stylesheet" type="text/css" href="{$Think.WXPATH}css/weui.min.css" />
+        <link rel="stylesheet" type="text/css" href="{$Think.WXPATH}css/jquery-weui.css" />
+        <link rel="stylesheet" type="text/css" href="{$Think.WXPATH}css/common.css" />
+        <script type="text/javascript" src="{$Think.WXPATH}js/jquery.min.js"></script>
+        <script type="text/javascript" src="{$Think.WXPATH}js/qhz.jssdk.js?v={$Think.WNO}"></script>
+        <script type="text/javascript" src="{$Think.WXPATH}js/jquery-weui.min.js?v={$Think.WNO}"></script>
+        <script type="text/javascript" src="{$Think.WXPATH}js/common.js?v={$Think.WNO}"></script>
+        <script type="text/javascript" src="{$Think.WXPATH}js/bootstrap.min.js"></script>
+    </head>
+<body>
+
+

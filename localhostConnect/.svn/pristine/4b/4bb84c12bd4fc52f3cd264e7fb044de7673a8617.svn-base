@@ -1,0 +1,102 @@
+<?php
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+namespace Frontend\Controller;
+
+use GraphAware\Neo4j\OGM\Tests\Proxy\Model\User;
+use Service\Connect\Logic\DataImportLogic;
+use Service\News\Logic\SendSMSLogic;
+use Service\User\Logic\UserFriendLogic;
+use Service\User\Logic\UserInviteLogic;
+use Service\User\Logic\UserLogic;
+use Think\Controller;
+use Think\Exception;
+
+/**
+ * Description of GoCallbackController
+ *
+ * @author DREAM
+ */
+class CallbackController extends Controller
+{
+
+    private $data; //参数 
+    private $sign; //签名
+
+    public function __construct()
+    {
+        parent::__construct();
+        $this->getSystemPar();
+        $responseInfo = file_get_contents('php://input');
+        $inputParam = stripcslashes($responseInfo);
+        $this->data = json_decode($inputParam, TRUE);
+        $this->sign = sha1(md5($this->data["returnurl"]) . "mboxdarren");
+        if ($this->sign != $this->data["sign"]) {
+            logger("ERROR-------MQ业务回调签名错误：", $this->data["returnurl"]);
+            echo '签名错误';
+            exit();
+        }
+        logger("Start-------MQ业务回调参数：", $inputParam);
+    }
+
+    /**
+     * 获取系统参数。
+     */
+    private function getSystemPar()
+    {
+        $par = new \Service\System\Logic\SysParameterLogic();
+        $config = $par->getConfig();
+        C($config);
+    }
+
+    //测试勿上传
+    public function rabCash()
+    {
+//        sleep(20);
+        echo 'ok';
+        logger("测试消息队列：rabCash参数一", $this->data["returnurl"]);
+        logger("测试消息队列：rabCash参数二", $this->data["order"]);
+    }
+
+    /**
+     * 导入联系人
+     */
+    public function importContacts()
+    {
+        $user_id = $this->data["user_id"];
+        if($user_id){
+            $logic = new DataImportLogic();
+            try {
+                $logic->import4Contacts($user_id);
+                logger("GoCallbackController/importContacts导入联系人成功", 'user_id:'.$user_id);
+            }catch (Exception $ex){
+                logger("GoCallbackController/importContacts导入联系人失败", 'user_id:'.$user_id.',错误信息：'.$ex->getMessage());
+            }
+        }
+        echo 'success';
+    }
+
+
+    /**
+     * 通知发送短信
+     */
+    public function noticeMes() {
+        $user_id = $this->data['user_id'];
+        $logic = new UserFriendLogic();
+        $user = new UserLogic();
+        $info = $user->getUserInfo($user_id);
+        $phonelist = $logic->getMailNoInvitation($user_id);
+        $phoneStr = trim(implode(',',$phonelist),',');
+        $smstArr = C('phone_Message');
+        $content = $smstArr['Invitation'];
+        $content = vsprintf($content,array($info['name']));
+        $sms = new SendSMSLogic();
+        $sms->addBatchSmsLog($user_id,$phoneStr,$content);
+    }
+
+}

@@ -1,0 +1,109 @@
+<div id="sub-Patch-list">
+    <input type="hidden" name="hidrefurl" id="hidrefurl" value="{:U(ACTION_NAME, $_GET)}">
+    <h4 class="title">微信-回复消息</h4>
+    <form class="form-inline" id="query_Patch">
+        <label class="control-label">回复类型: </label>
+        <select class="form-control mr-10" name="replyType" style="width: 180px">
+            <option  value='' >全部</option>
+            <foreach name="replyTypes" item="vo" key="k" >
+                <option  value='{$k}' <if condition="$Think.post.replyType eq $k"> selected="selected" </if> >{$vo}</option>
+            </foreach>
+        </select>    
+        <label class="control-label pl_20 pr_10">关键词：</label>
+        <input type="text" value="{$Think.post.keyword}" name="keyword" placeholder="关键词" class="form-control"> 
+        <a href="{:U(ACTION_NAME, $_GET)}"  onclick="$Util.openQuery(this, event, 'query_Patch')"  class="btn btn-info"><i class="icon-search"></i>查询</a>
+        <a href="/Backend/Spread/wxReplyEdit" title="编辑-消息"  onclick="$Util.openWin(this, event)" class="btn btn-success"><i class="icon-plus"></i>新增</a> 
+    </form>
+    <table class="table table-striped table-bordered">
+        <thead>
+            <tr>          
+                <th>回复类型</th>
+                <th>关键词</th>       
+                <th>内容格式</th>
+                <th>回复标题</th>
+                <th>文本</th>
+                <th>图片</th>
+                <th>创建人</th>              
+                <th>创建时间</th>              
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody>
+        <volist name='result' id='vo'>
+            <tr>
+                <td  style="text-align: left">{$replyTypes[$vo[replyType]]}</td>
+                <td>{$vo.keyword}</td>
+                <td  style="text-align: left">{$contentTypes[$vo[contentType]]}</td>
+                <td  style="text-align: left"><a href="#" data-toggle="popover" data-placement="bottom" data-content="{$vo.title}" title="" data-original-title="提示">{$vo.title|sub_str=0,20,'...'}</a></td>
+                <td style="text-align: left"><a href="#" data-toggle="popover" data-placement="bottom" data-content="{$vo.content}" title="" data-original-title="提示">{$vo.content|sub_str=0,20,'...'}</a></td>
+                <td  style="text-align: left"><neq name="vo.imgUrl" value=""><a class="image_gall" title="浏览" href="{$Think.UPLOAD}{$vo.imgUrl}"> [浏览]</a></neq></td>
+                <td>{$vo.addUserName}</td>
+                <td>{$vo.addDatetime|formatlongDate}</td>
+                <td>
+                    <a class="btn btn-xs btn-primary pr-10" href="/Backend/Spread/wxReplyEdit/key/{$vo.replyID}"  onclick="$Util.openWin(this, event)" title="修改-消息"><span class="icon-edit"></span>修改  </a>
+                    <a class="btn btn-xs btn-warning pr-10 delete" href="/Backend/Spread/delWxReply" data="{$vo.replyID}"><span class="icon-remove"></span>删除</a>
+                </td>
+            </tr>
+        </volist>
+        </tbody>
+    </table>
+    <nav class=" pagination-centered">
+        <ul class="pagination">  
+            {$pageHtml}
+        </ul>
+    </nav>
+    <script type="text/javascript" >
+        $(function ($) {
+            $(".image_gall").popImage();
+            $("[data-toggle='popover']").popover().on("mouseenter", function () {
+                var _this = this;
+                $(this).popover("show");
+                $(this).siblings(".popover").on("mouseleave", function () {
+                    $(_this).popover('hide');
+                });
+            }).on("mouseleave", function () {
+                var _this = this;
+                setTimeout(function () {
+                    if (!$(".popover:hover").length) {
+                        $(_this).popover("hide")
+                    }
+                }, 100);
+            });
+            $(".delete").click(function (e) {
+                var url = $(this).attr("href");
+                var key = $(this).attr("data");
+                $win.confirm("确定要删除吗").on(function () {
+                    $.ajax({
+                        type: "post",
+                        url: url,
+                        data: {'key': key},
+                        dataType: "json",
+                        beforeSend: function () {
+                            $(".sub-content").showLoading();
+                        },
+                        success: function (data, textStatus) {
+                            $(".sub-content").hideLoading();
+                            if (data.status == 1) {
+                                $win.message(data.msg).on(function () {
+                                    $Util.openQuery();
+                                });
+                            } else {
+                                $win.warn(data.msg);
+                            }
+                        },
+                        complete: function () {
+                            $(".sub-content").hideLoading();
+                        },
+                        error: function () {
+                            $(".sub-content").hideLoading();
+                        }
+                    });
+                });
+                e.preventDefault();
+            });
+        });
+    </script>
+</div>
+
+
+

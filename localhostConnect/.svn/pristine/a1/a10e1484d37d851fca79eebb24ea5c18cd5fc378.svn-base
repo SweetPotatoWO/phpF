@@ -1,0 +1,208 @@
+<?php
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+namespace SmallApi\Controller;
+
+use Common\Controller\BaseController;
+use Common\Common\Redis;
+use Common\Common\AesSecurity;
+use Service\User\Logic\UserLogic;
+use Common\Common\Authcode;
+use Think\Cache;
+
+/**
+ * Description of BaseMobileController
+ *
+ * @author Administrator
+ */
+abstract class BaseMobileController extends BaseController {
+
+    const APPID = 'wxe93627806f3d3617'; //APPID
+    const APP_SECRET = '57a7dea1a138ce0e02a0c4b0b4899eda'; //APPSECRET
+    const API_AUTH_URL = "https://api.weixin.qq.com/sns/jscode2session?appid=%s&secret=%s&js_code=%s&grant_type=authorization_code";
+
+    protected $return = array('status' => 0, 'msg' => '', 'data' => null);
+
+    public function _initialize() {
+        $this->_init();
+    }
+
+    /**
+     * 初始化。
+     */
+    private function _init() {
+        $this->getLoginStutas();
+    }
+
+    /**
+     * 检查用户登录状态
+     */
+    protected function userCheck() {
+        if (empty(C('openID'))) {
+            $this->return['status'] = 2;
+            $this->return['msg'] = '未登录！';
+            exit;
+        }
+        return true;
+    }
+
+    function _empty() {
+        header("HTTP/1.0 404 Not Found");
+        $this->display('Public:404');
+    }
+
+    function index() {
+        header("HTTP/1.0 404 Not Found");
+        $this->display('Public:404');
+    }
+
+    /**
+     * 获取分页limit
+     * @return type
+     */
+    protected function getPage($size = 0) {
+        $size = $size == 0 ? C("PAGE_SIZE") : $size;
+        $page = I("post.p") * 1 > 0 ? I("post.p") * 1 : I("get.p") * 1;
+        if (!preg_match('/^\d+$/', $page)) {
+            $page = 0;
+        }
+        $page = ($page * 1 == 0 ? 0 : $page * 1 - 1) * 1 * $size;
+        return $page . "," . $size;
+    }
+
+    /**
+     * 根据Token获取用户登录信息。
+     * @param type $token
+     * @return boolean
+     */
+    private function getLoginInfoByApp() {
+        $aes = new AesSecurity();
+        $token = $aes->decryptData($_COOKIE['token']);
+        $deviceID = $aes->decryptData($_COOKIE['sid']);
+        if (!empty($token) && strlen($token) > 5 && !empty($deviceID) && strlen($deviceID) > 5) {
+            $redis = Redis::GetInstance();
+            $searchKey = $this->getLoginCaheKey($token);
+            $keys = $redis->getKeys($searchKey);
+            if ($keys) {
+                $userInfo = $redis->get($keys[0]);
+                if ($userInfo && $deviceID == $userInfo['deviceID']) {
+                    $loginInfo['userID'] = $userInfo['userID'];
+                    $loginInfo['phone'] = $userInfo['phone'];
+                    return $loginInfo;
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * 获取登录缓存key
+     * @param type $token
+     * @param type $userID
+     * @return type
+     */
+    private function getLoginCaheKey($token, $userID = '') {
+        return sprintf('APP_Login_%s_%s', $token, $userID);
+    }
+
+    /**
+     * Http Get请求。
+     * @param type $url
+     * @return type
+     */
+    protected function httpGet($url) {
+        $curl = curl_init();
+        curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($curl, CURLOPT_TIMEOUT, 500);
+        curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, false);
+        curl_setopt($curl, CURLOPT_URL, $url);
+        $res = curl_exec($curl);
+        curl_close($curl);
+        return $res;
+    }
+
+    /**
+     * 获取用户登录信息
+     */
+    protected function getwxUserOpenID($code) {
+        $res = array('status' => 1, 'msg' => '请求成功', 'data' => null);
+        if (empty($code)) {
+            $res['status'] = 0;
+            $res['msg'] = '请求失败';
+            return $res;
+        }
+        $url = sprintf(self::API_AUTH_URL, self::APPID, self::APP_SECRET, $code);
+        $result = json_decode($this->httpGet($url), true);
+        if (isset($result['session_key'])) {
+            $key = "WXLOGIN";
+            $logic = new UserLogic();
+            $userInfo = $logic->getUserByOpenID($result['openid']);
+            $authcode = Authcode::singleton();
+            $cookieID = md5(uniqid(rand(), TRUE));
+            $cookiestr = $result['openid'] . ',' . $cookieID . ',' . $userInfo['userID'] . ',' . $userInfo['phone'] . ',' . $lasttime;
+            $str = $authcode->authcode($cookiestr, "ECODE");
+            $str = base64_encode($str);
+            $time = 20 * 60;
+            $lasttime = $time + time();
+            $redis = Cache::getInstance('Redis');
+            $redis->delete($key . $result['openid']);
+            $redis->set($key . $result['openid'], $result['openid'] . ',' . $cookieID . ',' . $userInfo['userID'] . ',' . $userInfo['phone'], $time);
+            $res['data']['openid'] = $result['openid'];
+            $res['data']['info'] = $str;
+        } else {
+            $res['status'] = 0;
+            $res['msg'] = '请求失败';
+        }
+        return $res;
+    }
+
+    /**
+     * 获取用户登录情况
+     */
+    private function getLoginStutas() {
+        $key = 'WXLOGIN';
+        $value = base64_decode($_COOKIE[$key]);
+        $authcode = Authcode::singleton();
+        $authCookie = $authcode->authcode($value);
+        if (empty($authCookie)) {
+            return false;
+        }
+        list($openID, $cookieID, $userID, $phone, $lasttime) = explode(',', $authCookie);
+        $redis = Cache::getInstance('Redis');
+        $mem = $redis->get($key . $openID);
+        $cstr = $openID . ',' . $cookieID . ',' . $userID . ',' . $phone;
+        $userInfo = array();
+        if ($mem === $cstr) {
+            $userInfo = array(
+                'openID' => $openID,
+                'userID' => $userID,
+                'phone' => $phone
+            );
+            $redis->set($key . $openID, $openID . ',' . $cookieID . ',' . $userID . ',' . $phone, 20 * 60);
+        }
+        $this->setLoginStutas($userInfo);
+    }
+
+    /**
+     * 设置登录状态。
+     * @param type $loginInfo
+     */
+    private function setLoginStutas($loginInfo = array()) {
+        if (is_array($loginInfo) && !empty($loginInfo)) {
+            C('userID', $loginInfo["userID"]);
+            C('phone', $loginInfo["phone"]);
+            C('openID', $loginInfo["openID"]);
+        } else {
+            C('userID', null);
+            C('phone', null);
+            C('openID', null);
+        }
+    }
+
+}

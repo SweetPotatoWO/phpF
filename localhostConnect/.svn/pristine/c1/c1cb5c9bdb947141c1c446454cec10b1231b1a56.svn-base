@@ -1,0 +1,257 @@
+<?php
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+namespace Service\News\Logic;
+
+use Common\Common\CodeGenerator;
+use Common\Common\Redis;
+use Common\Common\ThirdApi\ChuanglanSmsApi;
+use Service\News\Model\SmsSendModel;
+use Service\User\Model\UserModel;
+
+/**
+ * 短信消息体组合，站内信消息组合
+ *
+ * @author DREAM
+ */
+class SendSMSLogic {
+
+    private $XAName = "创蓝";
+    private $XASend = null;
+    private $logic = null;
+    private $mobileLock = 'mobile_check_Lock_'; //同一手机号码验证短信次数不能超过5次 前缀
+    private $mobileLockTime = 600; //验证失败次数过多，锁定10分钟
+
+    public function __construct() {
+        $this->logic = new SmsVerifyLogic();   //验证吗验证类
+    }
+
+    /**
+     * 确认手机号
+     * @param type $mobile
+     * @param type $code
+     */
+    public function ConfirmVerify($mobile, $code) {
+        
+        $cache = Redis::GetInstance();
+        $firm = $cache->get($mobile . "_Valid");
+        $ret = $this->codeSock($mobile);
+        if (!$ret) {
+            return false; //同一验证码次数不能超过5次
+        }
+        if ($firm) {
+            if ($firm == $code) {
+                $this->codeUnLock($mobile);
+                return true;
+            }
+        } else {
+            $result = $this->logic->getConfirmVerify($mobile, $code);
+            if ($result) {
+                $this->codeUnLock($mobile);
+            }
+            return $result;
+        }
+    }
+
+    /**
+     * 计算手机短信验证次数
+     * @param type $mobile
+     * 
+     */
+    public function codeSock($mobile) {
+        $lock = $this->mobileLock . $mobile;
+        $cache = Redis::GetInstance();
+        $times = $cache->get($lock);
+        if ($times && $times >= 6) {
+            return false;
+        }
+        //失败次数累加
+        if ($times && $times < 6) {
+            $cache->set($lock, $times + 1, $this->mobileLockTime);
+        } else {
+            $cache->set($lock, 1, $this->mobileLockTime);
+        }
+        return true;
+    }
+
+    /**
+     * 解锁手机验证次数
+     * @param type $mobile
+     */
+    public function codeUnLock($mobile) {
+        $lock = $this->mobileLock . $mobile;
+        $cache = Redis::GetInstance();
+        $cache->del($lock);
+    }
+
+    /**
+     * 发送短信验证码
+     * @param type $userID
+     * @param type $username
+     * @param type $mobile
+     * @param type $type
+     */
+    public function sendCode($mobile, $type, $terminal) {
+
+        $cache = Redis::GetInstance();
+        $over = $cache->get($mobile . "_2_SMSCode_" . $type); //一分钟内不能重复发送同一个业务
+        $count = $cache->get($mobile . "_10_SMSCode"); //十分钟内发送三条
+        $varlast = 60 - (time() - $over) - 1;
+        if ($varlast * 1 > 1) {
+            return "请 " . $varlast . " 秒后再重试获取!";
+        }
+        if ($count > 2) {
+            return "您发送的短信过多！";
+        }
+        $sms = new ChuanglanSmsApi();
+        $result = $sms->sendVerify($mobile,$terminal,$type);
+        if ($result) {
+            $this->codeUnLock($mobile);
+            $cache->set($mobile . "_Valid", $result, 60); //一分钟内有效
+            $cache->set($mobile . "_10_SMSCode", $count * 1 + 1, 600); //限制10分钟发送三条
+            $cache->set($mobile . "_2_SMSCode_" . $type, time(), 60);
+            return true;
+        }
+        return "发送失败！";
+    }
+
+
+    /**
+     * 一键邀请全部
+     * @param $phoneStr
+     * @param $content
+     */
+    public function sendAllLetterMes($phoneStr,$userID) {
+        $sms = new ChuanglanSmsApi();
+        $user = new UserModel();
+        $strArr[] = $user->where(array('userID'=>$userID))->getField('nickname');
+        $code = new  CodeGenerator();
+        $key = $code->createCode($userID);
+        $strArr[] = WECHAT."user/register/key/".$key;
+        $res = $sms->sendAllInvite($userID,$phoneStr,$strArr);
+        return $res;
+    }
+
+
+    /**
+     * 用户邀请的发送短信
+     * @param $mobile
+     * @param $userID
+     * @param $name
+     * @return bool
+     */
+    public function sendInvitationMes($mobile,$userID,$name) {
+        $sms = new ChuanglanSmsApi();
+        $strArr[] = ($name)?$name:"神秘人";
+        $code = new  CodeGenerator();
+        $key = $code->createCode($userID);
+        $strArr[] = WECHAT."user/register/key/".$key;
+        $res = $sms->sendBusinessMes($mobile,$userID,'Invitation',$strArr);
+        return $res;
+    }
+
+
+    /**
+     * 评价的短信
+     * @param $mobile 电话
+     * @param $userID  用户的ID
+     * @param $name  姓名
+     * @param $content  内容
+     * @return bool
+     */
+    public function sendEvaluateMes($mobile,$userID,$name,$content) {
+
+        $strArr[] = ($name)?$name:"神秘人";
+        $strArr[] = $content;
+        $code = new  CodeGenerator();
+        $key = $code->createCode($userID);
+        $strArr[] = WECHAT."user/register/key/".$key;
+
+        $sms = new ChuanglanSmsApi();
+        return $sms->sendBusinessMes($mobile,$userID,'Evaluate',$strArr);
+
+    }
+
+
+    /**
+     * 私信的信息
+     * @param $mobile 手机
+     * @param $userID  用户的ID
+     * @param $company  公司的名称
+     * @param $name   用户的姓名
+     * @return bool
+     */
+    public function sendLetter($mobile,$userID,$company,$name) {
+        $strArr[] = $company;
+        $strArr[] = ($name)?$name:"神秘人";
+        $strArr[] = "";
+        $sms = new ChuanglanSmsApi();
+        return $sms->sendBusinessMes($mobile,$userID,'PrivateLetter',$strArr);
+    }
+
+
+    /**
+     * 提示完善信息
+     * @param $mobile
+     * @param $userID
+     * @param $company
+     * @param $name
+     */
+    public function Information($mobile,$userID,$company,$name) {
+        $str = "";
+        $str .= ($company)?$company."的":"";
+        $str .= ($name)?$name:"神秘人";
+        $strArr[] = $str;
+        $sms = new ChuanglanSmsApi();
+        return $sms->sendBusinessMes($mobile,$userID,'Information',$strArr);
+    }
+
+    /**
+     * 同意好友申请
+     * @param $mobile
+     * @param $userID
+     * @param $company
+     * @param $name
+     * @return bool
+     */
+    public function AgreeApply($mobile,$userID,$company,$name) {
+        $strArr[] = $company;
+        $strArr[] = ($name)?$name:"神秘人";
+        $strArr[] = "";
+        $sms = new ChuanglanSmsApi();
+        return $sms->sendBusinessMes($mobile,$userID,'AgreeApply',$strArr);
+    }
+
+
+    /**
+     * 好友申请
+     * @param $mobile
+     * @param $userID
+     * @param $company
+     * @param $name
+     * @return bool
+     */
+    public function FriendApply($mobile,$userID,$company,$name) {
+        $strArr[] = $company;
+        $strArr[] = ($name)?$name:"神秘人";
+
+        $strArr[] = "";
+        $sms = new ChuanglanSmsApi();
+        return $sms->sendBusinessMes($mobile,$userID,'FriendApply',$strArr);
+    }
+
+
+    /**
+     * 记录批量发送短信的消息
+     */
+    public function addBatchSmsLog($userID,$phoneStr,$content) {
+        $model = new SmsSendModel();
+        return $model->addBatchSmsLog($userID,$phoneStr,$content);
+    }
+    
+}

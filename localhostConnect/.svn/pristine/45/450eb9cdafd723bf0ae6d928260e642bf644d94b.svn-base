@@ -1,0 +1,88 @@
+<div id="sub-User-list">
+    <script type="text/javascript" src="{$Think.BPATH}js/datejs/WdatePicker.js"></script> 
+    <input type="hidden" name="hidrefurl" id="hidrefurl" value="{:U(ACTION_NAME, $_GET)}">
+    <h4 class="title">用户举报管理<span class="titleqit">默认查询一周内记录</span></h4>
+    <form class="form-inline" id="query_log"> 
+        <div class="form-group">
+            <label class="control-label">举报人电话:</label>
+            <input type="text" class="form-control mr-10" value="{$Think.post.txtphone}" name="txtphone" placeholder="电话">
+        </div>
+        <div class="form-group">
+            <label class="control-label">被举报人电话:</label>
+            <input type="text" class="form-control mr-10" value="{$Think.post.txtfphone}" name="txtfphone" placeholder="电话">
+        </div>
+                <div class="form-group mr-10">
+            <label class="control-label">举报原因:</label>
+            <select name='type' id="type" class="form-control">
+                <option value="">--请选择--</option>
+                <volist name="proseType" id="vo" key="k">
+                <option value='{$k}' <eq name='Think.post.type' value='$k'>selected="selected"</eq>>{$vo}</option>
+                </volist>
+            </select>
+        </div>
+        <div class="form-group mr-10">
+            <label class="control-label">审核状态:</label>
+            <select name='status' id="status" class="form-control">
+                <option value="">--请选择--</option>
+                <volist name="proseStatus" id="vo" key="k">
+                <option value='{$k}' <eq name='Think.post.status' value='$k'>selected="selected"</eq>>{$vo}</option>
+                </volist>
+            </select>
+        </div>
+        <div class="form-group mr-10">
+            <label class="control-label">举报时间:</label>
+            <input type="text" class="form-control mr-5" onclick="WdatePicker({isShowClear: true, readOnly: true, maxDate: '%y-%M-%d'})" value="{$Think.post.txtDateStart}" id="txtDateStart" name="txtDateStart" placeholder="开始日期">     
+            <label class="control-label">～</label>
+            <input type="text" class="form-control mr-5" onclick="WdatePicker({isShowClear: true, readOnly: true, maxDate: '%y-%M-%d'})" value="{$Think.post.txtDateEnd}" id="txtDateEnd" name="txtDateEnd" placeholder="结束日期">   
+        </div>
+        <div class="form-group">
+            <a href="{:U(ACTION_NAME, $_GET)}"  onclick="$Util.openQuery(this, event, 'query_log')"  class="btn btn-info"><i class="icon-search"></i>查询</a>
+        </div>
+    </form>
+    <table class="table table-striped table-bordered">
+        <thead>
+            <tr> 
+                <th>举报人</th>
+                <th>被举报人</th>
+                <th>举报原因</th>
+                <th>举报内容</th>
+                <th>举报时间</th>
+                <th>审核结果</th>
+                <th>备注</th>
+                <th>审核人</th>
+                <th>审核时间</th>
+                <th>操作</th>
+            </tr>           
+        </thead>
+        <tbody>
+        <volist name="result" id="vo">
+            <tr>  
+                <td>{$vo.activeUser} {$vo.activePhone}</td>
+                <td>{$vo.passiveUser} {$vo.passivePhone}</td>
+                <td>{$proseType[$vo[type]]}</td>
+                <td>{$vo.content}</td>
+                <td>{$vo.addDatetime|formatLongDate}</td>
+                <td>{$proseStatus[$vo[status]]}</td>
+                <td>{$vo.remark}</td>
+                <td>{$vo.editUserName}</td>
+                <td>{$vo.editDatetime|formatlongDate}</td>
+                <td>
+                    <eq name='vo.status' value='1'>
+                    <a class="btn btn-xs btn-primary pr-10" href="/Backend/User/editProse/key/{$vo.prosecuteID}" title="处理-举报"  onclick="$win.dialog(this, event)"><span class="icon-edit"></span>修改</a>
+                    </eq>
+                </td>
+            </tr>
+        </volist>
+        </tbody>
+    </table>
+    <nav class=" pagination-centered">
+        <ul class="pagination">  
+            {$page}
+        </ul>
+    </nav>  
+    <script>
+    </script>
+</div>
+
+
+

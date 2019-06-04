@@ -1,0 +1,68 @@
+<?php
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+namespace Service\User\Logic;
+
+use Service\User\Model;
+
+/**
+ * 用户跟踪
+ *
+ * @author DREAM
+ */
+class UserServiceLogic {
+
+    /**
+     * 添加用户跟踪记录
+     * @param type $data
+     */
+    public function addTrack($data) {
+        $model = new Model\UserServiceModel();
+        $result = $model->addTrack($data);
+        return $result;
+    }
+
+    /**
+     * 查询客服服务信息 
+     * @param type $where
+     * @param type $whereArr
+     * @param type $limit
+     */
+    public function getTrack($where, $whereArr, $limit) {
+        $model = new Model\UserServiceModel();
+        $result = $model->getTrack("(1=1)" . $where, $whereArr, $limit);
+        return $result;
+    }
+
+    /**
+     * 用户，投资，充值，提现次数
+     * @param type $where
+     * @param type $whereArr
+     * @param type $limit
+     * @return type
+     */
+    public function getUserCount($where, $whereArr, $limit) {
+        $model = new Model\UserServiceModel();
+        $result = $model->getUserCount($where, $whereArr, $limit);
+        return $result;
+    }
+
+    /**
+     * 用户服务类型统计
+     * @param type $where
+     * @param type $whereArr
+     * @param type $limit
+     * @return type
+     */
+    public function getServiceCount($where, $whereArr, $limit) {
+        $model = new Model\UserServiceModel();
+        $result = $model->getServiceCount($where, $whereArr, $limit);
+        return $result;
+    }
+
+}

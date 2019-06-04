@@ -1,0 +1,68 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: Administrator
+ * Date: 2018/8/23 0023
+ * Time: 14:14
+ */
+namespace Service\Integral\Logic;
+
+
+use Service\Integral\Model\UserSigninModel;
+
+class SignLogic {
+
+
+    private  $error = array("error"=>0,"msg"=>"修改成功");
+
+
+
+
+    /**获取到用户今天的签到
+     * @param $userID
+     */
+    public function getTodayDetail($userID) {
+        $model = new UserSigninModel();
+        return $model->getTodayOne($userID);
+    }
+
+
+    /**
+     * 添加一个用户的签到记录
+     *
+     */
+    public  function signHanld($userID) {
+        $login = new IntegralLogic();
+        $info = $login->getOneIntegral(array('typeCode'=>'sign',"typeWeight"=>"common"));
+        if(empty($info)) {
+            $this->error['error'] = 1;
+            $this->error['msg'] = "找不到签到的配置";
+            return $this->error;
+        }
+        $model = new UserSigninModel();
+        $res = $model->addOne($userID,$info['typeValue']);
+        if($res) {
+            return $this->error;
+        } else {
+            $this->error['error'] = 1;
+            return $this->error['msg'] = "操作失败";
+        }
+    }
+
+
+    /**
+     * 判断用户在签到的时候是否累计到了
+     */
+    public function receiveSign($userID) {
+        $model = new UserSigninModel();
+    }
+
+
+    /**
+     * 获取到一个用户的签到统计
+     */
+    public function getSignStatByUserID($useID) {
+        $model = new UserSigninModel();
+        return $model->addOrGetStatInfoByMonth($useID);
+    }
+}

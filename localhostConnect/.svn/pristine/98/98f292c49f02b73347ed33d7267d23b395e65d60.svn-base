@@ -1,0 +1,69 @@
+<?php
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+namespace Service\User\Logic;
+
+use Service\User\Model\UserActionLogModel;
+
+class UserActionLogLogic {
+
+    /**
+     * 增加ICP日志 
+     * @param type $userID
+     * @param type $phone
+     * @param type $ip
+     * @param type $act
+     * @param type $rs
+     * @param type $terminal 
+     */
+    public function addLog($userID = 0, $phone = 0, $ip = 0, $act = 0, $rs = 0, $terminal = 0) {
+        if (empty($userID) || empty($phone)) {
+            return false;
+        }
+        $data = $this->getLogMsg($userID, $phone, $ip, $act, $rs, $terminal);
+        $logic = new UserActionLogModel();
+        $result = $logic->addlog($data);
+        return $result;
+    }
+
+    /**
+     * 组合登录的日志 
+     * @param type $userID
+     * @param type $phone
+     * @param type $ip
+     * @param type $act
+     * @param type $rs
+     * @param type $terminal
+     */
+    protected function getLogMsg($userID, $phone, $ip, $act, $rs, $terminal) {
+        $data = array();
+        $addDatetime = time();
+        $data["userID"] = $userID;
+        $data["phone"] = $phone;
+        $data["logIP"] = $ip;
+        $data["action"] = $act;
+        $data["ret"] = $rs;
+        $data["terminal"] = $terminal;
+        $data["addDatetime"] = $addDatetime;
+        return $data;
+    }
+
+    /**
+     * 获取前台日志
+     * @param type $where
+     * @param type $whereArr
+     * @param type $limit
+     * @return type
+     */
+    public function getActLog($where, $whereArr, $limit) {
+        $logic = new UserActionLogModel();
+        $result = $logic->getActLog("(1=1)" . $where, $whereArr, $limit);
+        return $result;
+    }
+
+}

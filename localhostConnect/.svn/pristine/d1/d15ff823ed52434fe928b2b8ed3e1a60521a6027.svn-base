@@ -1,0 +1,55 @@
+/*
+Navicat MySQL Data Transfer
+
+Source Server         : 钱盒子测试
+Source Server Version : 50631
+Source Host           : 120.25.85.171:3306
+Source Database       : devmbox_hx
+
+Target Server Type    : MYSQL
+Target Server Version : 50631
+File Encoding         : 65001
+
+Date: 2018-08-08 11:14:10
+*/
+
+SET FOREIGN_KEY_CHECKS=0;
+
+-- ----------------------------
+-- Table structure for d_user
+-- ----------------------------
+DROP TABLE IF EXISTS `d_user`;
+CREATE TABLE `d_user` (
+  `userID` int(11) NOT NULL AUTO_INCREMENT COMMENT '客户ID',
+  `userKey` varchar(50) DEFAULT NULL COMMENT '用户编码，或者KEY值',
+  `userName` varchar(50) NOT NULL COMMENT '用户名',
+  `userNickname` varchar(50) DEFAULT NULL COMMENT '客户昵称',
+  `password` varchar(50) NOT NULL COMMENT '密码',
+  `payPassword` varchar(50) DEFAULT NULL COMMENT '客户交易密码',
+  `userStatus` tinyint(1) DEFAULT '1' COMMENT '客户状态 1 正常 0 注销',
+  `realName` varchar(200) NOT NULL DEFAULT '' COMMENT '客户姓名',
+  `realStatus` tinyint(1) DEFAULT '0' COMMENT '实名认证状态 0 未认证，1已认证',
+  `accNO` varchar(50) DEFAULT '' COMMENT '华兴账号',
+  `bankStatus` tinyint(1) DEFAULT '0' COMMENT '绑卡标示  0 未绑卡,1绑卡',
+  `userSex` tinyint(4) DEFAULT '0' COMMENT '性别 0 未知 1 男 2 女',
+  `headUrl` varchar(256) DEFAULT '' COMMENT '头像路径',
+  `email` varchar(50) DEFAULT NULL COMMENT '邮箱',
+  `emailStatus` tinyint(1) DEFAULT '0' COMMENT '邮箱认证状态 0 未认证，1已认证',
+  `vipStatus` tinyint(4) DEFAULT '0' COMMENT '状态 0 未认证，1已认证',
+  `viplevel` tinyint(5) DEFAULT '0' COMMENT 'VIP等级',
+  `vipTime` int(11) DEFAULT NULL COMMENT 'VIP 时间',
+  `phone` varchar(50) DEFAULT NULL COMMENT '电话',
+  `phoneStatus` tinyint(1) DEFAULT '0' COMMENT '电话认证状态 0 未认证，1已认证',
+  `attendantID` int(11) DEFAULT '0' COMMENT '客服的ID',
+  `attendantUserName` varchar(50) DEFAULT NULL COMMENT '专属客服',
+  `userType` tinyint(4) DEFAULT '0' COMMENT '客户类型 0普通用户 1 潜在客户 5 大客户 15公司员工 20企业融资用户 21担保方 30融资用户 40马甲用户',
+  `clientSource` int(11) DEFAULT '0' COMMENT '推广渠道ID',
+  `regDatetime` int(11) NOT NULL COMMENT '注册时间',
+  `regTerminal` tinyint(4) DEFAULT '1' COMMENT '注册终端 1 PC 2 安卓 3 IOS 4 微信',
+  `regIP` varchar(20) DEFAULT NULL COMMENT '注册IP',
+  `openID` varchar(50) DEFAULT NULL COMMENT '微信编码ID',
+  `customerID` varchar(100) NOT NULL DEFAULT '' COMMENT '法大大 客户唯一编号',
+  `editDatetime` int(11) DEFAULT NULL COMMENT '修改时间',
+  PRIMARY KEY (`userID`),
+  KEY `user_phone` (`phone`)
+) ENGINE=InnoDB AUTO_INCREMENT=403042 DEFAULT CHARSET=utf8 COMMENT='用户表';

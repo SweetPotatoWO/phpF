@@ -1,0 +1,55 @@
+<div id="sub-User-list">
+    <script type="text/javascript" src="{$Think.BPATH}js/datejs/WdatePicker.js"></script> 
+    <input type="hidden" name="hidrefurl" id="hidrefurl" value="{:U(ACTION_NAME, $_GET)}">
+    <h4 class="title">历史搜索 <span class="titleqit">默认查询一周内的记录</span></h4>
+    <form class="form-inline" id="query_User"> 
+        <div class="form-group mr-10">
+            <label class="control-label">最后请求时间:</label>
+            <input type="text" class="form-control mr-5" onclick="WdatePicker({isShowClear: true, readOnly: true, maxDate: '%y-%M-%d'})" value="{$Think.post.txtDateStart}" id="txtDateStart" name="txtDateStart" placeholder="开始日期">     
+            <label class="control-label">～</label>
+            <input type="text" class="form-control mr-5" onclick="WdatePicker({isShowClear: true, readOnly: true, maxDate: '%y-%M-%d'})" value="{$Think.post.txtDateEnd}" id="txtDateEnd" name="txtDateEnd" placeholder="结束日期">   
+        </div> 
+       <div class="form-group mr-10">
+            <label class="control-label">请求类型:</label>
+            <select class="form-control mr-10" name="stype" id="stype" style="width: 100px">
+                <option value="">所有</option>
+                <option value="user" <eq name='Think.post.stype' value='user'>selected='selected'</eq>>人名</option>
+                <option value="company" <eq name='Think.post.stype' value='company'>selected='selected'</eq>>公司</option>
+            <option value="legal" <eq name='Think.post.stype' value='legal'>selected='selected'</eq>>法人</option>
+            </select>  
+        </div>
+        <div class="form-group">
+            <a href="{:U(ACTION_NAME, $_GET)}"  onclick="$Util.openQuery(this, event, 'query_User')"  class="btn btn-info"><i class="icon-search"></i>查询</a> 
+        </div>
+    </form>
+    <table class="table table-striped table-bordered">
+        <thead>
+            <tr> 
+                <th>搜索类型</th>
+                <th>搜索内容</th>
+                <th>搜索次数</th>
+                <th>创建时间</th>
+                <th>最后搜索时间</th>
+            </tr>
+        </thead>
+        <tbody>
+        <volist name="result" id="vo">
+            <tr>  
+                <td>{$vo.searchType}</td>
+                <td>{$vo.content}</td>
+                <td>{$vo.searchCount}</td>
+                <td>{$vo.addDatetime}</td>
+                <td>{$vo.lastSearchTime}</td>
+            </tr>
+        </volist>
+        </tbody>
+    </table>
+<nav class=" pagination-centered">
+    <ul class="pagination">
+        {$pageHtml}
+    </ul>
+</nav>
+</div>
+
+
+

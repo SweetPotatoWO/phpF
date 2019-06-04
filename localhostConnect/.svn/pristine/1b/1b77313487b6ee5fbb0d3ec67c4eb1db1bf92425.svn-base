@@ -1,0 +1,23 @@
+<?php
+
+namespace Service\Activity\Logic;
+
+
+
+
+use Service\Activity\Model\ActivityLogModel;
+
+class ActivityLogic {
+
+
+    public function getOne($id) {
+        $model = new ActivityLogModel();
+        return $model->getOne($id);
+    }
+
+
+    public function addOne($userID) {
+        $model = new ActivityLogModel();
+        return $model->addOne($userID);
+    }
+}

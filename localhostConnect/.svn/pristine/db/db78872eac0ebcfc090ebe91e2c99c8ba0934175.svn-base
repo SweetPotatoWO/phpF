@@ -1,0 +1,180 @@
+<include file="Common:header" />
+<div class="personal">
+	<div class="download mb-10 clearfix">
+		<div class="fl">开启你的人脉和机遇</div>
+		<div class="fr">
+			<a href="{$dowload}">下载</a>
+		</div>
+	</div>
+	
+	<div class="tag">
+		<div class="info">
+			<div class="clearfix">
+				<div class="fl mr-15 portrait"><img src="{$userCompany.headUrl}" class="portrait" /></div>
+				<div class="fl userInfo">
+					<p class="fs-16 mb-5">{$userCompany.name}&nbsp;
+						<foreach name="label" item="v">
+						<img src="{$v.labelLogo}" class="p" />&nbsp;
+						</foreach>
+					</p>
+					<p class="mb-0 color-deep">{$userCompany.job}</p>
+					<p class="company-name mb-0 color-deep">{$userCompany.companyName}</p>
+				</div>
+			</div>
+		</div>
+	</div>
+	<if condition="!empty($userTag) OR !empty($wantTag)">
+		<div class="tags bg-white mt-15">
+			<h4 class="hd fs-16 mb-15 fw-b">个人标签</h4>
+			<div class="bd pb-10">
+				<if condition="!empty($userTag)">
+				<div class="clearfix mb-5">
+					<div class="fl color-deep">熟悉领域</div>
+						<div class="fl pl-20 tag-box">
+							<foreach name="userTag" item="v">
+								<span class="pr-10">{$v.tagName}</span>
+							</foreach>
+						</div>
+				</div>
+				</if>
+				<if condition="!empty($wantTag)">
+				<div class="clearfix">
+					<div class="fl color-deep">希望结识</div>
+						<div class="fl pl-20 tag-box">
+							<foreach name="wantTag" item="v">
+								<span class="pr-10">{$v.tagName}</span>
+							</foreach>
+						</div>
+				</div>
+				</if>
+			</div>
+		</div>
+		</if>
+
+	<if condition="!empty($userCompany['companyName'])">
+	<div class="company bg-white mt-10">
+		<h4 class="hd fs-16 mb-15 fw-b">公司</h4>
+		<div class="bd">
+
+			<div class="clearfix">
+				<div class="fl mt-10 icon">
+					<img <if condition="!empty($userCompany['companyLogo'])"> src='{$userCompany.companyLogo}'<else/>src='/Public/wechat/images/company/icon-company.png'</if> class="icon"/>
+				</div>
+				<div class="fl pl-20" style="width: 90%;">
+					<p class="fs-15 mb-5 text-ellipsis">{$userCompany.companyName}</p>
+					<p class="color-deep fs-13"><span>注册资金：{$userCompany.regCapital}万</span>&nbsp;|&nbsp;<span>成立时间：{$userCompany.regDatetime}年</span></p>
+				</div>
+			</div>
+
+		</div>
+	</div>
+	</if>
+
+
+	<if condition="!empty($workexperience)">
+	<div class="company bg-white mt-10">
+		<h4 class="hd fs-16 mb-5 fw-b">工作经历</h4>
+			<div class="bd">
+				<foreach name="workexperience" item="v">
+				<div class="clearfix bord-b pt-10">
+					<div class="fl mt-10 icon">
+						<img <if condition="!empty($v['companyLogo'])"> src='{$v.companyLogo}'<else/>src='/Public/wechat/images/company/icon-company.png' </if> class="icon"/>
+					</div>
+					<div class="fl pl-20" style="width: 90%;">
+						<p class="fs-15 mb-5 text-ellipsis">{$v.companyName}</p>
+						<p class="color-deep fs-13">
+							<span><if condition="!empty($v['startDatetime'])">{$v.startDatetime}~{$v.endDatetime}</if></span>&nbsp;
+							<span>{$v.group}</span>&nbsp;
+							<span>{$v.job}</span>
+						</p>
+					</div>
+				</div>
+				</foreach>
+			</div>
+	</div>
+	</if>
+
+	<if condition="!empty($userEd)">
+	<div class="company bg-white mt-10">
+		<h4 class="hd fs-16 mb-5 fw-b">教育经历</h4>
+		<div class="bd">
+			<foreach name="userEd" item="v">
+			<div class="clearfix bord-b pt-10">
+				<div class="fl mt-10 icon">
+					<img src="/Public/wechat/images/user/default-edu.png" class="icon"/>
+				</div>
+				<div class="fl pl-20">
+					<p class="fs-15 mb-5">{$v.schoolName}</p>
+					<p class="color-deep fs-13">
+						<span><if condition="!empty($v['startDatetime'])">{$v.startDatetime}~{$v.endDatetime}</if></span>&nbsp;
+						<span>{$v.major}</span>&nbsp;
+						<span>
+							<if condition="$v['diploma'] eq 1">
+								专科
+								<elseif condition="$v['diploma'] eq 2" />
+								本科
+								<elseif condition="$v['diploma'] eq 3" />
+								硕士
+								<elseif condition="$v['diploma'] eq 4" />
+								博士
+								<else/>
+								其他
+							</if>
+						</span>
+					</p>
+				</div>
+			</div>
+			</foreach>
+		</div>
+	</div>
+	</if>
+
+	<if condition="!empty($more)">
+	<div class="company bg-white mt-10 mb-10">
+		<h4 class="hd fs-16 mb-5 fw-b">更多</h4>
+		<div class="bd">
+			<if condition="!empty($more['workMajorName'])">
+			<div class="clearfix bord-b pt-10 pb-10 fs-15">
+				<div class="fl">行业</div>
+				<div class="fl pl-20">{$more.workMajorName}</div>
+			</div>
+			</if>
+
+			<if condition="!empty($more['workCity'])">
+			<div class="clearfix bord-b pt-10 pb-10 fs-15">
+				<div class="fl">城市</div>
+				<div class="fl pl-20">{$more.workCity}</div>
+			</div>
+			</if>
+
+			<if condition="!empty($more['provinceName'])">
+			<div class="clearfix bord-b pt-10 pb-10 fs-15">
+				<div class="fl">籍贯</div>
+				<div class="fl pl-20">{$more.provinceName}{$more.cityName}{$more.countyName}</div>
+			</div>
+			</if>
+
+
+			<if condition="!empty($more['userSex'])">
+			<div class="clearfix bord-b pt-10 pb-10 fs-15">
+				<div class="fl">性别</div>
+				<div class="fl pl-20">
+					{$more.userSex}
+				</div>
+			</div>
+			</if>
+		</div>
+	</div>
+	</if>
+</div>
+</body>
+</html>
+<script>
+    //需要分享代码
+    window.qhzapp = new QHZAPP({
+        api: ['default', 'share'], //'share'可选填
+        wxHost: '{$Think.WECHAT}',
+        actcode: 'Personal',
+        shareurl: '{$shareUrl}'//选填，不需要获取分享信息可以不填
+    });
+</script>

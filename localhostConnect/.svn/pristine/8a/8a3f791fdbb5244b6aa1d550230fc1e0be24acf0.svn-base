@@ -1,0 +1,39 @@
+<?php
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+namespace Service\User\Logic;
+
+use Service\User\Model\UserVisitorModel;
+
+/**
+ * Description of UserVisitor
+ *
+ * @author admin
+ */
+class UserVisitorLogic {
+
+    /**
+     * 获取访客列表
+     */
+    public function getVisitorList($userID, $limit) {
+        $result = array('totalVisitor' => 0, 'todayVisitor' => 0, 'list' => array());
+        $model = new UserVisitorModel();
+        $total = $model->getTotalVisitor($userID);
+        if ($total[0]['total'] == 0) {//总访问人数为零
+            return false;
+        }
+        $result['totalVisitor'] = $total[0]['total'];
+        $result['todayVisitor'] = $total[1]['total'];
+        $data = $model->getVisitorList($userID, $limit);
+        $UF = new UserFriendLogic();
+        $data['rows'] = $UF->handleVisitorData($data['rows']);
+        $result['list'] = $data['rows'];
+        return $result;
+    }
+
+}

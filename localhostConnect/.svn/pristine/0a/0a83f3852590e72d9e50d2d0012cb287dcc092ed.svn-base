@@ -1,0 +1,124 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: Administrator
+ * Date: 2018/8/23 0023
+ * Time: 14:15
+ */
+namespace Service\Integral\Model;
+use Common\Model\SlaveModel;
+use Service\Integral\Logic\IntegralLogic;
+use Think\Model;
+
+class UserSigninModel extends SlaveModel {
+
+
+    /**添加签到记录
+     * @param $userID
+     * @param $typeValue
+     * @return mixed
+     */
+    public function addOne($userID,$typeValue) {
+
+        //获取到最新的一条数据
+        $newInfo = $this->getNewOne($userID);
+        //当前的时间
+
+        $today = strtotime(date('Y-m-d'));
+
+        if($newInfo['signinDate'] + 86400 == $today ) {   //刚好是昨天签到的
+            $saveData['continueTotal'] =1;   //连续钱的增量就为1
+        } else {
+            $saveData['continueTotal'] = (empty($newInfo))? 1:0;    //不是且 同时 从未签到过 还是1 不然就是 0
+        }
+        $saveData['grandTotal'] = 1;
+        $saveData['integralTotal'] = $typeValue;
+        $saveData['month'] = floor(date('m'));   //月份
+        $saveData['monthTotal'] = 1;
+
+        $addData = array(    //账户签到的流水记录
+            "userID"=>$userID,
+            "signinDate"=>$today,
+            'createdDate'=>time(),
+            "createdUserID"=>$userID,
+            "awardIntegral"=>$typeValue,
+        );
+
+        $this->saveOrAddSiginStat($userID,$saveData);   //先更新统计量
+        $this->add($addData);   //在添加记录
+        $integra = new IntegralLogic();
+        return $integra->userIntegralInc($userID,"sign","common");  //添加积分 添加用户的积分选项
+    }
+
+
+    /**获取到今天的一条
+     * @param $userID
+     */
+    public function getTodayOne($userID) {
+        $arr = array(
+            'userID'=>$userID,
+            "signinDate"=>strtotime(date('Y-m-d')),
+        );
+        return $this->where($arr)->find();
+    }
+
+
+    /**
+     * 获取到用户签到最新的一条
+     */
+    public function getNewOne($userID) {
+        return $this->where(array('userID'=>$userID))->order("createdDate desc")->find();
+    }
+
+
+    /**添加用户签到的统计量
+     * @param $userID
+     * @param $data
+     */
+    protected function saveOrAddSiginStat($userID,$data) {
+        $info =  M('UserSigninStat')->where(array('userID'=>$userID))->find();   //获取到当前的统计量
+        if(empty($info)) {    //添加
+            $data['userID'] = $userID;
+            return M("UserSigninStat")->add($data);
+        } else {   //修改
+            $saveData = array(
+                "userID"=>$userID,
+                "continueTotal"=>(empty($data['continueTotal']))? 1 : $info['continueTotal']+$data['continueTotal'],   //连续
+                "grandTotal"=>$info['grandTotal']+$data['grandTotal'],   //总量
+                "integralTotal"=>$info['integralTotal']+$data['integralTotal'],   //总积分
+                "updatedDate"=>time(),
+                'month'=>$data['month'],   //保存月份
+                'monthTotal'=>($info['month'] != $data['month'])? 1:$info['monthTotal']+$data['monthTotal'],   //添加当前月份累计的签到次数
+            );
+            return M("UserSigninStat")->where(array('userID'=>$userID))->save($saveData);
+        }
+    }
+
+
+    /**
+     * 获取用户每月的统计量
+     */
+    public function addOrGetStatInfoByMonth($userID) {
+        $info =  M('UserSigninStat')->where(array('userID'=>$userID))->field(array('month','monthTotal'))->find();   //获取到当前的统计量
+        $m = floor(date("m"));
+        if(!empty($info)) {
+            if($info['month'] == $m ) {  //是否 在当前的月份
+                return $info;
+            } else {    //否则更新下
+                $saveData = array(
+                    "month"=>$m,
+                    "monthTotal"=>0,
+                );
+                M('UserSigninStat')->where(array('userID'=>$userID))->save($saveData);    //化为0
+                return $saveData;
+            }
+        } else {
+            $data['userID'] = $userID;
+            M('UserSigninStat')->add($data);
+            return array(
+                'month'=>floor(date('m')),
+                'monthTotal'=>0,
+            );
+        }
+    }
+}

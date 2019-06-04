@@ -1,0 +1,294 @@
+<?php
+
+namespace Service\Integral\Logic;
+
+
+
+use Common\Common\Redis;
+use Service\Connect\Logic\ConnectRelationLogic;
+use Service\Integral\Model\CardGroupModel;
+use Service\Integral\Model\UserCardModel;
+use Service\JavaService\Logic\SiteLogic;
+use Service\UserCenter\Logic\UserCenterLogic;
+
+class CardLogic {
+
+
+    public function getUserCardList($userID) {
+        $model = new UserCardModel();
+        $data = $model->getList(array('userID'=>$userID),"cid,userName,phoneContent,cardImgUrl,companyContent,cardHeadUrl");
+
+        $return['count'] = count($data);
+        $return['list'] = $this->handlData($data);  //处理数据
+        return $return;
+    }
+
+
+    /**
+     * 处理数据
+     */
+    public function handlData($data) {
+        $return = [];
+        foreach ($data as $key=>$value) {
+            $return['cid'] = $value['cid'];
+            $return['userName'] = $value['userName'];
+            $tmp = unserialize($value['phoneContent']);
+            $return['phone'] = ($tmp[0]['value'])?$tmp[0]['value']:"";
+            $tmp = unserialize($value['companyContent']);
+            $return['companyName'] = ($tmp[0]['name'])?$tmp[0]['name']:"";
+            $return['jobName'] = ($tmp[0]['job'])?$tmp[0]['job']:"";
+            $return['groupName'] = ($tmp[0]['group'])?$tmp[0]['group']:"";
+            $return['cardImgUrl'] = UPLOAD.$value['cardImgUrl'];
+            $returnArr [] = $return;
+        }
+        return $returnArr;
+    }
+
+
+    /**
+     * 添加用户的分组
+     * @param $name
+     */
+    public function addGroup($data) {
+        $model = new  CardGroupModel();
+        $info = $model->getGroupByName($data['name'],$data['userID']);
+        if(empty($info) || empty($data['groupID'])) {  //添加
+            $saveData['groupName'] = $data['name'];
+            $saveData['userID'] = $data['userID'];
+            return $model->addOne($saveData);
+        } else {   //编辑
+            $saveData['groupName'] = $data['name'];
+            return $model->saveOne($saveData,$data);
+        }
+    }
+
+    /**
+     * 获取到组的列表
+     */
+    public function groupList($userID) {
+        $model = new CardGroupModel();
+        return $model->groupList($userID);
+    }
+
+    /**
+     * 获取到卡片的详情
+     */
+    public function getCardInfo($cardID) {
+        $model = new UserCardModel();
+        $group = new CardGroupModel();
+        $cardInfo = $model->getUserCardByCid($cardID);
+        if(empty($cardInfo)) {
+            return false;
+        }
+        $cardInfo['phoneContent'] = CardStringToArr($cardInfo['phoneContent']);
+        $cardInfo['mailContent'] = CardStringToArr($cardInfo['mailContent']);
+        $cardInfo['companyContent'] = CardStringToArr($cardInfo['companyContent']);
+        $cardInfo['websiteContent'] = CardStringToArr($cardInfo['websiteContent']);
+        $cardInfo['areaContent'] = CardStringToArr($cardInfo['areaContent']);
+        if(!empty($cardInfo['groupID'])) {   //空的组ID
+            $GroupInfo = $group->getGroupNameField($cardInfo['groupID']);
+        } else {
+            $GroupInfo = "";
+        }
+        $cardInfo['cardHeadUrl'] = (empty($cardInfo['cardHeadUrl']))?"": UPLOAD.$cardInfo['cardHeadUrl'];
+        $cardInfo['groupInfo'] = $GroupInfo;
+        $cardInfo['cardImgUrl'] =(empty($cardInfo['cardImgUrl']))?"": UPLOAD.$cardInfo['cardImgUrl'];
+        $cardInfo['socialConnectContent'] = empty($cardInfo['socialConnectContent'])?"":$cardInfo['socialConnectContent'];
+        return $cardInfo;
+    }
+
+
+    /**
+     * 修改和编辑卡片
+     */
+    public function addOrSaveCard($data,$userID) {
+        $userCard = new UserCardModel();
+        if(empty($data['cid'])) {
+            $data['userID'] = $userID;
+            return $userCard->addOne($data);
+        } else {
+            return $userCard->saveOne($data['cid'],$data);
+        }
+    }
+
+    /**
+     * 删除卡片
+     */
+    public function delCard($id,$userID) {
+        $userCard = new UserCardModel();
+        return $userCard->where(array('cid'=>$id,'userID'=>$userID))->delete();
+    }
+
+
+    /**
+     * 异步填充用户的基本信息
+     * @param $phone
+     * @param $userID
+     */
+    public function addCardUserMes($phone,$userID) {
+        $model = new UserCardModel();
+        $cardInfo = $model->getInfoByPhone($phone);
+        if(!$cardInfo){
+           exit;
+        }
+        $userCenter = new UserCenterLogic();
+        $userCompanyInfo = $userCenter->getUserCompanyInfo($userID);
+        $update = array();
+        $update['userID'] = $userID;
+        $update['name'] = (empty($userCompanyInfo['name']))? $cardInfo['userName']:$userCompanyInfo['name'];
+        $update['job'] = (empty($userCompanyInfo['job']))? $cardInfo['job']:$userCompanyInfo['job'];
+        $update['group'] = (empty($userCompanyInfo['group']))? $cardInfo['companyGroup']:$userCompanyInfo['group'];
+        if(empty($userCompanyInfo['companyID'])) {   //存在的话就不需要
+            $Site = new SiteLogic();
+            $list  = $Site->SearchAccCompany($userID,$cardInfo['companyName']);
+            $companyInfo = $list['list'][0];
+
+            if(!empty($companyInfo)) {
+                $update['companyID'] = $companyInfo['companyID'];
+                $update['companyName'] = $companyInfo['companyName'];
+            }
+        }
+        $update['addDatetime'] = time();
+        $userCenter->saveUserCompany($update,$userID);
+    }
+
+
+    /**
+     * 获取到今天是否
+     * @param $userID
+     */
+    public function getTodayCard($userID) {
+        $model = new UserCardModel();
+        return $model->getTodayOne($userID);
+    }
+
+
+    /**
+     * 保存到纯名片的那张表中
+     */
+    public function saveCardClear($data,$userID) {
+        $model = new UserCardModel();
+        return $model->saveCardClear($data,$userID);
+    }
+
+
+    /**
+     * 获取清楚名片列表
+     */
+    public function getClearCard($where,$limit) {
+        $model = new UserCardModel();
+        return $model->getClearList($where,$limit);
+    }
+
+
+    public function getAllNum($where) {
+        $model = new UserCardModel();
+        return $model->getClearNum($where);
+    }
+
+
+
+    /**
+     * Redis 浏览公司次数
+     */
+    public function saveRedisByCard($userID,$companyInfo="") {
+        $redis = Redis::GetInstance();
+        $redis = $redis->redisOtherMethods();
+        $redis->select(1);
+        $key = 'card'.strtotime(date('Y-m-d'))."_".$userID."_".mt_rand(10000,99999);
+        return $redis->set($key,json_encode($companyInfo),86400);
+    }
+
+
+    /**
+     * 获取到redis的次数
+     */
+    public function getNowTimeRedisByCard($userID) {
+        $redis = Redis::GetInstance();
+        $key = 'card'.strtotime(date('Y-m-d'))."_".$userID."*";
+        $redis = $redis->redisOtherMethods();
+        $redis->select(1);
+        $arr = $redis->keys($key);
+        if(empty($arr)) {
+            return 0;
+        }
+        return count($arr);
+    }
+
+    /**
+     * 小程序
+     * 获取名片列表，分页，不带首字母索引
+     * @param $userID
+     * @param string $limit
+     * @return mixed
+     */
+    public function getUserCardInfos($userID, $limit = '0, 100') {
+        $columns = "cid,userName,phoneContent,cardImgUrl,companyContent,cardHeadUrl,addDatetime";
+        $model = new UserCardModel();
+        $data = $model->getCardList(array('userID'=>$userID), $columns, $limit, 'addDatetime desc');
+
+        $returnArr = [];
+        foreach ($data as $key=>$value) {
+            $return = [];
+            $return['cid'] = $value['cid'];
+            $return['userName'] = $value['userName'];
+            $tmp = unserialize($value['phoneContent']);
+            $return['phone'] = ($tmp[0]['value'])?$tmp[0]['value']:"";
+            $tmp = unserialize($value['companyContent']);
+            $return['companyName'] = ($tmp[0]['name'])?$tmp[0]['name']:"";
+            $return['jobName'] = ($tmp[0]['job'])?$tmp[0]['job']:"";
+            $return['groupName'] = ($tmp[0]['group'])?$tmp[0]['group']:"";
+            $return['cardImgUrl'] = empty($value['cardImgUrl']) ? '' : UPLOAD.$value['cardImgUrl'];
+            $return['addDatetime'] = formatshortDate($value['addDatetime']);
+            $returnArr[] = $return;
+        }
+
+        $return['count'] = $model->getCardNum($userID);
+        $return['list'] = $returnArr;  //处理数据
+        return $return;
+    }
+
+    /**
+     * 小程序
+     * 获取到卡片的详情
+     * @param $cardID
+     * @return bool|mixed
+     */
+    public function getCardDetail($cardID) {
+        $model = new UserCardModel();
+        $cardInfo = $model->getUserCardByCid($cardID);
+        if(empty($cardInfo)) {
+            return false;
+        }
+        return $cardInfo;
+    }
+
+
+    /**
+     * 无论怎么修改都是正确的
+     * 修改是否推荐的状态
+     * @param $status
+     * @param $phone
+     * @return mixed
+     */
+    public function updateRecommend($status,$phone) {
+        $model = new UserCardModel();
+        $res = $model->updateRecommend($status,$phone);
+        if($res) {
+            $logic_connect = new ConnectRelationLogic;
+            $logic_connect->setPersonRecommend($phone,$status==1);
+        }
+        return true;
+    }
+
+
+    /**
+     * 获取到信息根据电话
+     * @param $phone
+     * @return mixed
+     */
+    public function getInfoByPhone($phone,$userID) {
+        $model = new UserCardModel();
+        return $model->where(array('phoneOne'=>$phone,'userID'=>$userID))->field('cid')->find();
+    }
+}

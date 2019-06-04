@@ -1,0 +1,45 @@
+<?php
+namespace Service\User\Logic;
+
+
+
+
+use Service\User\Model\UserJobauthModel;
+
+class UserAuthLogic {
+
+
+
+    public function addAuth($data) {
+        $model = new UserJobauthModel();
+        return $model->addAuth($data);
+    }
+
+
+
+    public function getAuthList($where,$limit) {
+        $model = new UserJobauthModel();
+        $list =  $model->getAuthList($where,$limit);
+        foreach ($list as $key=>$value) {
+            $list[$key]['mailBox'] = UPLOAD.$value['mailBox'];
+            $list[$key]['certificate'] = UPLOAD.$value['certificate'];
+            $list[$key]['workCard'] = UPLOAD.$value['workCard'];
+        }
+        return $list;
+    }
+
+
+    public function getAuthCount($where) {
+        $model = new UserJobauthModel();
+        return $model->getAuthCount($where);
+    }
+
+
+    public function ajaxAuthHanld($id,$status) {
+        $model = new UserJobauthModel();
+        return $model->ajaxAuthHanld($id,$status);
+    }
+
+
+
+}

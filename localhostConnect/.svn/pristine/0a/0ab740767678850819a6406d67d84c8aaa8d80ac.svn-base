@@ -1,0 +1,89 @@
+<?php
+namespace Service\User\Model;
+
+use Common\Model\SlaveModel;
+
+class FriendApplyModel extends SlaveModel
+{
+
+
+    /**
+     * 获取到当前的进行中的数据
+     * @param $userID
+     * @param $friendID
+     * @return mixed
+     */
+    public function getFailOneApply($userID,$friendID) {
+        return $this->where(array('userID'=>$userID,'friendID'=>$friendID,'status'=>array('in',"1,2")))->find();
+    }
+
+    /**
+     * 获取都当前申请数量
+     * @param $userID
+     * @return mixed
+     */
+    public function applyCount($userID) {
+        return $this->where(array('friendID'=>$userID,'status'=>1))->count();
+    }
+
+
+    /**
+     * 获取都啊一条邀请中的记录
+     * @param $userID
+     * @param $friendID
+     * @return mixed
+     */
+    public function getOneApply($userID,$friendID) {
+
+        return $this->where(array("userID"=>$userID,"friendID"=>$friendID,"status"=>array("elt",2)))->find();
+    }
+
+
+    /**
+     * 保存一条申请记录
+     * @param $data
+     * @return bool|mixed
+     */
+    public function addFriendApply($data) {
+        if(empty($data)) {
+            return false;
+        }
+        $data['addDatetime'] = time();
+        return $this->add($data);
+
+    }
+
+    /**
+     * 获取到当天的申请数量
+     * @param $useID
+     * @return mixed
+     */
+    public function  getNowTimeApplyConnt ($useID) {
+        $where = array("userID"=>$useID,"addDatetime"=>array("egt",strtotime(date("Y-m-d"))));
+        return M("FriendApply")->where($where)->count();
+    }
+
+
+    /**
+     * 获取到申请中的一条记录
+     * @param $userID
+     * @param $friendID
+     * @return mixed
+     */
+    public function getOneApplying($userID,$friendID) {
+        return $this->where(array('userID'=>$userID,'friendID'=>$friendID,'status'=>1))
+               ->field("id as applyID")->find();
+    }
+
+
+    /**
+     * 获取到对方的申请信息
+     * @param $userID
+     * @param $friendID
+     */
+    public function getMoreApply($userID,$friendID) {
+        return $this->where(array('userID'=>$userID,'status'=>'3','friendID'=>$friendID))->field('id')->find();
+    }
+
+}
+?>

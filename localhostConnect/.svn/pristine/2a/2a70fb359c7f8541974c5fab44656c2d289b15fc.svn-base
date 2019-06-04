@@ -1,0 +1,54 @@
+<div id="sub_Code_list">
+    <script type="text/javascript" src="{$Think.BPATH}js/datejs/WdatePicker.js"></script> 
+    <input type="hidden" name="hidrefurl" id="hidrefurl" value="{:U(ACTION_NAME,$GET)}">
+    <h4 class="title">验证码查询<span class="titleqit">默认查询最近一周数据</span></h4>
+    <form class="form-inline" id="query_Code">
+        <div class="form-group ">
+            <label class="control-label">电话号码: </label>
+            <input type="text" class="form-control" value="{$Think.post.phone}" name="phone" placeholder="请输入电话号码">      
+        </div> 
+        <div class="form-group ">
+            <label class="control-label">发送时间:</label>
+            <input type="text" class="form-control mr-5" onclick="WdatePicker({isShowClear: true, readOnly: true, maxDate: '%y-%M-%d'})" value="{$Think.post.dateStart}" id="dateStart" name="dateStart" placeholder="请输入开始时间">     
+            <label class="control-label">～</label>
+            <input type="text" class="form-control mr-5" onclick="WdatePicker({isShowClear: true, readOnly: true, maxDate: '%y-%M-%d'})" value="{$Think.post.dateEnd}" id="dateEnd" name="dateEnd" placeholder="请输入结束时间">   
+        </div> 
+        <div class="form-group">
+            <a href="{:U(ACTION_NAME, $_GET)}"  onclick="$Util.openQuery(this, event, 'query_Code')"  class="btn btn-info"><i class="icon-search"></i>查询</a> 
+        </div>
+    </form>
+    <table class="table table-striped table-bordered">
+        <thead>
+            <tr>          
+                <th>用户名</th>
+                <th>电话号码</th>
+                <th>验证号</th>
+                <th>发送内容</th>
+                <th>发送时间</th>
+                <th>过期时间</th>
+                <th>发送短信的接口</th>
+            </tr>
+        </thead>
+        <tbody>
+        <volist name="result" id="vo">
+            <tr>     
+                <td>{$vo.receiveName}</td>
+                <td>{$vo.receivePhone}</td>
+                <td>{$vo.verifyCode}</td>
+                <td style="text-align: left">{$vo.sendContent}</td>
+                <td>{$vo.addDatetime|formatlongDate}</td>
+                <td>{$vo.overdueTime|formatlongDate}</td>
+                <td>{$vo.sendInterface}</td>
+            </tr>
+        </volist>
+        </tbody>
+    </table>
+    <nav class=" pagination-centered">
+        <ul class="pagination">  
+            {$page}
+        </ul>
+    </nav>  
+</div>
+
+
+

@@ -1,0 +1,166 @@
+﻿$(function() {
+    //初始化绑定默认的属性
+    $.upLoadDefaults = $.upLoadDefaults || {};
+    $.upLoadDefaults.property = {
+        multiple: false, //是否多文件
+        water: false, //是否加水印
+        thumbnail: false, //是否生成缩略图
+        sendurl: null, //发送地址
+        filetypes: "jpg,jpge,png,gif", //文件类型
+        filesize: "3", //文件大小
+        btntext: "浏览...", //上传按钮的文字
+        inputID: "", //路径控件
+        browseID: "", //浏览ID
+        browseDIV: "", //浏览DIV      
+        swf: null //SWF上传控件相对地址
+    };
+    //初始化上传控件
+    $.fn.InitUploader = function(b) {
+        var fun = function(parentObj) {
+            var p = $.extend({}, $.upLoadDefaults.property, b || {});
+            var btnObj = $('<div class="upload-btn"></div>').appendTo(parentObj);
+            //初始化属性
+            // p.sendurl += "?action=UpLoadFile";
+            if (!p.multiple) {
+                p.sendurl += "?DelFilePath=" + $("#" + p.inputID + "").val();
+            }
+            //初始化WebUploader
+            var uploader = WebUploader.create({
+                auto: true, //自动上传
+                swf: p.swf, //SWF路径
+                inputID: p.inputID, //路径控件ID
+                browseID: p.browseID, //浏览ID
+                browseDIV: p.browseDIV, //浏览DIV
+                server: p.sendurl, //上传地址
+                duplicate: false,
+                pick: {
+                    id: btnObj,
+                    multiple: p.multiple
+                },
+                accept: {
+                    /*title: 'Images',*/
+                    extensions: p.filetypes
+                            /*mimeTypes: 'image/*'*/
+                },
+                formData: {
+                    'DelFilePath': '' //定义参数
+                },
+                fileVal: 'Filedata', //上传域的名称
+                compressSize: 10000,
+                compress: false,
+                fileSingleSizeLimit: p.filesize * 1024 * 1024 //文件大小
+            });
+
+            //当validate不通过时，会以派送错误事件的形式通知
+            uploader.on('error', function(type) {
+                switch (type) {
+                    case 'Q_EXCEED_NUM_LIMIT':
+                        $win.warn("错误：上传文件数量过多！");
+                        break;
+                    case 'Q_EXCEED_SIZE_LIMIT':
+                        $win.warn("错误：文件总大小超出限制！");
+                        break;
+                    case 'F_EXCEED_SIZE':
+                        $win.warn("错误：文件大小超出限制！");
+                        break;
+                    case 'Q_TYPE_DENIED':
+                        $win.warn("错误：禁止上传该类型文件！");
+                        break;
+                    case 'F_DUPLICATE':
+                        $win.warn("错误：请勿重复上传该文件！");
+                        break;
+                    default:
+                        $win.warn('错误代码：' + type);
+                        break;
+                }
+            });
+
+            //当有文件添加进来的时候
+            uploader.on('fileQueued', function(file) {
+                //如果是单文件上传，把旧的文件地址传过去
+                if (!p.multiple) {
+                    uploader.options.formData.DelFilePath = $("#" + uploader.options.inputID + "").val();
+                }
+                //防止重复创建
+                if (parentObj.children(".upload-progress").length == 0) {
+                    //创建进度条
+                    var fileProgressObj = $('<div class="upload-progress"></div>').appendTo(parentObj);
+                    $('<span class="txt">上传ing...</span>').appendTo(fileProgressObj);
+                    $('<span class="bar"><b></b></span>').appendTo(fileProgressObj);
+                }
+            });
+
+            //文件上传过程中创建进度条实时显示
+            uploader.on('uploadProgress', function(file, percentage) {
+                var progressObj = parentObj.children(".upload-progress");
+                progressObj.children(".txt").html(file.name);
+                progressObj.find(".bar b").width(percentage * 100 + "%");
+            });
+
+            //当文件上传出错时触发
+            uploader.on('uploadError', function(file, reason) {
+                uploader.removeFile(file); //从队列中移除
+                $win.warn(file.name + "上传失败，错误代码：" + reason);
+            });
+
+            //当文件上传成功时触发
+            uploader.on('uploadSuccess', function(file, data) {
+                if (data.status == '0') {
+                    var progressObj = parentObj.children(".upload-progress");
+                    $win.warn(data.msg);
+                }
+                if (data.status == '1') {
+                    //如果是单文件上传，则赋值相应的表单
+                    if (!p.multiple) {
+                        $("#" + uploader.options.inputID + "").val(data.file.path);
+                        $("#" + uploader.options.browseID + "").attr('src', $("#hidUpURL").val() + data.file.path);
+                    } else {
+                        addImage($("." + uploader.options.browseDIV + ""), data.file.name, data.file.path);
+                    }
+                    var progressObj = parentObj.children(".upload-progress");
+                    progressObj.children(".txt").html("上传成功：" + file.name);
+                }
+                uploader.removeFile(file); //从队列中移除
+            });
+
+            //不管成功或者失败，文件上传完成时触发
+            uploader.on('uploadComplete', function(file) {
+                var progressObj = parentObj.children(".upload-progress");
+                progressObj.children(".txt").html("上传完成");
+                //如果队列为空，则移除进度条
+                if (uploader.getStats().queueNum == 0) {
+                    progressObj.remove();
+                }
+            });
+        };
+        return $(this).each(function() {
+            fun($(this));
+        });
+    }
+});
+
+/*图片相册处理事件
+ =====================================================*/
+//添加图片相册
+function addImage(targetObj, name, originalSrc) {
+    //插入到相册UL里面
+    var newLi = $('<li>'
+            + '<input type="hidden" name="hid_photo_name" value="∮' + originalSrc + '|' + name + '" />'
+            + '<div class="img-box" onclick="setFocusImg(this,' + targetObj + ');">'
+            + '<img src="' + $("#hidUpURL").val() + originalSrc + '" />'
+            + '<span class="remark"><i>' + name + '</i></span>'
+            + '</div>'
+            + '<a href="javascript:;" onclick="delImg(this);">删除</a>'
+            + '</li>');
+    newLi.appendTo(targetObj.children("ul"));
+}
+//选中
+function setFocusImg(obj, targetObj) {
+    targetObj.find(".img-box").removeClass("selected");
+    $(obj).addClass("selected");
+}
+
+//删除图片LI节点
+function delImg(obj) {
+    $(obj).parent().remove(); //删除的LI节点  
+}

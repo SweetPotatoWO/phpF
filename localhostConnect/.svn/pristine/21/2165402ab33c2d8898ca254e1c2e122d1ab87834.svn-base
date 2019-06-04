@@ -1,0 +1,457 @@
+<include file="Common:header" />
+<div class="businessInfo">
+	<div class="navigation text-center bg-white">
+        <ul class="nav nav-tabs bord-n clearfix" role="tablist">
+            <li role="presentation">
+                <a href="#registerInfo" aria-controls="registerInfo" role="tab" data-toggle="tab" >登记信息</a>
+            </li>
+            <li role="presentation" data="list">
+                <a href="#changeRec" aria-controls="changeRec" role="tab" data-toggle="tab">变更记录</a>
+            </li>
+            <li role="presentation" data="list">
+                <a href="#investment " aria-controls="investment" role="tab" data-toggle="tab">对外投资</a>
+            </li>
+            <li role="presentation" data="list">
+                <a href="#annualRep" aria-controls="annualRep" role="tab" data-toggle="tab">企业年报</a>
+            </li>
+        </ul>
+    </div>
+    
+    <div class="tab-content">
+    	<!--登记信息-->
+    	<div id="registerInfo" role="tabpanel" class="registerInfo tab-pane bg-white active">
+
+			<if condition="!empty($baseInfo)">
+    		<table class="table">
+    			<tr>
+    				<td width="34%" class="color-deep">法定代表人：</td>
+    				<td align="left">{$baseInfo.legalName}</td>
+    			</tr>
+    			<tr>
+    				<td class="color-deep">注册资金：</td>
+    				<td align="left">{$baseInfo.regCapital}</td>
+    			</tr>
+    			<tr>
+    				<td class="color-deep">注册号：</td>
+    				<td align="left">{$baseInfo.regNO}</td>
+    			</tr>
+    			<tr>
+    				<td class="color-deep">组织机构代码：</td>
+    				<td align="left">{$baseInfo.orgNO}</td>
+    			</tr>
+    			<tr>
+    				<td class="color-deep">统一信用代码：</td>
+    				<td align="left">{$baseInfo.sclCrtCode}</td>
+    			</tr>
+    			<tr>
+    				<td class="color-deep">经营状态：</td>
+    				<td align="left">{$baseInfo.orgStatus}</td>
+    			</tr>
+    			<tr>
+    				<td class="color-deep">企业类型：</td>
+    				<td align="left">{$baseInfo.regType}</td>
+    			</tr>
+    			<tr>
+    				<td class="color-deep">登记机关：</td>
+    				<td align="left">{$baseInfo.regAuth}</td>
+    			</tr>
+    			<tr>
+    				<td class="color-deep">成立时间：</td>
+    				<td align="left">{$baseInfo.startDatetime}</td>
+    			</tr>
+    			<tr>
+    				<td class="color-deep">发照日期：</td>
+    				<td align="left">{$baseInfo.fromTime}</td>
+    			</tr>
+    			<tr>
+    				<td class="color-deep">营业期限：</td>
+    				<td align="left">{$baseInfo.toTime}</td>
+    			</tr>
+    			<tr>
+    				<td class="color-deep">经营范围：</td>
+    				<td align="left">{$baseInfo.bssScope}</td>
+    			</tr>
+
+    		</table>
+				<else/>
+    		<!--暂无数据-->
+    		<div class="nodata text-center fs-13 color-deep pl-10">暂无数据~</div>
+			</if>
+    	</div>
+    	<!--变更记录-->
+    	<div id="changeRec" role="tabpanel" class="changeRec tab-pane bg-white">
+    		<ul>
+    			<!--<li class="bord-l pl-15 relative">-->
+    				<!--<div class="color-deep fs-12 pb-5">2018-11-11</div>-->
+    				<!--<p class="text-ellipsis pr-10">投资人变更（包括出资额、出资方式、出资日期、投资投资人变更（包括出资额、出资方式、出资日期、投资</p>-->
+    				<!--<div class="text-justify pb-10">-->
+    					<!--<div class="clearfix bord-b">-->
+    						<!--<div class="fl before">-->
+    						<!--<h6 class="fs-12 color-deep">变更前</h6>-->
+    						<!--<p>深圳市南山区高科技一路高新科技园12号</p>-->
+    					<!--</div>-->
+    					<!--<div class="fl after">-->
+    						<!--<h6 class="fs-12 color-deep">变更前</h6>-->
+    						<!--<p>深圳市南山区大冲商务中心金蝶软件园12号</p>-->
+    					<!--</div>-->
+    					<!--</div>    					-->
+    				<!--</div>-->
+    			<!--</li>-->
+    		</ul>
+
+    		<!--<div id="wxNo" class="wxLast text-center fs-13 color-deep">已经没有更多数据</div>-->
+            <!--<div id="wxLoad" class="wxLast text-center fs-13 color-deep">正在努力加载...</div>-->
+            <div id="cMore" page="2" class="wxLast text-center fs-13 color-deep">点击加载更多</div>
+    	</div>
+    	<!--对外投资-->
+    	<div id="investment" role="tabpanel" class="investment tab-pane">
+    		<div class="list">
+    			<!--&lt;!&ndash;单条数据循环start&ndash;&gt;-->
+    			<!--<a href="" class="block bg-white bord-b clearfix">-->
+    				<!--<div class="fl portrait"><img src="/Public/wechat/images/company/touxiang.png" class="img-responsive"></div>-->
+    				<!--<div class="fl pl-15 content">-->
+    					<!--<h6 class="color-content relative">深圳市沃德宝投资咨询有限公司</h6>-->
+    					<!--<div class="fs-12 color-deep">法定代表人：小米</div>-->
+    					<!--<div class="fs-12 clearfix pt-10">-->
+    						<!--<div class="col-xs-4">-->
+    							<!--<div class="color-deep pb-5">投资时间</div>-->
+    							<!--<div>2018-08-78</div>-->
+    						<!--</div>-->
+    						<!--<div class="col-xs-4">-->
+    							<!--<div class="color-deep pb-5">投资金额</div>-->
+    							<!--<div>5000万</div>-->
+    						<!--</div>-->
+    						<!--<div class="col-xs-4">-->
+    							<!--<div class="color-deep pb-5">股权比例</div>-->
+    							<!--<div>20%</div>-->
+    						<!--</div>-->
+    					<!--</div>-->
+    				<!--</div>-->
+    			<!--</a>-->
+    			<!--&lt;!&ndash;单条数据循环end&ndash;&gt;    			-->
+    		</div>
+    		<!--暂无数据-->
+    		<!--<div class="nodata text-center fs-13 color-deep pl-10">暂无数据~</div>-->
+    		<!--点击加载-->
+    		<!--<div id="wxNo" class="wxLast text-center fs-13 color-deep">已经没有更多数据</div>-->
+            <!--<div id="wxLoad" class="wxLast text-center fs-13 color-deep">正在努力加载...</div>-->
+            <div id="iMore" page="2" class="wxLast text-center fs-13 color-deep">点击加载更多</div>
+    	</div>
+   		<!--企业年报-->
+		<div id="annualRep" role="tabpanel" class="annualRep tab-pane">
+   			<div class="list">
+   				<!--<a href="/Wechat/Company/reportDetail.html" class="block bord-b bg-white relative">2017年度</a>-->
+   				<!--<a href="" class="block bord-b bg-white relative">2016年度</a>-->
+   				<!--<a href="" class="block bord-b bg-white relative">2015年度</a>-->
+   			</div>
+   			<!--&lt;!&ndash;暂无数据&ndash;&gt;-->
+    		<!--<div class="nodata text-center fs-13 color-deep pl-10">暂无数据~</div>-->
+    		<!--&lt;!&ndash;点击加载&ndash;&gt;-->
+    		<!--<div id="wxNo" class="wxLast text-center fs-13 color-deep">已经没有更多数据</div>-->
+            <!--<div id="wxLoad" class="wxLast text-center fs-13 color-deep">正在努力加载...</div>-->
+            <div id="aMore" page="2" class="wxLast text-center fs-13 color-deep">点击加载更多</div>
+   		</div>
+    </div>
+</div>
+</body>
+</html>
+<script type="application/javascript">
+
+	var type = "{$type}";
+	var companyID = "{$companyID}";
+    var pagesize = 15;  //每一页的列表数量
+	$(function () {
+        getChangeInfo(1); //1就是第一页
+		getInvita(1);
+		yearReport(1);
+		$("#iMore").click(function() {  //点击加载
+		    var page = $(this).attr('page');
+		    getInvita(page);
+        });
+
+		$("#aMore").click(function () {
+		    var page = $(this).attr('page');
+		    yearReport(page);
+        });
+
+        $("#cMore").click(function () {
+            var page = $(this).attr('page');
+            getChangeInfo(page);
+        });
+
+
+
+
+        //标签的切换
+		switchNav(type);
+	});
+
+
+	//切换标签
+	function switchNav(type) {
+	    switch (type) {
+			case '1':
+			    $("a[data-toggle='tab']").removeClass('active show');
+                $("a[aria-controls='registerInfo']").addClass('active show');
+                $("#registerInfo").addClass('active');
+
+                $("#changeRec").removeClass('active');
+                $("#investment").removeClass('active');
+                $("#annualRep").removeClass('active');
+			    break;
+			case '2':
+                $("a[data-toggle='tab']").removeClass('active show');
+                $("a[aria-controls='changeRec']").addClass('active show');
+                $("#changeRec").addClass('active');
+
+                $("#registerInfo").removeClass('active');
+                $("#annualRep").removeClass('active');
+                $("#investment").removeClass('active');
+			    break;
+			case '3':
+                $("a[data-toggle='tab']").removeClass('active show');
+                $("a[aria-controls='investment']").addClass('active show');
+                $("#investment").addClass('active');
+
+                $("#changeRec").removeClass('active');
+                $("#annualRep").removeClass('active');
+                $("#registerInfo").removeClass('active');
+			    break;
+			case '4':
+                $("a[data-toggle='tab']").removeClass('active show');
+                $("a[aria-controls='annualRep']").addClass('active show');
+                $("#annualRep").addClass('active');
+
+                $("#registerInfo").removeClass('active');
+                $("#changeRec").removeClass('active');
+                $("#investment").removeClass('active');
+			    break;
+        }
+	}
+
+    //获取到投资的信息
+    function getInvita(page) {
+        var data = {'page':page,'companyID':companyID};
+        $.ajax({
+            url:"/wechat/company/getInvests",
+            type:"post",
+            data:data,
+            dataType:'json',
+            success:function(data){
+                if(data.code == 0) {   //成功
+                    getCombinationInvita(data.data,page,pagesize);
+                } else {   //失败
+                    alert("服务器出错");
+                }
+            },
+            error:function(data){
+                alert("请求错误");
+            },
+        });
+    }
+
+	//获取到公司的年报
+	function yearReport(page) {
+	    var data = {'page':page,'companyID':companyID}
+        $.ajax({
+            url:"/wechat/company/getReport",
+            type:"post",
+            data:data,
+            dataType:'json',
+            success:function(data){
+                if(data.code == 0) {   //成功
+                    getCombinationReport(data.data,page,pagesize);
+                } else {   //失败
+                    alert("服务器出错");
+                }
+            },
+            error:function(data){
+                alert("请求错误");
+            },
+        });
+	}
+
+
+    //获取到变更信息
+    function getChangeInfo (page) {
+        var data = {'page':page,'companyID':companyID};
+        $.ajax({
+            url:"/wechat/company/changeInfos",
+            type:"post",
+            data:data,
+            dataType:'json',
+            success:function(data){
+                if(data.code == 0) {   //成功
+                    getCombinationChangeInfo(data.data,page,pagesize);
+                } else {   //失败
+                    alert("服务器出错");
+                }
+            },
+            error:function(data){
+                alert("请求错误");
+            },
+        });
+    }
+
+
+    /**
+     * 组合年报信息
+     * @param data
+     * @param page
+     * @param pagesize
+     */
+	function getCombinationReport(data,page,pagesize) {
+        var html = "";
+        if(data == "" && page == 1) {  //当请求的是第一页且没数据的时候
+            var b = $("#annualRep").children();
+            html = "<div class=\"nodata text-center fs-13 color-deep pl-10\">暂无数据~</div>";
+            $("#annualRep").html(html);
+            return;
+        }
+        if(data == "" && page !=1) {   //当请求是第一页的是否
+            var html = '<div id="wxNo" class="wxLast text-center fs-13 color-deep">已经没有更多数据</div>';
+            $("#annualRep").append(html);
+            return
+        }
+        //都不是的时候
+        for (var a in data){
+            html +='<a href="/Wechat/Company/reportDetail/id/'+data[a].reportId+'" class="block bord-b bg-white relative">'+data[a].reportYear+'年度</a>';
+        }
+        $("#annualRep").children("div").eq(0).append(html);
+        if(data.length < pagesize) {   //当请求的结果集合小于一页的时候
+            html = '<div id="wxNo" class="wxLast text-center fs-13 color-deep">已经没有更多数据</div>';
+            $("#annualRep").append(html);
+            $("#aMore").remove();  //移除点击更多
+        } else {
+            $("#aMore").attr('page',parseInt(page)+1);  //分页加一
+        }
+    }
+
+
+    /**
+     * 变更信息
+     * @param data
+     */
+	function getCombinationChangeInfo(data,page,pagesize) {
+        var html = "";
+        if(data == "" && page == 1) {  //当请求的是第一页且没数据的时候
+            var b = $("#changeRec").children();
+            html = "<div class=\"nodata text-center fs-13 color-deep pl-10\">暂无数据~</div>";
+            $("#changeRec").html(html);
+            return;
+        }
+        if(data == "" && page !=1) {   //当请求是第一页的是否
+            var html = '<div id="wxNo" class="wxLast text-center fs-13 color-deep">已经没有更多数据</div>';
+            $("#changeRec").append(html);
+            return
+        }
+        for (var a in data){
+            html +="<li class=\"bord-l pl-15 relative\">\n" +
+                "    \t\t\t\t<div class=\"color-deep fs-12 pb-5\">"+data[a].changeTime+"</div>\n" +
+                "    \t\t\t\t<p class=\"text-ellipsis pr-10\">"+data[a].changeItem+"</p>\n" +
+                "    \t\t\t\t<div class=\"text-justify pb-10\">\n" +
+                "    \t\t\t\t\t<div class=\"clearfix bord-b\">\n" +
+                "    \t\t\t\t\t\t<div class=\"fl before\">\n" +
+                "    \t\t\t\t\t\t<h6 class=\"fs-12 color-deep\">变更前</h6>\n" +
+                "    \t\t\t\t\t\t<p>"+data[a].beforeChange+"</p>\n" +
+                "    \t\t\t\t\t</div>\n" +
+                "    \t\t\t\t\t<div class=\"fl after\">\n" +
+                "    \t\t\t\t\t\t<h6 class=\"fs-12 color-deep\">变更后</h6>\n" +
+                "    \t\t\t\t\t\t<p>"+data[a].afterChange+"</p>\n" +
+                "    \t\t\t\t\t</div>\n" +
+                "    \t\t\t\t\t</div>    \t\t\t\t\t\n" +
+                "    \t\t\t\t</div>\n" +
+                "    \t\t\t</li>";
+        }
+        $("#changeRec").children("ul").eq(0).append(html);
+        if(data.length < pagesize) {   //当请求的结果集合小于一页的时候
+            html = '<div id="wxNo" class="wxLast text-center fs-13 color-deep">已经没有更多数据</div>';
+            $("#changeRec").append(html);
+            $("#cMore").remove();  //移除点击更多
+        } else {
+            $("#cMore").attr('page',parseInt(page)+1);  //分页加一
+        }
+	}
+
+
+    /**
+     * 组合投资信息
+     * @param data
+     */
+    function getCombinationInvita(data,page,pagesize) {
+
+        console.log(data);
+
+        var html = "";
+        if(data == "" && page == 1) {  //当请求的是第一页且没数据的时候
+            var b = $("#investment").children();
+            html = "<div class=\"nodata text-center fs-13 color-deep pl-10\">暂无数据~</div>";
+            $("#investment").html(html);
+            return;
+        }
+        if(data == "" && page !=1) {   //当请求是第一页的是否
+            var html = '<div id="wxNo" class="wxLast text-center fs-13 color-deep">已经没有更多数据</div>';
+            $("#investment").append(html);
+            return
+        }
+
+        for (var a in data) {
+            html += "<a href='javascript:void(0);'  onclick='jumptoPage(this);' companyID='"+data[0].companyID+"' class='block bg-white bord-b  clearfix'>\n" +
+                "    \t\t\t\t<div class='fl portrait'><img src='/Public/wechat/images/company/icon-company.png' class='img-responsive'></div>\n" +
+                "    \t\t\t\t<div class='fl pl-15 content'>\n" +
+                "    \t\t\t\t\t<h6 class='color-content relative'>" + data[a].name + "</h6>\n" +
+                "    \t\t\t\t\t<div class='fs-12 color-deep'>法定代表人:" + data[a].legalName + "</div>\n" +
+                "    \t\t\t\t\t<div class='fs-12 clearfix pt-10'>\n" +
+                "    \t\t\t\t\t\t<div class='col-xs-4'>\n" +
+                "    \t\t\t\t\t\t\t<div class='color-deep pb-5'>投资时间</div>\n" +
+                "    \t\t\t\t\t\t\t<div>" + data[a].investTime + "</div>\n" +
+                "    \t\t\t\t\t\t</div>\n" +
+                "    \t\t\t\t\t\t<div class='col-xs-4'>\n" +
+                "    \t\t\t\t\t\t\t<div class='color-deep pb-5'>投资金额</div>\n" +
+                "    \t\t\t\t\t\t\t<div>" + data[a].regCapital + "万</div>\n" +
+                "    \t\t\t\t\t\t</div>\n" +
+                "    \t\t\t\t\t\t<div class='col-xs-4'>\n" +
+                "    \t\t\t\t\t\t\t<div class='color-deep pb-5'>股权比例</div>\n" +
+                "    \t\t\t\t\t\t\t<div>" + data[a].proportion + "</div>\n" +
+                "    \t\t\t\t\t\t</div>\n" +
+                "    \t\t\t\t\t</div>\n" +
+                "    \t\t\t\t</div>\n" +
+                "    \t\t\t</a>";
+        }
+
+        $("#investment").children("div").eq(0).append(html);
+        if(data.length < pagesize) {   //当请求的结果集合小于一页的时候
+            html = '<div id="wxNo" class="wxLast text-center fs-13 color-deep">已经没有更多数据</div>';
+            $("#investment").append(html);
+            $("#iMore").remove();  //移除点击更多
+        } else {
+            $("#iMore").attr('page',parseInt(page)+1);  //分页加一
+        }
+
+    }
+
+
+    window.qhzapp = new QHZAPP({
+        api: ['default', 'share'], //'share'可选填
+        wxHost: '{$Think.SITE}Wechat/',
+        actcode: 'arborDayAct',
+        shareurl: '{$Think.SITE}Mobile/Activity/arborDayAct'//选填，不需要获取分享信息可以不填
+    });
+
+    //
+	//  跳转到APP的页面
+    //  @param obj
+    //
+    // function jumptoPage(obj) {
+    //     var companyID = $(obj).attr("companyID");
+    //     qhzapp.jumpToPage.jumpToCompany(companyID);
+	// }
+
+
+
+
+
+
+
+
+</script>

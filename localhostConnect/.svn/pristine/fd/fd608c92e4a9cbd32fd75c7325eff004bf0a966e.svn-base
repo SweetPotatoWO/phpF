@@ -1,0 +1,50 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: Administrator
+ * Date: 2018/9/14 0014
+ * Time: 18:05
+ */
+namespace Service\User\Model;
+
+use Common\Model\SlaveModel;
+
+class UserMaillistModel extends SlaveModel {
+
+    public function addAll($data) {
+        if(!is_array($data[0]) || empty($data)) {
+            return false;
+        } else {
+            return $this->addAll($data);
+        }
+    }
+
+    /**批量更新
+     * @param $data
+     */
+    public function saveAll($userName,$data) {
+
+            return $this->where(array('userName'=>$userName))->save($data);
+
+    }
+
+    /**获取到同学的电话
+     * @param $userID
+     * @return mixed
+     */
+    public function getPhoneList($userID) {
+        $field = array("userName","phone","group");
+        return $this->field("phone")->field($field)->where(array('userID'=>$userID ))->select();
+    }
+
+
+    /**
+     * 获取到电话号码根据名字
+     */
+    public function getPhoneByName($userID,$arr) {
+        $where['userName'] = array('in',$arr);
+        $field = array("userName","phone","group");
+        return $this->where($where)->where(array('userID'=>$userID))->field($field)->select();
+    }
+
+}

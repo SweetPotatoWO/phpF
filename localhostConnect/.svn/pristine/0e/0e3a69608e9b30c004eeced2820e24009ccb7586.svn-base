@@ -1,0 +1,26 @@
+<?php
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+namespace Service\News\Model;
+
+use Common\Model\SlaveModel;
+
+
+class UserProsecuteModel extends SlaveModel {
+
+    public function addOne($data) {
+        return $this->add($data);
+    }
+
+
+    public function getNoSendProsecute() {
+        $sql = "select up.userID,up.prosecuteID,uc.`name` from d_user_prosecute as up 
+                INNER JOIN d_user_company as uc on up.otherID=uc.userID where up.sendNews = 0 and ".time()."-up.addDatetime>10800";
+        return $this->query($sql);
+    }
+}

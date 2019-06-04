@@ -1,0 +1,102 @@
+<?php
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+namespace Service\User\Model;
+
+use Common\Model\SlaveModel;
+use Think\Exception;
+
+/**
+ * 用户服务跟踪情况
+ *
+ * @author DREAM
+ */
+class UserServiceModel extends SlaveModel {
+
+    /**
+     * 添加跟踪记录
+     * @param type $data
+     * @return boolean
+     */
+    public function addTrack($data) {
+        try {
+            $data["addDateTime"] = time();
+			$data["addUserID"] = C("userID");
+            $result = $this->add($data);
+            return $result;
+        } catch (Exception $ex) {
+            logger(__METHOD__, $ex->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * 查询客服服务信息 
+     * @param type $where
+     * @param type $whereArr
+     * @param type $limit
+     */
+    public function getTrack($where, $whereArr, $limit) {
+        $countsql = "SELECT COUNT(*) as count FROM d_user_service as A  INNER JOIN
+                    d_user as B  ON A.userID=B.userID where " . $where . "";
+        $total = $this->SlaveDB()->query($countsql, $whereArr);
+        $result["total"] = $total[0]["count"];
+        $sql = "SELECT A.userName,A.userID,A.serviceID,A.serviceUserName ,A.speakName,A.serviceName,A.addDateTime,
+            A.serviceContent,A.serviceDate,B.phone,B.regDatetime
+            FROM d_user_service as A  INNER JOIN
+            d_user as B  ON A.userID=B.userID where " . $where . " ORDER BY A.addDateTime DESC  LIMIT %s;";
+        array_push($whereArr, $limit);
+        $result["rows"] = $this->SlaveDB()->query($sql, $whereArr);
+        return $result;
+    }
+
+    /**
+     * 用户，投资，充值，提现次数
+     * @param type $where
+     * @param type $whereArr
+     * @param type $limit
+     * @return type
+     */
+    public function getUserCount($where, $whereArr, $limit) {
+        $sqlcount = "SELECT COUNT(1) as count from d_slave_user_count"
+                . " AS A INNER JOIN d_user AS B ON A.userID=B.userID LEFT JOIN d_user_info AS C ON A.userID=C.userID  where (1=1) " . $where . "";
+        $total = $this->SlaveDB()->query($sqlcount, $whereArr);
+        $result["total"] = $total[0]["count"];
+        $sql = "SELECT A.* from d_slave_user_count"
+                . " AS A INNER JOIN d_user AS B ON A.userID=B.userID  LEFT JOIN d_user_info AS C ON B.userID=C.userID where (1=1) " . $where . " ORDER BY A.editDatetime desc LIMIT %s;";
+        array_push($whereArr, $limit);
+        $result["rows"] = $this->SlaveDB()->query($sql, $whereArr);
+        return $result;
+    }
+
+    /**
+     * 获取客服服务统计
+     * @param type $where
+     * @param type $whereArr
+     * @param type $limit
+     * @return type
+     */
+    public function getServiceCount($where, $whereArr, $limit) {
+        $sqlcount = "SELECT COUNT(1) AS count FROM( SELECT serviceUserID FROM d_user_service where (1=1) " . $where . " GROUP BY serviceDate,serviceUserID) T ";
+        $total = $this->SlaveDB()->query($sqlcount, $whereArr);
+        $sql = "SELECT serviceDate,
+                        SUM(CASE WHEN speak=117 THEN 1 ELSE 0 END) AS 'dh',
+                        SUM(CASE WHEN speak=118 THEN 1 ELSE 0 END) AS 'dx',
+                        SUM(CASE WHEN speak=119 THEN 1 ELSE 0 END) AS 'qq',
+                        SUM(CASE WHEN speak=120 THEN 1 ELSE 0 END) AS 'wx',
+                        SUM(CASE WHEN speak=121 THEN 1 ELSE 0 END) AS 'dkf',
+                        SUM(CASE WHEN speak=122 THEN 1 ELSE 0 END) AS 'yxqq',
+                        serviceUserName 
+                        FROM d_user_service where (1=1) " . $where . "  GROUP BY serviceDate,serviceUserName ORDER BY serviceDate DESC LIMIT %s";
+        array_push($whereArr, $limit);
+        $result["total"] = $total[0]["count"];
+        $result["rows"] = $this->SlaveDB()->query($sql, $whereArr);
+        return $result;
+    }
+
+}

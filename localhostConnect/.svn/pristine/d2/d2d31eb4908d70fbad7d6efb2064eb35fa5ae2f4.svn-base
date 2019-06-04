@@ -1,0 +1,672 @@
+<?php
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+namespace Backend\Controller;
+
+use Think\Controller;
+use Service\Business\Logic;
+use Service\News\Logic\SiteNewsLogic;
+use Service\Huax\Lib\HxBorrowPacket;
+use Service\User\Logic\UserLogic;
+use Service\Huax\Lib\HxAccountPacket;
+use Service\Business\Logic\RepaymentLogic;
+use Service\Common\CallBackLogic;
+
+/**
+ * Description of GoCallbackController
+ *
+ * @author DREAM
+ */
+class GoCallbackController extends Controller {
+
+    private $data; //参数 
+    private $sign; //签名
+
+    public function __construct() {
+        parent::__construct();
+        $this->getSystemPar();
+        $responseInfo = file_get_contents('php://input');
+        $inputParam = stripcslashes($responseInfo);
+        $this->data = json_decode($inputParam, TRUE);
+        $this->sign = sha1(md5($this->data["returnurl"]) . "mboxdarren");
+        if ($this->sign != $this->data["sign"]) {
+            logger("ERROR-------Golang业务回调签名错误：", $this->data["returnurl"]);
+            echo 'ok';
+            exit();
+        }
+        logger("Start-------Golang业务回调参数：", $inputParam);
+    }
+
+    /**
+     * 获取系统参数。
+     */
+    private function getSystemPar() {
+        $par = new \Service\System\Logic\SysParameterLogic();
+        $config = $par->getConfig();
+        C($config);
+    }
+
+    //固定的定时器调用
+
+    public function rabTimer() {
+        echo 'ok';
+       // $this->awaitRepaysThree();
+        $this->addRepaysDayToRq();
+        $this->addMegtoMq();
+        logger("定期器消息：rabTimer", $this->data["returnurl"]);
+    }
+
+    //测试勿上传
+    public function rabCash() {
+//        sleep(20);
+        echo 'ok';
+        logger("测试消息队列：rabCash参数一", $this->data["returnurl"]);
+        logger("测试消息队列：rabCash参数二", $this->data["order"]);
+    }
+
+    /**
+     * 还款核对
+     */
+    public function rabPayCheck() {
+        echo 'ok';
+        // GHBCollectNO 华兴单号  borrowNO 标编号
+        $orderNO = $this->data["GHBCollectNO"];
+        $borrowNO = $this->data["borrowNO"];
+        $order = $this->data["order"];
+        if (strlen($borrowNO) > 5 && strlen($orderNO) > 5) {
+            $logic = new Logic\RepaymentLogic();
+            $result = $logic->getHxCollectInfo($orderNO, $borrowNO);
+            logger("rabPayCheck-------还款核对" . $borrowNO, json_encode($result));
+            $body = $result['body'];
+            $collect = new Logic\CollectLogic();
+            $param["checks"] = 1;
+            $where["checks"] = 0;
+            $where["borrowNO"] = $borrowNO;
+            $where["collectionOrder"] = $order;
+            if ($body["RETURN_STATUS"] == "S") {
+                $collect->editCollect($param, $where);
+            } else {
+                $template = array('type' => "SMS", 'phone' => "18664987795,15889550702,13826113883", 'msg' => "还款标的编号" . $this->data["borrowNO"] . "核对还款失败，请手工核对.");
+                $callLogic = new CallBackLogic();
+                $callLogic->sendNotice($template);
+            }
+        }
+        exit();
+    }
+
+    /**
+     * 发送站内消息
+     */
+    public function sendSiteNews() {
+        echo 'ok';
+        $borrowNO = $this->data["borrowNO"];
+        $newsType = $this->data["newsType"];
+        if (strlen($borrowNO) > 5 && !empty($newsType)) {
+            $newsData = array();
+            if ($newsType == "Tender") {
+                $logic = new Logic\TenderLogic();
+                $data = $logic->getTenderSMS($borrowNO);
+                foreach ($data as $key => $value) {
+                    $newsData[] = array(
+                        "userID" => $value["userID"],
+                        "data" => array($value["borrowTitle"], $value["TenderMoney"])
+                    );
+                }
+            } else if ($newsType == "RepayCollect" && strlen($this->data["repaymentNO"]) > 5) {
+                $logic = new Logic\RepaymentLogic();
+                $data = $logic->getRepaySMS($borrowNO, $this->data["repaymentNO"]);
+                foreach ($data as $key => $value) {
+                    $newsData[] = array(
+                        "userID" => $value["userID"],
+                        "data" => array($value["borrowTitle"], $value["repaymentOrder"] . "/" . $value["borrowLimit"], $value["CollectMoney"] * 1 == 0 ? $value["collectionMoney"] : $value["CollectMoney"])
+                    );
+                }
+            }
+            if (count($newsData) > 0) {
+                $newsLogic = new SiteNewsLogic();
+                $newsLogic->sendAllNews($newsType, $newsData);
+            }
+        }
+    }
+
+    /**
+     * 标的结清通知。
+     */
+    public function borrowSettleNotice() {
+        echo 'ok';
+        $borrowNO = $this->data["borrowNO"];
+        if (!empty($borrowNO) && strlen($borrowNO) > 5) {
+            $logic = new Logic\BorrowAdvanceLogic();
+            $check = $logic->checkHasAdance($borrowNO);
+            if ($check === false) {
+                $hx = new HxBorrowPacket();
+                $hxNO = getOrderNo("OGW00250");
+                $result = $hx->borrowSettleNotice($hxNO, $borrowNO);
+                if (!empty($result) && $result['header']['errorCode'] == '0') {
+                    logger_sys($borrowNO, '标的结清通知成功，Msg：' . json_encode($result, JSON_UNESCAPED_UNICODE));
+                }
+                logger_sys($borrowNO, '标的结清通知发送失败，err：' . json_encode($result, JSON_UNESCAPED_UNICODE));
+            } else {
+                logger_sys($borrowNO, '标的结清通知发送失败，err：标还有代偿未偿还！');
+            }
+        }
+    }
+
+    /**
+     * 销户通知
+     */
+    public function hxDstyAccount() {
+        echo 'ok';
+        $accNO = $this->data["accno"];
+        if (!empty($accNO) && strlen($accNO) > 5) {
+            logger_sys("存管账户销户", '存管账户销户：' . $accNO);
+            exit;
+            $logic = new UserLogic();
+            $logic->dstyAccount($accNO);
+            $hx = new HxAccountPacket();
+            $hxNO = getOrderNo("OGW00237");
+            $result = $hx->dstyAccount($hxNO, $accNO);
+            if (!empty($result) && $result['header']['errorCode'] == '0') {
+                logger_sys($accNO, '存管账户销户成功，Msg：' . json_encode($result, JSON_UNESCAPED_UNICODE));
+            }
+            logger_sys($accNO, '存管账户销户失败，err：' . json_encode($result, JSON_UNESCAPED_UNICODE));
+        }
+    }
+
+    /**
+     * 自动还款
+     */
+    public function autoRepay() {
+        echo 'ok';
+        $borrowNO = $this->data["borrowNO"];
+        $repaymentNO = $this->data["repaymentNO"];
+        $repaymentMoney = $this->data['repaymentMoney'];
+        $repaymentOrder = $this->data['repaymentOrder'];
+        if (!empty($borrowNO) && strlen($borrowNO) > 5 && !empty($repaymentNO) && strlen($repaymentNO) > 5) {
+            logger_sys($borrowNO, "标：$borrowNO 第 $repaymentOrder 期 还款金额：$repaymentMoney 还款编号：$repaymentNO 自动还款");
+            $logic = new RepaymentLogic();
+            $result = $logic->autoRepay($borrowNO, $repaymentNO);
+            logger_sys($borrowNO, "标：$borrowNO 第 $repaymentOrder 期 还款金额：$repaymentMoney 还款编号：$repaymentNO 自动还款结果：$result");
+        }
+    }
+
+    /**
+     * 获取三天后需要还款记录
+     */
+    private function awaitRepaysThree() {
+        $smstArr = C('phone_Message');
+        $smsTpl = $smstArr['AwaitRepay'];
+        if (empty($smsTpl))
+            return;
+        $logic = new RepaymentLogic();
+        $result = $logic->awaitRepaysThree();
+        $callLogic = new CallBackLogic();
+        $sendTime = strtotime(date("Y-m-d", time()) . ' 10:00:00');
+        $ticket = $sendTime - time();
+        $data = array();
+        foreach ($result as $key => $value) {
+            $value['repaymentDatetime'] = date("Y年m月d", $value['repaymentDatetime']);
+            $msg = sprintf($smsTpl, $value['repaymentDatetime'], $value['repaymentMoney']);
+            $data[] = array(
+                'type' => "SMS",
+                'phone' => $value['phone'],
+                'msg' => $msg
+            );
+        }
+        $callLogic->sendBatchMsg($data, true, $ticket, 'Notice', 'Notice.Exchange');
+    }
+
+    /**
+     * 将当天需要自动还款的记录放入消息队列
+     */
+    private function addRepaysDayToRq() {
+        $callback = new CallBackLogic();
+        $callback->addRepaysDayToRq();
+    }
+
+    /**
+     * 将当天需要自动还款的记录放入消息队列
+     */
+    public function awaitAutoRepaysDay() {
+        $logic = new RepaymentLogic();
+        $result = $logic->awaitAutoRepaysDay();
+        $sendTime = strtotime(date("Y-m-d", time()) . ' 14:00:00');
+        $ticket = $sendTime - time();
+        $returnurl = SITE . "Backend/GoCallback/autoRepay";
+        $callLogic = new CallBackLogic();
+        $data = array();
+        foreach ($result as $key => $value) {
+            $data[] = array(
+                'returnurl' => $returnurl,
+                'borrowNO' => $value['borrowNO'],
+                'repaymentNO' => $value['repaymentNO'],
+                'repaymentMoney' => $value['repaymentMoney'],
+                'repaymentOrder' => $value['repaymentOrder']
+            );
+        }
+        $callLogic->sendBatchMsg($data, true, $ticket);
+    }
+
+    public function budan() {
+        echo 'OK';
+        $borrowNO = $this->data["borrowNO"];
+        $GHBCollectNO = $this->data["GHBCollectNO"];
+        $GHBNO = $this->data["GHBNO"];
+        $redis = \Common\Common\Redis::GetInstance();
+        $check = $redis->hget('BUDAN', $borrowNO);
+        if ($check) {
+            return;
+        } else {
+            $redis->hset('BUDAN', $borrowNO, $GHBNO);
+        }
+        $field = "userID,phone,borrowNO,realName,accNO,repaymentNO,repaymentMoney,repaymentOrder,repaymentCapital,repaymentInterest,replaceStatus,guaFees";
+        $where["GHBNO"] = $GHBNO;
+        $where["borrowNO"] = $borrowNO;
+        $where["GHBCollectNO"] = $GHBCollectNO;
+        $where["repaymentStatus"] = 2;
+        $repmodel = new \Service\Business\Model\BorrowRepaymentModel();
+        $result = $repmodel->getRepayment($field, $where);
+        if (count($result) == 0 || strlen($result["realName"]) < 1 || strlen($result["accNO"]) < 1) {
+            exit;
+        }
+        $fields = "borrowID,userID,phone,projectType,borrowNO,guaranteeID,borrowTitle,borrowStatus,borrowDays,borrowLimit";
+        $where = array();
+        $where["borrowNO"] = $result['borrowNO'];
+        $bor = new Logic\BorrowLogic();
+        $borrow = $bor->getBorrowNO($fields, $where);
+        if (!empty($borrow)) {
+            $relogic = new RepaymentLogic();
+            $relogic->financierAccountDetail($borrow, $result);
+        }
+    }
+
+    /**
+     * 插入MQ九点开始推送消息
+     */
+    private function addMegtoMq() {
+         $logic=new \Service\Operate\Logic\JpushLogic();
+         return $logic->sendAppMsg();
+    }
+
+    /**
+     * 异步发送手机APP签到通知
+     */
+    public function sendAppMsg() {
+        echo 'OK';
+        $logic = new \Service\Operate\Logic\JpushLogic();
+        $act = $this->data["act"];
+        $content = $this->data["msg"];
+        $logic->sendPush($content, $act);
+    }
+
+    /**
+     * 自动复审
+     */
+    public function autoReview() {
+        echo 'OK';
+        $borrowNO = $this->data["borrowNO"];
+        if (empty($borrowNO) || trim($borrowNO) === "")
+            return;
+        $logic = new Logic\BorrowLogic();
+        $result = $logic->reviewPass($borrowNO, "自动复审");
+        if ($result * 1 > 0) {
+            $logic = new \Service\Account\Logic\AgreementSignLogic();
+            $logic->agreementToRabbitMQ($borrowNO);
+            $borrow = new \Service\Business\Logic\LoanContentLogic();
+            $borrow->addLoanContent($borrowNO); //添加贷后管理
+            logger_sys($borrowNO, "自动复审成功！");
+        } else {
+            logger_sys($borrowNO, "自动复审失败！Error" . $result);
+        }
+    }
+
+    /**
+     * 提交收益明细
+     */
+    public function payToCollect() {
+        echo 'OK';
+        $orderNO = $this->data["orderNO"];
+        $borrowNO = $this->data["borrowNO"];
+        $repaymentOrder = $this->data["repaymentOrder"];
+        $hx = new \Service\Huax\Logic\HXRepayLogic();
+        $hx->payToCollect($orderNO, $borrowNO, $repaymentOrder);
+    }
+
+    /**
+     * 流标返回使用的券。
+     */
+    public function cancelBorTicket() {
+        echo 'OK';
+        $borrowNO = $this->data["borrowNO"];
+        if (empty($borrowNO)) {
+            return;
+        }
+        $logic = new Logic\HdAwardLogic();
+        $result = $logic->getTicketAward($borrowNO);
+        foreach ($result as $value) {
+            
+        }
+    }
+
+    public function advance() {
+        $start = strtotime(date('Ymd'));
+        $end = $start + 86400;
+        $model = new \Think\Model();
+        $sql = "SELECT A.userID,A.repaymentID,A.borrowNO,A.repaymentNO,A.repaymentOrder,B.borrowLimit,B.repaymentCapital,B.realBorrowMoney,B.borrowTitle FROM "
+                . " d_borrow_repayment A INNER JOIN d_borrow B ON B.borrowNO=A.borrowNO "
+                . " INNER JOIN advanceborrow C ON C.borrowNO=B.borrowNO"
+                . " WHERE C.status=0 AND A.repaymentStatus=0 AND A.repaymentDatetime>=%d AND A.repaymentDatetime<%d;";
+        $result = $model->query($sql, $start, $end);
+        $call = new CallBackLogic();
+        $returnurl = SITE . "Backend/GoCallback/advanceBorrowOne";
+        $data = array();
+        foreach ($result as $value) {
+            $data[] = array(
+                "returnurl" => $returnurl,
+                "userID" => $value["userID"],
+                "repaymentID" => $value["repaymentID"],
+                "borrowNO" => $value["borrowNO"],
+                "repaymentNO" => $value["repaymentNO"],
+                "repaymentOrder" => $value["repaymentOrder"],
+                "borrowLimit" => $value["borrowLimit"],
+                "repaymentCapital" => $value["repaymentCapital"],
+                "realBorrowMoney" => $value["realBorrowMoney"],
+                "borrowTitle" => $value["borrowTitle"]
+            );
+        }
+        $call->sendBatchMsg($data, true, 10);
+    }
+
+    public function advanceBorrowOne() {
+        $userID = $this->data["userID"];
+        $repaymentID = $this->data["repaymentID"];
+        $borrowNO = $this->data["borrowNO"];
+        $repaymentNO = $this->data["repaymentNO"];
+        $repaymentOrder = $this->data["repaymentOrder"];
+        $borrowLimit = $this->data["borrowLimit"];
+        $repaymentCapital = $this->data["repaymentCapital"];
+        $realBorrowMoney = $this->data["realBorrowMoney"];
+        $borrowTitle = $this->data["borrowTitle"];
+        $repaymentDatetime = $this->data["repaymentDatetime"];
+        $sale = $this->data["sale"];
+        if ($userID * 1 < 1 || empty($repaymentID) || empty($borrowNO) || empty($repaymentNO) || empty($repaymentOrder) || empty($borrowLimit) || empty($realBorrowMoney) || empty($repaymentDatetime)) {
+            return;
+        }
+        if ($sale <= 0 || $sale > 1)
+            return;
+        $nowDate = strtotime(date('Ymd'));
+        $days = (strtotime(date('Ymd', $repaymentDatetime)) - $nowDate) / 86400;
+        $repayModel = new \Think\Model("BorrowRepayment");
+        $where["borrowNO"] = $borrowNO;
+        $where["repaymentStatus"] = 0;
+        $allCapita = $repayModel->where($where)->sum("repaymentCapital");
+        $allCapita = $allCapita * 1;
+        $lastCapita = roundMoney($realBorrowMoney - $repaymentCapital) * 1;
+        if (($allCapita > 0) && ($lastCapita == $allCapita)) {
+            $where["repaymentID"] = $repaymentID;
+            $where["repaymentNO"] = $repaymentNO;
+            $data["repaymentCapital"] = $allCapita;
+            $data["remark"] = "提前还款";
+            $data["repaymentMoney"] = array('exp', 'repaymentInterest+' . +$allCapita);
+            $result = $repayModel->where($where)->data($data)->save();
+            if ($result) {
+                unset($where["repaymentNO"]);
+                unset($where["repaymentID"]);
+                $where["repaymentOrder"] = array("gt", $repaymentOrder);
+                $where["repaymentID"] = array("neq", $repaymentID);
+                $repData["repaymentStatus"] = 6;
+                $repData["remark"] = "提前还款";
+                $upResult = $repayModel->where($where)->data($repData)->save();
+                if ($upResult || ($borrowLimit * 1 == $repaymentOrder * 1)) {
+                    if ($sale == 1 && ($repaymentOrder * 1 < $borrowLimit * 1)) {
+                        $moneyWhere["borrowNO"] = $borrowNO;
+                        $moneyWhere["repaymentStatus"] = 6;
+                        $moneyWhere["repaymentOrder"] = array("gt", $repaymentOrder);
+                        $moneyWhere["repaymentID"] = array("neq", $repaymentID);
+                        $money = $repayModel->where($moneyWhere)->sum("repaymentInterest");
+                        if ($money * 1 > 0) {
+                            $accLogic = new \Service\Account\Logic\AccountLogic();
+                            $remark = "提前还款【" . borrowLink($borrowNO, $borrowTitle) . "】调整账户";
+                            $accLogic->updateAccount($userID, 0, 0, 0, 0, $money * -1, 407, $borrowNO, 2, $remark); //投资人
+                        }
+                    }
+                    $redis = \Common\Common\Redis::GetInstance();
+                    $redis->hset("AdvanceBorrow", $borrowNO, $borrowNO);
+                    $mqdata = array(
+                        "borrowNO" => $borrowNO,
+                        "repaymentOrder" => $repaymentOrder,
+                        "borrowLimit" => $borrowLimit,
+                        "borrowTitle" => $borrowTitle,
+                        "repaymentID" => $repaymentID,
+                        "repaymentNO" => $repaymentNO,
+                        "sale" => $sale
+                    );
+                    $call = new CallBackLogic();
+                    $call->sendCallbackInfo(SITE . "Backend/GoCallback/advanceBorrowTwo", $mqdata);
+                    $call->sendCallbackInfo(SITE . "Backend/GoCallback/advanceBorrowThr", $mqdata);
+                    logger_sys($borrowNO, "提前还款：修改还款计划成功！");
+                } else {
+                    logger_sys($borrowNO, "提前还款：修改还款计划剩余未还状态失败！" . serialize($result));
+                }
+            } else {
+                logger_sys($borrowNO, "提前还款：修改还款计划本金失败！" . serialize($result));
+            }
+        }
+    }
+
+    public function advanceBorrowTwo() {
+        $borrowNO = $this->data["borrowNO"];
+        $repaymentOrder = $this->data["repaymentOrder"];
+        $borrowLimit = $this->data["borrowLimit"];
+        $borrowTitle = $this->data["borrowTitle"];
+        $repaymentID = $this->data["repaymentID"];
+        $repaymentNO = $this->data["repaymentNO"];
+        $sale = $this->data["sale"];
+        if (empty($borrowNO) || empty($repaymentOrder) || empty($borrowLimit) || empty($sale) || empty($repaymentID) || empty($repaymentNO)) {
+            return;
+        }
+        $sale = $sale * 1;
+        if ($sale <= 0 || $sale > 1)
+            return;
+        $collModel = new \Service\Business\Model\BorrowCollectionModel();
+        $where["borrowNO"] = $borrowNO;
+        $where["collectionStatus"] = 1;
+        $where["collectionOrder"] = $repaymentOrder;
+        $collList = $collModel->where($where)->select();
+        $accLogic = new \Service\Account\Logic\AccountLogic();
+        $updateResult = true;
+        foreach ($collList as $value) {
+            $allWhere = array();
+            $allWhere["borrowNO"] = $borrowNO;
+            $allWhere["collectionStatus"] = 1;
+            $allWhere["collectionOrder"] = array("egt", $repaymentOrder);
+            $allWhere["tenderNO"] = $value["tenderNO"];
+            $allWhere["userID"] = $value["userID"];
+            $allResult = $collModel->field("SUM(capital) AS capital,SUM(interest) AS interest")->where($allWhere)->find();
+            $allCapita = $allResult["capital"] * 1;
+            if ($allCapita * 1 > 0) {
+                $upWhere = array();
+                $upWhere["userID"] = $value["userID"];
+                $upWhere["borrowNO"] = $borrowNO;
+                $upWhere["tenderNO"] = $value["tenderNO"];
+                $upWhere["collectionID"] = $value["collectionID"];
+                $upWhere["collectionStatus"] = 1;
+                $data["capital"] = $allCapita;
+                $data["interest"] = roundMoney($value["interest"] * $sale);
+                $data["collectionMoney"] = $data["capital"] + $data["interest"];
+                $data["remark"] = "提前还款";
+                $result = $collModel->where($upWhere)->data($data)->save();
+                if ($result) {
+                    $islast = ($sale < 1 && $repaymentOrder * 1 == $borrowLimit * 1);
+                    if (($repaymentOrder * 1 < $borrowLimit * 1) || $islast) {
+                        $result = $this->updateCollect($value["userID"], $borrowNO, $value["tenderNO"], $value["collectionID"], $value["collectionOrder"]);
+                        if ($result || $islast) {
+                            $money = roundMoney($allResult["interest"] * 1 - $data["interest"] * 1);
+                            if ($money * 1 > 0) {
+                                $remark = "提前还款【" . borrowLink($borrowNO, $borrowTitle) . "】调整账户";
+                                $accLogic->updateAccount($value["userID"], $money * -1, 0, 0, $money * -1, 0, 407, $borrowNO, 2, $remark); //投资人
+                            }
+                        } else {
+                            $updateResult = false;
+                        }
+                    }
+                } else {
+                    logger_sys($borrowNO, "提前还款：修改收款计划剩余未收状态失败！" . serialize($result));
+                    $updateResult = false;
+                }
+            } else {
+                logger_sys($borrowNO, "提前还款：修改收款计划本金失败！" . serialize($result));
+                $updateResult = false;
+            }
+        }
+        if ($updateResult === true) {
+            $mqdata = array(
+                "borrowNO" => $borrowNO,
+                "repaymentOrder" => $repaymentOrder,
+                "borrowLimit" => $borrowLimit,
+                "borrowTitle" => $borrowTitle,
+                "repaymentID" => $repaymentID,
+                "repaymentNO" => $repaymentNO,
+                "sale" => $sale
+            );
+            $call = new CallBackLogic();
+            $call->sendCallbackInfo(SITE . "Backend/GoCallback/advanceBorrowFour", $mqdata);
+        }
+    }
+
+    public function advanceBorrowFour() {
+        $borrowNO = $this->data["borrowNO"];
+        $repaymentOrder = $this->data["repaymentOrder"];
+        $borrowLimit = $this->data["borrowLimit"];
+        $borrowTitle = $this->data["borrowTitle"];
+        $sale = $this->data["sale"];
+        $repaymentID = $this->data["repaymentID"];
+        $repaymentNO = $this->data["repaymentNO"];
+        if (empty($borrowNO) || empty($repaymentOrder) || empty($borrowLimit) || empty($sale) || empty($repaymentID) || empty($repaymentNO)) {
+            return;
+        }
+        if ($sale * 1 >= 1 || $sale * 1 <= 0) {
+            return;
+        }
+        $allWhere = array();
+        $allWhere["borrowNO"] = $borrowNO;
+        $allWhere["collectionStatus"] = 1;
+        $collModel = new \Service\Business\Model\BorrowCollectionModel();
+        $allResult = $collModel->field("SUM(capital) AS capital,SUM(interest) AS interest")->where($allWhere)->find();
+        $allCapita = roundMoney($allResult["capital"] * 1);
+        $allInterest = roundMoney($allResult["interest"] * 1);
+        if ($allCapita > 0 && $allInterest > 0) {
+            $where["repaymentID"] = $repaymentID;
+            $where["repaymentNO"] = $repaymentNO;
+            $where["repaymentStatus"] = 0;
+            $repayModel = new \Think\Model("BorrowRepayment");
+            $repayInfo = $repayModel->where($where)->find();
+            $lastCapita = roundMoney($repayInfo["repaymentCapital"]);
+            if (!empty($repayInfo) && $lastCapita == $allCapita) {
+                $where["remark"] = "提前还款";
+                $data["repaymentInterest"] = $allInterest;
+                $data["repaymentMoney"] = array('exp', 'repaymentCapital+' . +$allInterest);
+                $result = $repayModel->where($where)->data($data)->save();
+                if ($result) {
+                    $moneyWhere["borrowNO"] = $borrowNO;
+                    $moneyWhere["repaymentStatus"] = 6;
+                    $moneyWhere["repaymentOrder"] = array("gt", $repaymentOrder);
+                    $moneyWhere["repaymentID"] = array("neq", $repaymentID);
+                    $money = $repayModel->where($moneyWhere)->sum("repaymentInterest");
+                    $money = roundMoney($money + $repayInfo["repaymentInterest"] * 1 - $allInterest);
+                    if ($money * 1 > 0) {
+                        $accLogic = new \Service\Account\Logic\AccountLogic();
+                        $remark = "提前还款【" . borrowLink($borrowNO, $borrowTitle) . "】调整账户";
+                        $accLogic->updateAccount($repayInfo["userID"], 0, 0, 0, 0, $money * -1, 407, $borrowNO, 2, $remark); //投资人
+                    }
+                }
+            }
+        }
+    }
+
+    private function updateCollect($userID, $borrowNO, $tenderNO, $collectionID, $collectionOrder) {
+        $upWhere["userID"] = $userID;
+        $upWhere["borrowNO"] = $borrowNO;
+        $upWhere["tenderNO"] = $tenderNO;
+        $upWhere["collectionID"] = array("gt", $collectionID);
+        $upWhere["collectionOrder"] = array("gt", $collectionOrder);
+        $data["collectionStatus"] = 6;
+        $collModel = new \Service\Business\Model\BorrowCollectionModel();
+        return $collModel->where($upWhere)->data($data)->save();
+    }
+
+    public function advanceBorrowThr() {
+        echo 'OK';
+        $borrowNO = $this->data["borrowNO"];
+        $repaymentOrder = $this->data["repaymentOrder"];
+        $borrowLimit = $this->data["borrowLimit"];
+        if (empty($borrowNO) || empty($repaymentOrder) || empty($borrowLimit)) {
+            return;
+        }
+        $rate = $repaymentOrder * 1 / ($borrowLimit * 1);
+        $sql = "SELECT A.*,B.addInterest,C.realTenderMoney FROM d_hd_award A 
+                INNER JOIN d_user_holdticket B ON B.holdID=A.ticketID 
+                INNER JOIN d_borrow_tender C ON C.tenderNO=A.tenderNO 
+                WHERE A.handleStatus=1 AND A.awardType=101 AND C.tenderStatus=1 AND A.borrowNO='%s'";
+        $model = new \Think\Model("HdAward");
+        $awardList = $model->query($sql, $borrowNO);
+        foreach ($awardList as $value) {
+            $where["awardID"] = $value["awardID"];
+            $awardMoney = $this->equalArr($value["realTenderMoney"], $value["addInterest"], $borrowLimit, $repaymentOrder);
+            if ($awardMoney * 1 <= 0) {
+                $awardMoney = $value["awardMoney"];
+            }
+            $data["awardMoney"] = roundMoney($awardMoney);
+            $data["remark"] = "提前还款";
+            $model->data($data)->where($where)->save();
+        }
+    }
+
+    /**
+     * 等额本息还款算法 每月还贷本息：BX=a*i(1+i)^N/[(1+i)^N-1]  第n个月还贷本金：B=a*i(1+i)^(n-1)/[(1+i)^N-1]
+     * 第n个月还贷利息：X=BX-B= a*i(1+i)^N/[(1+i)^N-1]- a*i(1+i)^(n-1)/[(1+i)^N-1]
+     * 计算结果保留6位小数
+     * @param 金额       
+     * @param 年利息 22.4
+     * @param $instalments 期数
+     */
+    private function equalArr($amount, $yrate, $instalments, $nowlimit) {
+        if ($nowlimit * 1 < 1 || $nowlimit * 1 == $instalments) {
+            return 0;
+        }
+        $mrate = $yrate / (12 * 100);
+        $powinterest = pow((1 + $mrate), $instalments);
+        $repayment = round($amount * $mrate * $powinterest / ($powinterest - 1), 2);
+        $intAllTotal = round(($repayment * $instalments - $amount), 2);
+        $result = array();
+        $capTotal = 0;
+        $inTotal = 0;
+        for ($i = 1; $i < $instalments + 1; $i++) {
+            $result[$i]['times'] = $i;
+            $interest = round(($amount - $capTotal) * $mrate, 2);
+            $capital = $repayment - $interest;
+            if ($i == $instalments) {
+                $capital = $amount - $capTotal;
+                $interest = $intAllTotal - $inTotal;
+                if ($interest < 0) {
+                    $interest = 0;
+                }
+            }
+            $result[$i]['repaymentAmount'] = $capital + $interest;
+            $result[$i]['capital'] = $capital;
+            $result[$i]['interest'] = $interest;
+            $capTotal = $capTotal + $capital;
+            $inTotal = $inTotal + $interest;
+            if ($nowlimit * 1 == $i) {
+                return $inTotal;
+            }
+        }
+        return 0;
+    }
+
+}

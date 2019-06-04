@@ -1,0 +1,63 @@
+<?php
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+namespace Service\Backend\Logic;
+
+/**
+ * Description of BaseLogic
+ *
+ * @author Administrator
+ */
+class BaseLogic {
+
+    /**
+     * 返回结果。
+     * @param type $status
+     * @param type $msg
+     * @param type $data
+     * @return type
+     */
+    protected function returnResult($status, $msg, $data = "") {
+        return array("status" => $status, "msg" => $msg, "data" => $data);
+    }
+
+    /**
+     * 组合树
+     * @param type $result
+     * @param type $keyfield 字段名称
+     * @param type $Parent
+     * @param type $pid
+     * @param type $dicID
+     * @param type $level
+     * @return type
+     */
+    public function tree($result, $keyfield, $Parent, $pid = 0, $dicID = "", $level = 0) {
+        $treeArr = array();
+        foreach ($result as $key => $v) {
+            if ($v[$Parent] == $pid) {
+                $v['sort'] = $level;
+                if (strlen($dicID) > 0 && strpos($dicID, $v[$key]) > 0) {
+                    array_push($treeArr, $v);
+                } elseif (strlen($dicID) == 0) {
+                    array_push($treeArr, $v);
+                }
+                $dd = $v[$key];
+                $arr = $this->tree($result, $keyfield, $Parent, $v[$keyfield], $dicID, $level + 1);
+                if (!empty($arr)) {
+                    $treeArr = array_merge($treeArr, $arr);
+                }
+            } else {
+                unset($result[$key]);
+            }
+        }
+        return $treeArr;
+    }
+
+   
+
+}

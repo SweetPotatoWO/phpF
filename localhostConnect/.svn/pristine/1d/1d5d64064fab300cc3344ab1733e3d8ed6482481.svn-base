@@ -1,0 +1,47 @@
+<div id="sub-User-list">
+    <script type="text/javascript" src="{$Think.BPATH}js/datejs/WdatePicker.js"></script> 
+    <h4 class="title">用户：【{$userInfo.nickname} {$userInfo.phone} 】好友列表<span class="titleqit"></span></h4>
+    <form class="form-inline" id="query_User"> 
+        <div class="form-group ">
+            <label class="control-label">基本信息:</label>
+            <input type="text" class="form-control ipt mr-10" value="{$Think.post.txtphone}" name="txtphone" id="txtphone" placeholder="好友手机号"> 
+            <input type="text" class="form-control ipt mr-10" value="{$Think.post.txtrealName}" name="txtrealName" id="txtrealName" placeholder="好友姓名">
+        </div>    
+        <div class="form-group">
+            <a href="{:U(ACTION_NAME, $_GET)}"  onclick="$Util.openQuery(this, event, 'query_User')"  class="btn btn-info"><i class="icon-search"></i>查询</a> 
+        </div>
+        <input type='hidden' name='id' value='{$userInfo.userID}'>
+    </form>
+    <table class="table table-striped table-bordered">
+        <thead>
+            <tr> 
+                <th>好友名字</th>
+                <th>好友手机号</th>
+                <th>所在公司</th>
+                <th>好友职业</th>
+                <th>添加好友时间</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody>
+        <volist name="result" id="vo">
+            <tr>  
+                <td >{$vo.nickname}</td>
+                <td>{$vo.phone}</td>
+                <td>{$vo.companyName}</td>
+                <td>{$vo.job}</td>
+                <td>{$vo.addDatetime|formatShortDate} </td>
+               <td><a class="btn btn-xs btn-primary pr-10" href="/Backend/User/userInfo/id/{$vo.friendUserID}"  onclick="$Util.openWin(this, event)"><span class="icon-search"></span>此人信息</a></td>
+            </tr>
+        </volist>
+        </tbody>
+    </table>
+    <nav class=" pagination-centered">
+        <ul class="pagination">
+            {$page}
+        </ul>
+    </nav>
+</div>
+
+
+

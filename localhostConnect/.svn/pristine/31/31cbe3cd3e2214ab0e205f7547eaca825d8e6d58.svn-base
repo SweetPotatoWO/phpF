@@ -1,0 +1,66 @@
+<?php
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+namespace Service\System\Model;
+
+use Common\Model\SlaveModel;
+
+class SysParameterModel extends SlaveModel {
+
+    /**
+     * 查询系统参数
+     * @param type $where
+     * @param type $whereArr
+     * @param type $limit
+     */
+    public function getParameter($where, $whereArr, $limit) {
+        $result["total"] = $this->table("d_sys_parameter")->where($where, $whereArr)->count();
+        $result["rows"] = $this->table("d_sys_parameter")->where($where, $whereArr)->order("addDatetime DESC")->limit($limit)->select();
+        return $result;
+    }
+
+    /**
+     * 查询单个参数
+     * @param type $where
+     */
+    public function getXinParameter($where) {
+        $result = $this->table("d_sys_parameter")->where($where)->find();
+        return $result;
+    }
+
+    /**
+     * 获取全部数据
+     * @param type $where
+     * @return type
+     */
+    public function getParMore($where) {
+        $field = "parKey,parValue";
+        $result = $this->field($field)->where($where)->order("addDatetime DESC")->select();
+        return $result;
+    }
+
+    /**
+     * 保存系统参数
+     * @param type $where
+     * @param type $data
+     */
+    public function saveParameter($where, $data) {
+        try {
+            $model = M("SysParameter");
+            if (!is_null($where) && count($where) > 0) {
+                $result = $model->where($where)->data($data)->save();
+                return $result * 1 ? $where["parID"] : false;
+            } else {
+                return $model->add($data);
+            }
+        } catch (Exception $ex) {
+            logger(__METHOD__, $ex->getMessage());
+        }
+    }
+
+}

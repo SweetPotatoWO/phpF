@@ -1,0 +1,604 @@
+<?php
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+namespace Backend\Controller;
+
+use Service\System\Logic;
+
+class SystemController extends BaseEndController {
+
+    /**
+     * 系统日志列表
+     */
+    public function getSysLog() {
+        $par = I("post.");
+        $where = "";
+        $whereArr = array();
+        if (!is_null($par["logKey"]) && !empty($par["logKey"])) {
+            $where.="AND logKey ='%s'";
+            array_push($whereArr, $par["logKey"]);
+        }
+        if (!is_null($par["txtDateStart"]) && !empty($par["txtDateStart"])) {
+            $where.="AND addDatetime >'%s'";
+            array_push($whereArr, strtotime($par["txtDateStart"]));
+        }
+        if (!is_null($par["txtDateEnd"]) && !empty($par["txtDateEnd"])) {
+            $where.="AND addDatetime <'%s'";
+            array_push($whereArr, strtotime("+1day", strtotime($par["txtDateEnd"])));
+        }
+        $limit = $this->getPage();
+        $logic = new Logic\SystemLogLogic();
+        $result = $logic->getSysLog($where, $whereArr, $limit);
+        $this->assign("result", $result["rows"]);
+        $this->assign("pageHtml", $this->showPage($result["total"]));
+        $this->display("syslog");
+    }
+
+    /**
+     * 查看系统日志里的日志描述
+     */
+    public function getLogView() {
+        $key = I("get.key");
+        $logic = new Logic\SystemLogLogic();
+        $data = $logic->getLogView($key);
+        $this->assign("data", $data["logRemark"]);
+        $this->display("syslogView");
+    }
+
+    /**
+     * redis列表
+     */
+    public function getSysRedis() {
+        $par = I("post.");
+        if (!is_null($par["txtkey"]) && !empty($par["txtkey"])) {
+            $key = $par["txtkey"];
+        } else {
+            $key = C("SHORT_CODE") . '*_TenderBorrow_Times';
+        }
+        $this->key = $key;
+        $logic = new Logic\RedisLogic();
+        $result = $logic->getRedisList($key);
+        $this->assign('redlist', $result);
+        $this->display("redisList");
+    }
+
+    /**
+     * 查看
+     */
+    public function getView() {
+        $key = I("get.key");
+        $logic = new Logic\RedisLogic();
+        $result = $logic->getView($key);
+        $this->assign('data', $result);
+        $this->display("redisView");
+    }
+
+    /**
+     * 删除Redis
+     */
+    public function delRedis() {
+        $key = I("post.key");
+        $logic = new Logic\RedisLogic();
+        $result = $logic->delRedis($key);
+        if ($result * 1 > 0) {
+            $this->jsonReturn(1, "删除成功!");
+        }
+        $this->jsonReturn(0, "操作失败!");
+    }
+
+    /**
+     * VIP等级
+     */
+    public function getVIP() {
+        $this->display("VIP");
+    }
+
+    /**
+     * 前台菜单列表
+     */
+    public function getMenu() {
+        $par = I("post.");
+        $where.="";
+        $whereArr = array();
+        if (!is_null($par["txtmenuName"]) && !empty($par["txtmenuName"])) {
+            $where.="AND menuName='%s'";
+            array_push($whereArr, $par["txtmenuName"]);
+        }
+        $logic = new Logic\HomeMenuLogic();
+        $result = $logic->getHomeMenu($where, $whereArr);
+        $listid = 1;
+        $this->assign("listid", $listid);
+        $this->assign("result", $result);
+        $this->display("menuList");
+    }
+
+    /**
+     * 修改前台菜单
+     */
+    public function editMenu() {
+        $key = I("get.key");
+        $logic = new Logic\HomeMenuLogic();
+        if ($key * 1 > 0) {
+            $data = $logic->getXinMenu($key);
+            $this->assign("data", $data);
+        }
+        $menuType = $logic->getHomeMenu();
+        $this->assign("menuType", $menuType);
+        $this->display("menuEdit");
+    }
+
+    /**
+     * 保存修改的前台菜单 
+     */
+    public function saveMenu() {
+        $par = I("post.par");
+        if (count($par) > 0) {
+            $logic = new Logic\HomeMenuLogic();
+            $result = $logic->saveMenu($par);
+            if ($result * 1 > 0) {
+                $this->jsonReturn(1, "操作成功", $result);
+            }
+        }
+        return $this->jsonReturn(0, "操作失败");
+    }
+
+    /**
+     * 删除前台菜单
+     */
+    public function delMenu() {
+        $key = I("post.key");
+        if ($key * 1 > 0) {
+            $logic = new Logic\HomeMenuLogic();
+            $result = $logic->delMenu($key);
+            if ($result * 1 > 0) {
+                $this->jsonReturn(1, "删除成功", $result);
+            }
+        }
+        $this->jsonReturn(0, "删除失败");
+    }
+
+    /**
+     * 敏感词
+     */
+    public function getSen() {
+        $par = I("post.");
+        $where = "";
+        $wherearr = array();
+        if (!is_null($par["sensitive"]) && !empty($par["sensitive"])) {
+            $where.= "AND content like '%s' ";
+            array_push($wherearr, "%" . $par["sensitive"] . "%");
+        }
+        $limit = $this->getPage();
+        $logic = new Logic\SysSensitiveLogic();
+        $result = $logic->getSen($where, $wherearr, $limit);
+        $this->assign("result", $result["rows"]);
+        $this->assign("page", $this->showPage($result["total"]));
+        $this->display("senList");
+    }
+
+    /**
+     * 增加敏感词
+     * 编辑敏感词
+     */
+    public function editSen() {
+        $key = I("get.key");
+        if ($key * 1 > 0) {
+            $logic = new Logic\SysSensitiveLogic();
+            $result = $logic->getSinCen($key);
+            $this->assign("data", $result);
+        }
+        $this->display("senEdit");
+    }
+
+    /**
+     * 保存敏感词
+     */
+    public function saveSen() {
+        $par = I("post.par");
+        if (count($par) * 1 > 0) {
+            $logic = new Logic\SysSensitiveLogic();
+            $result = $logic->saveSen($par);
+            if ($result * 1 > 0) {
+                $this->jsonReturn(1, "操作成功", $result);
+            } else {
+                $this->jsonReturn(0, "操作失败", $result);
+            }
+        }
+        $this->assign("result", $result);
+    }
+
+    /**
+     * 删除敏感词
+     */
+    public function delSen() {
+        $key = I("post.key");
+        if ($key * 1 > 0) {
+            $logic = new Logic\SysSensitiveLogic();
+            $result = $logic->delSen($key);
+            if ($result * 1 > 0) {
+                $this->jsonReturn(1, "操作成功!", $result);
+            }
+            $this->jsonReturn(0, "操作失败!");
+        }
+    }
+
+    /**
+     * 词典管理
+     */
+    public function getDic() {
+        $par = I("post.");
+        $where.="";
+        $whereArr = array();
+        if (!is_null($par["txtdicName"]) && !empty($par["txtdicName"])) {
+            $where.="AND dicName = '%s'";
+            array_push($whereArr, $par["txtdicName"]);
+        }
+        $logic = new Logic\DictionaryLogic();
+        $result = $logic->getDicList($where, $whereArr);
+        $dicId = 1;
+        $this->assign("dicId", $dicId);
+        $this->assign("result", $result);
+        $this->display("dicList");
+    }
+
+    /**
+     * 修改词典
+     */
+    public function editDic() {
+        $key = I("get.key");
+        $logic = new Logic\DictionaryLogic();
+        if ($key * 1 > 0) {
+            $data = $logic->getSinDic($key);
+            $data["edit"] = "edit";
+            $this->assign("data", $data);
+        }
+        $dicType = $logic->getDicList();
+        $this->assign("dicType", $dicType);
+        $this->display("dicEdit");
+    }
+
+    /**
+     * 保存词典
+     */
+    public function saveDic() {
+        $par = I("post.par");
+        if (count($par) > 0) {
+            $logic = new Logic\DictionaryLogic();
+            $result = $logic->saveDic($par);
+            if ($result * 1 > 0) {
+                $this->jsonReturn(1, "保存成功!", $result);
+            }
+        }
+        $this->jsonReturn(0, "保存失败!");
+    }
+
+    /**
+     * 删除字典 
+     */
+    public function delDic() {
+        $key = I("post.key");
+        if ($key * 1 > 0) {
+            $logic = new Logic\DictionaryLogic();
+            $result = $logic->delDic($key);
+            if ($result * 1 > 0) {
+                $this->jsonReturn(1, "删除成功!", $result);
+            }
+        }
+        $this->jsonReturn(0, "删除失败!");
+    }
+
+    /**
+     * 获取系统参数
+     */
+    public function getParameter() {
+        $par = I("post.");
+        $where = "";
+        $whereArr = array();
+        if (!is_null($par["parType"]) && !empty($par["parType"])) {
+            $where.="AND parType='%s'";
+            array_push($whereArr, $par["parType"]);
+        }
+        if (!is_null($par["parName"]) && !empty($par["parName"])) {
+            $where.="AND parName='%s'";
+            array_push($whereArr, $par["parName"]);
+        }
+        $limit = $this->getPage();
+        $logic = new Logic\SysParameterLogic();
+        $result = $logic->getParameter($where, $whereArr, $limit);
+        $this->assign("result", $result["rows"]);
+        $this->assign("pageHtml", $this->showPage($result["total"]));
+        $this->display("parameterList");
+    }
+
+    /**
+     * 修改系统参数
+     */
+    public function getXinParameter() {
+        $key = I("get.key");
+        if ($key * 1 > 0) {
+            $logic = new Logic\SysParameterLogic();
+            $data = $logic->getXinParameter($key);
+            $this->assign("data", $data);
+        }
+        $this->display("parameterEdit");
+    }
+
+    /**
+     * 保存系统参数
+     */
+    public function saveParameter() {
+        $par = I("post.par");
+        if (count($par) > 0) {
+            $logic = new Logic\SysParameterLogic();
+            $result = $logic->saveParameter($par);
+            if ($result * 1 > 0) {
+                $this->jsonReturn(1, "保存成功!", $result);
+            }
+        }
+        $this->jsonReturn(0, "保存失败!");
+    }
+
+    /**
+     * 删除系统参数
+     */
+    public function delParameter() {
+        $key = I("post.key");
+        if ($key * 1 > 0) {
+            $logic = new Logic\SysParameterLogic();
+            $result = $logic->delParameter($key);
+            if ($result * 1 > 0) {
+                $this->jsonReturn(1, "删除成功!", $result);
+            }
+        }
+        $this->jsonReturn(0, "删除失败!");
+    }
+
+    /**
+     * 获取等级信息
+     */
+    public function getLevel() {
+        $logic = new Logic\SystemLogLogic();
+        $result = $logic->getLevel();
+        $this->assign("result", $result);
+        $this->display("levelList");
+    }
+
+    /**
+     * 获取VIP商品打折信息
+     */
+    public function getVipdst() {
+        $logic = new Logic\SystemLogLogic();
+        $result = $logic->getLevel();
+        $this->assign("result", $result);
+        $this->display("vipdst");
+    }
+
+    /**
+     * 保存等级信息
+     */
+    public function saveLevel() {
+        $par = I("post.par");
+        if (count($par)) {
+            $logic = new Logic\SystemLogLogic();
+            $result = $logic->saveLevel($par);
+            if ($result * 1 > 0) {
+                $this->jsonReturn(1, "修改成功!", $result);
+            }
+        }
+        $this->jsonReturn(0, "修改失败!");
+    }
+
+    /**
+     * 获取标签列表
+     */
+    public function getLable() {
+        $par = I("post.");
+        $where = "";
+        $whereArr = array();
+        if (!is_null($par["textCode"]) && !empty($par["textCode"])) {
+            $where.=" AND labelCode='%s'";
+            array_push($whereArr, $par["textCode"]);
+        }
+        if (!is_null($par["status"]) && !empty($par["status"])) {
+            $where.=" AND status='%s'";
+            array_push($whereArr, $par["status"] - 1);
+        }
+        $limit = $this->getPage();
+        $logic = new Logic\LabelLogic();
+        $result = $logic->getLableList($where, $whereArr, $limit);
+        $this->assign("result", $result["rows"]);
+        $this->assign("pageHtml", $this->showPage($result["total"]));
+        $this->display('lableList');
+    }
+
+    /**
+     * 编辑或新增
+     */
+    public function editLabelType() {
+        $key = I("get.key");
+        if ($key * 1 > 0) {
+            if ($key * 1 > 0) {
+                $logic = new Logic\LabelLogic();
+                $result = $logic->getLabelInfo($key);
+                $this->assign('data', $result);
+            }
+        }
+        $this->display("editLabelType");
+    }
+
+    /**
+     * 删除标签
+     */
+    public function delLabel() {
+        $key = I("post.key");
+        if ($key * 1 > 0) {
+            $logic = new Logic\LabelLogic();
+            $result = $logic->delLable($key);
+            if ($result * 1 > 0) {
+                $this->jsonReturn(1, "删除成功!", $result);
+            }
+        }
+        $this->jsonReturn(0, "删除失败!");
+    }
+
+    /*
+     * 保存logo
+     */
+
+    public function saveLogo() {
+        $picture = $this->uploadImg("banner");
+        echo json_encode($picture);
+    }
+
+    /**
+     * 保存标签
+     */
+    public function saveLabelType() {
+        $par = I("post.par");
+        if (count($par)) {
+            $logic = new Logic\LabelLogic();
+            $result = $logic->saveLabel($par);
+            if ($result * 1 > 0) {
+                return $this->jsonReturn(1, "保存成功!", $result);
+            }
+        }
+        return $this->jsonReturn(0, '保存失败!');
+    }
+
+    /**
+     * 获取评论字典列表
+     */
+    public function getEvaluaList() {
+        $par = I("post.");
+        $where = "";
+        $whereArr = array();
+        if (!is_null($par["textContent"]) && !empty($par["textContent"])) {
+            $where.=" AND content like '%s'";
+            array_push($whereArr, '%' . $par["textContent"] . '%');
+        }
+        if (!is_null($par["status"]) && !empty($par["status"])) {
+            $where.=" AND status='%s'";
+            array_push($whereArr, $par["status"] - 1);
+        }
+        $limit = $this->getPage();
+        $logic = new Logic\LabelLogic();
+        $result = $logic->getEvaluaList($where, $whereArr, $limit);
+        $this->assign("result", $result["rows"]);
+        $this->assign("page", $this->showPage($result["total"]));
+        $this->display('evaluaList');
+    }
+
+    /**
+     * 编辑或新增评论类型
+     */
+    public function editEvaluaType() {
+        $key = I("get.key");
+        if ($key * 1 > 0) {
+            if ($key * 1 > 0) {
+                $logic = new Logic\LabelLogic();
+                $result = $logic->getEvaluaInfo($key);
+                $this->assign('data', $result);
+            }
+        }
+        $this->display("editEvaluaType");
+    }
+
+    /**
+     * 保存评论类型
+     */
+    public function saveEvaluaType() {
+        $par = I("post.par");
+        if (count($par)) {
+            $logic = new Logic\LabelLogic();
+            $result = $logic->saveEvaluaType($par);
+            if ($result * 1 > 0) {
+                return $this->jsonReturn(1, "保存成功!", $result);
+            }
+        }
+        return $this->jsonReturn(0, '保存失败!');
+    }
+
+    /**
+     * 删除评论类型
+     */
+    public function delEvaluaType() {
+        $key = I("post.key");
+        if ($key * 1 > 0) {
+            $logic = new Logic\LabelLogic();
+            $result = $logic->delEvaluaType($key);
+            if ($result * 1 > 0) {
+                $this->jsonReturn(1, "删除成功!", $result);
+            }
+        }
+        $this->jsonReturn(0, "删除失败!");
+    }
+
+    /**
+     * 获取行业类别
+     */
+    public function getMajoy() {
+        $par = I("post.");
+        $where = "";
+        $whereArr = array();
+        if (!is_null($par["jobname"]) && !empty($par["jobname"])) {
+            $where.="AND jobname like '%s'";
+            array_push($whereArr, '%'.trim($par["jobname"]).'%');
+        }
+        $logic = new Logic\SysMajobLogic();
+        $result = $logic->getMajoyList($where, $whereArr);
+        $this->assign("levelType", $logic->levelType);
+        $this->assign("result", $result);
+        $this->display("majoyList");
+    }
+
+    /**
+     * 修改菜单 
+     */
+    public function editMajoy() {
+        $key = I("get.key");
+        $logic = new Logic\SysMajobLogic();
+        if ($key * 1 > 0) {
+            $data = $logic->getMajoyInfo($key);
+            $this->assign("data", $data);
+        }
+        $list = $logic->getMajoyList();
+        $this->assign("majoyType", $list);
+        $this->display("majoyEdit");
+    }
+
+    /**
+     * 保存菜单
+     */
+    public function saveMajoy() {
+        $par = I("post.par");
+        if (count($par) * 1 > 0) {
+            $logic = new Logic\SysMajobLogic();
+            $result = $logic->saveMajoy($par);
+            if ($result * 1 > 0) {
+                $this->jsonReturn(1, "保存成功!", $result);
+            }
+        }
+        $this->jsonReturn(0, "保存失败!");
+    }
+
+    /**
+     * 删除后台菜单
+     */
+    public function delMajoy() {
+        $key = I("post.key");
+        if ($key * 1 > 0) {
+            $logic = new Logic\SysMajobLogic();
+            $result = $logic->delMajoy($key);
+            if ($result * 1 > 0) {
+                $this->jsonReturn(1, "删除成功!", $result);
+            }
+        }
+        $this->jsonReturn(0, "删除失败!");
+    }
+
+}

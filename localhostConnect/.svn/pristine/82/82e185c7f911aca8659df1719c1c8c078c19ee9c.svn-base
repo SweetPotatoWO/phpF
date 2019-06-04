@@ -1,0 +1,65 @@
+<?php
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+namespace Service\System\Model;
+
+use Common\Model\SlaveModel;
+
+class SysMajobModel extends SlaveModel {
+
+    /**
+     * 查出所有的列表
+     * 
+     */
+    public function getRegionList() {
+
+        $list = $this->select();
+        return $list;
+    }
+
+    /**
+     * 获取列表
+     */
+    public function getMajoyList($where, $whereArr, $field) {
+        $menu = $this->SlaveDB();
+        $result = $menu->where($where, $whereArr)->field($field)->select();
+        return $result;
+    }
+
+    /**
+     * 获取信息
+     */
+    public function getMajoyInfo($id) {
+        return $this->SlaveDB()->where(['majobID' => $id])->find();
+    }
+
+    /**
+     * 保存职业类型
+     */
+    public function savemajoy($data, $where) {
+        try {
+            if (is_array($where) && count($where) > 0) {
+                $result = $this->where($where)->save($data);
+                return $result * 1 > 0 ? $where["majobID"] : false;
+            } else {
+                return $this->add($data);
+            }
+        } catch (Exception $ex) {
+            logger(__METHOD__, $ex->getMessage());
+            return false;
+        }
+    }
+    
+    /**
+     * 删除职业
+     */
+    public function delMajoy($id){
+        return $this->where(['majobID' => $id])->delete();
+    }
+
+}

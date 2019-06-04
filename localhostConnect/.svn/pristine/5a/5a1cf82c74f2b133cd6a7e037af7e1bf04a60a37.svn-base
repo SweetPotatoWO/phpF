@@ -1,0 +1,139 @@
+<?php
+
+/**
+ * Created by PhpStorm.
+ * User: Administrator
+ * Date: 2018/8/15 0015
+ * Time: 9:55
+ */
+
+namespace Service\System\Logic;
+
+use Service\System\Model\SysMajobModel;
+use Common\Common\Redis;
+
+class SysMajobLogic {
+
+    public $sysModel = "";
+
+    public function __construct() {
+
+        $this->sysModel = new SysMajobModel();
+    }
+
+    /**
+     * 缓存城市列表
+     *
+     */
+    public function getRegionList() {
+
+        //$cache = Redis::GetInstance();
+        //$list = $cache->get("majob");
+        // if (empty($list) || is_null($list)) {
+        $list = $this->sysModel->getRegionList();
+        //  $cache->set("majob", $list, 86400 * 30); //存储一周
+        //}
+        return $list;
+    }
+
+    /**
+     * 根据父类获取
+     * @param type $parentID
+     *
+     */
+    public function getSubRegionList($parentID = 1) {
+        $list = $this->getRegionList();
+        $arr = array();
+        foreach ($list as $v) {
+            if ($v["parentID"] == $parentID) {
+                $arr[] = $v;
+            }
+        }
+        return $arr;
+    }
+
+    /**
+     * 获取城市并进行字典排序
+     */
+    public function getDicRegList($pid = 1) {
+        $list = $this->getRegionList();
+        $ret = $this->dictree($list, $pid);
+        return $ret;
+    }
+
+    /**
+     * 排序树
+     */
+    public function dictree($result, $pid = 0) {
+        $treeArr = array();
+        foreach ($result as $key => $v) {
+            if ($v['parentID'] == $pid) {
+                $arr = $this->dictree($result, $v['majobID']);
+                if (!empty($arr)) {
+                    $v["children"] = $arr;
+                }
+                array_push($treeArr, $v);
+                unset($result[$key]);
+            }
+        }
+        return $treeArr;
+    }
+
+    /**
+     * 获取到行业的全称
+     */
+    public function getAllName($id) {
+        $data = $this->sysModel->where(array("majobID" => $id))->field(array("parentID", "jobname"))->find();
+        $str = $data['jobname'];
+        return $str;
+    }
+
+    /**
+     * 获取行业列表
+     */
+    public function getMajoyList($where = '', $whereArr = array()) {
+        $field = "majobID,parentID,jobname,level,status";
+        $result = $this->sysModel->getMajoyList("(1=1)" . $where, $whereArr, $field);
+        $arrMenu = $this->dictree($result, 1);
+        if (empty($where)) {
+            return $arrMenu;
+        } else {
+            return $result;
+        }
+    }
+
+    /**
+     * 获取职业信息
+     */
+    public function getMajoyInfo($id) {
+        if ($id * 1 < 1)
+            return false;
+        return $this->sysModel->getMajoyInfo($id);
+    }
+
+    /**
+     * 保存工作类型
+     */
+    public function saveMajoy($par) {
+        $where = array();
+        try {
+            if ($par["majobID"] * 1 > 0) {
+                $where["majobID"] = $par["majobID"];
+                unset($par['majobID']);
+            }
+            $result = $this->sysModel->saveMajoy($par, $where);
+            return $result;
+        } catch (Exception $ex) {
+            logger(__METHOD__, $ex->getMessage());
+            return false;
+        }
+    }
+    
+    /**
+     * 删除
+     */
+    public function delMajoy($id){
+        return $this->sysModel->delMajoy($id);
+    }
+
+}

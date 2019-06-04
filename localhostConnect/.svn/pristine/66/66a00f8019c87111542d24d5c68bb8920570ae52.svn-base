@@ -1,0 +1,271 @@
+<?php
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+namespace SmallApi\Controller;
+
+use SmallApi\Controller\BaseMobileController;
+use Service\JavaService\Logic\SiteLogic;
+
+/**
+ * Description of UserController
+ *
+ * @author Administrator
+ */
+class SearchController extends BaseMobileController {
+
+    protected $searchLimit = 3000; //小程序搜索机会限制
+
+    /**
+     * 热门搜索
+     */
+
+    public function hotSearchValue() {
+        $par = I('get.');
+        $pageNum = $par['pageNum'] * 1 > 0 ? $par['pageNum'] : 1;
+        $pageSize = $par['pageSize'] * 1 > 0 ? $par['pageSize'] : 20;
+        $service = new SiteLogic();
+        $info = $service->hotSearchWorld($pageNum - 1, $pageSize);
+        if (empty($info['list'])) {
+            $this->return['data'] = array(
+                array("key" => "code", "value" => "产品经理", 'type' => 1),
+                array("key" => "code", "value" => "华为", 'type' => 2),
+                array("key" => "code", "value" => "百度", 'type' => 2),
+                array("key" => "code", "value" => "腾讯", 'type' => 2),
+                array("key" => "code", "value" => "人工智能", 'type' => 2),
+                array("key" => "code", "value" => "夏铁军", 'type' => 1),
+                array("key" => "code", "value" => "销售", 'type' => 1),
+                array("key" => "code", "value" => "产品", 'type' => 1),
+                array("key" => "code", "value" => "生物基因", 'type' => 2),
+            );
+        } else {
+            $this->return['data'] = $info['list'];
+        }
+        $this->return['status'] = 1;
+    }
+
+    /**
+     * 搜索
+     */
+    public function search() {
+        $this->userCheck();
+        $par = I('post.');
+        $pageIndex = $par['pageIndex'] * 1 > 0 ? $par['pageIndex'] : 1;
+        $pageSize = $par['pageSize'] * 1 > 0 ? $par['pageSize'] : 15;
+        $value = $par['value'];
+        $type = $par['type'];
+        $userID = C('userID') * 1;
+        $openID = C('openID');
+        if (empty($value) || empty($type)) {
+            $this->return['msg'] = '数据为空';
+            return false;
+        }
+        $javaService = new SiteLogic();
+        $hisRst = $javaService->userSearchHistory($userID, $openID, date('Y-m-d 00:00:00'), date('Y-m-d 23:59:59'));
+        if (is_numeric($hisRst) && $hisRst * 1 >= $this->searchLimit) {
+            $this->return['status'] = 3;
+            $this->return['msg'] = "已达到最大搜索上限30次,下载app享更多使用次数";
+            return false;
+        }
+        switch ($type) {
+            case 1:
+                $info = $javaService->SearchCompany($userID, $value, array($pageIndex - 1, $pageSize), $openID);
+                break;
+            case 2:
+                $info = $javaService->SearchLegal($userID, $value, array($pageIndex - 1, $pageSize), $openID);
+                break;
+            case 3:
+                $info = $javaService->SearchPeople($userID, $value, array($pageIndex - 1, $pageSize), $openID);
+                break;
+        }
+        if (empty($info['list'])) {
+            $this->return['msg'] = "数据为空";
+        } else {
+            $this->return['status'] = 1;
+            $this->return['data'] = array(
+                'totalPage' => ceil($info['totalRecords'] / $pageSize), //总页数
+                'list' => $info['list']);
+        }
+    }
+
+    /*
+     * 用户主页
+     */
+
+    public function userIndex() {
+        $this->userCheck();
+        $par = I('post.');
+        $userID = $par['userID']; //被访问者id
+        $vserID = $par['vserID'] = C('userID'); //当前用户id
+        $ceterlogic = new \Service\UserCenter\Logic\UserCenterLogic();
+        $userCompanyInfo = $ceterlogic->getUserCompanyInfo($userID);  //公司用户的基本信息
+        switch ($userCompanyInfo['isShowPhone']) {
+            case 1://仅自己可见
+            $vserID != $userID && $userCompanyInfo['phone'] = '保密';
+                break;
+            case 2://仅好友可见
+            !$ceterlogic->isFriend($userID,$vserID) && $userCompanyInfo['phone'] = '仅好友可见'; 
+                break;
+            default:
+                break;
+        }
+        $info['userCompany'] = $userCompanyInfo;
+        $workexperience = $ceterlogic->getUserEx($userID);   //获取到用户的工作经验
+        $info['workexperience'] = (empty($workexperience)) ? array() : $workexperience;
+        $userEd = $ceterlogic->getUserEducational($userID);   //获取到用户的教育经历
+        $info['userEd'] = (empty($userEd)) ? array() : $userEd;
+        $more = $ceterlogic->getMoreInfo($userID); //获取到用户的更多的信息
+        $ass = array("userSex" => "", "workMajorName" => "", "workCity" => "", "provinceName" => "", "cityName" => "", "countyName" => "");
+        $info["more"] = (empty($more)) ? $ass : $more;
+        !empty($vserID) && $ceterlogic->addVisitor($userID, $vserID);  //添加访问记录
+        $this->return['status'] = 1;
+        $this->return['data'] = $info;
+    }
+
+    /**
+     * 提醒用户完善信息(特殊处理返回code2为弹框)
+     */
+    public function remind() {
+        $this->userCheck();
+        $par = I('post.');
+        $userKey = $par['userKey'];
+        $userID = C('userID');
+        if (empty($userID)) {
+            $this->return['status'] = 3;
+            $this->return['msg'] = '为了提高对方的完善率，请先绑定手机号';
+            return $this->return;
+        }
+        $user = new \Service\User\Logic\UserLogic();
+        $code = new \Common\Common\CodeGenerator();
+        $remindID = $code->decode($userKey);   //提醒人的USERID
+        $res = $user->getRemindLock($userID, $remindID);
+        if ($res) {
+            $this->return['msg'] = "已经提示过了";
+            return false;
+        }
+        $userCenter = new \Service\UserCenter\Logic\UserCenterLogic();
+        $userInfo = $userCenter->getOneByUserID($userID);  //获取到己方的信息
+        $newlogic = new \Service\News\Logic\NewsLogic();
+        $newlogic->sendSystemME($remindID, $userID, 'information', array($userInfo['companyName'], $userInfo['name']));   //我方发送系统的信息
+        $phone = $user->getPhoneByUserID($remindID);   //获取到对方的手机号码
+        $sms = new \Service\News\Logic\SendSMSLogic();
+        $sms->Information($phone, $userID, $userInfo['companyName'], $userInfo['name']);
+        $user->remindLock($userID, $remindID);
+        $this->return['status'] = 1;
+        $this->return['msg'] = "已发送消息，提醒对方来完善信息";
+    }
+
+    /**
+     * 公司的基本信息
+     */
+    public function companyIndex() {
+        $this->userCheck();
+        $companyID = I('post.companyID');
+        $site = new SiteLogic();
+        $data = $site->getChattelMortgage($companyID);
+        if (empty($data)) {
+            $this->return['msg'] = "没有数据";
+            return $this->return;
+        }
+        //公司基本信息
+        $info['companyName'] = strip_tags($data['companyName']); //公司名字
+        $info['regCapital'] = (empty($data['regCapital'])) ? "注册资金100万" : "注册资金" . $data['regCapital']; //注册资本
+        $info['regDatetime'] = (empty($data['regDatetime'])) ? "成立1年" : '成立' . floor((time() - strtotime($data['regDatetime'])) / 31536000) . '年'; //注册时间
+        $info['bssScope'] = (empty($data['bssScope'])) ? "暂无介绍" : $data['bssScope']; //注册时间
+        $info['img'] = "";
+        //高层股东信息
+        $sarr = $site->getShareholder($companyID);  //股东信息
+        $marr = $site->getManagers($companyID);   //高层信息
+        $manager = array();
+        if (!empty($sarr) || !empty($marr)) {
+            $allSarr = [];  //初始化
+            foreach ($sarr['list'] as $key => $value) {   //先处理股东
+                $one['name'] = $value['name'];   //股东的名字
+                $one['proportion'] = $value['proportion'];   //股份
+                $one['post'] = "";   //职位
+                $one['img'] = "";
+                if (!empty($marr['list'])) {
+                    foreach ($marr['list'] as $k => $v) {
+                        if ($one['name'] == $v['name']) {     //相等 就是同时是股东 又同时是高层
+                            $one['post'] = $v['post'];   //职位
+                        }
+                    }
+                }
+                $allSaName[] = $one['name'];  //全部股东的姓名
+                $allSarr[] = $one;   //查出全部股东的职位
+            }
+
+            foreach ($marr['list'] as $key => $value) {   //返回高管信息
+                if (!in_array($value['name'], $allSaName)) {   //股东存在高管中
+                    $mdata['name'] = $value['name'];
+                    $mdata['post'] = $value['post'];
+                    $mdata['proportion'] = 0;
+                    $mdata['img'] = "";
+                    $allSarr[] = $mdata;
+                }
+            }
+            if (!empty($allSarr)) {
+                $manager['num'] = count($allSarr);
+                $manager['list'] = $allSarr;
+            }
+        }
+        $this->return['status'] = 1;
+        $this->return['data']['companyInfo'] = $info;
+        $this->return['data']['managerInfo'] = $manager;
+        return $this->return;
+    }
+
+    /**
+     * 公司相关信息
+     */
+    public function getCompanyInfo() {
+        $this->userCheck();
+        $par = I('post.');
+        isset($par['pageIndex']) && $pageIndex = $par['pageIndex'] * 1 > 0 ? $par['pageIndex'] : 1;
+        isset($par['pageSize']) && $pageSize = $par['pageSize'] * 1 > 0 ? $par['pageSize'] : 15;
+        $cid = $par['companyID'];
+        $type = $par['type'];
+        $site = new SiteLogic();
+        $data = array();
+        switch ($type) {
+            case 'management'://股东高管信息
+                $man = $site->getManagers($cid);
+                $sharehold = $site->getShareholder($cid);
+                !empty($man['list']) && $data['man'] = $man['list'];
+                !empty($sharehold['list']) && $data['sharehold'] = $sharehold['list'];
+                break;
+            case 'businessInfo'://工商信息
+                $data['baseInfo'] = $site->getChattelMortgage($cid);  //基本信息
+                break;
+            case 'changeInfos'://变更信息
+                $list = $site->changeInfos($cid, array($pageIndex - 1, $pageSize));
+                $data = $list['list'];
+                break;
+            case 'getPenalty'://行政处罚的列表
+                $list = $site->penalty($cid, array($pageIndex - 1, $pageSize));
+                $data = $list['list'];
+                break;
+            case 'getAbnormal'://经营异常
+                $list = $site->abnormal($cid, array($pageIndex - 1, $pageSize));
+                $data = $list['list'];
+                break;
+        }
+        if (empty($data)) {
+            $this->return['msg'] = '暂无数据';
+        } else {
+            $this->return['status'] = 1;
+            $this->return['data'] = $data;
+        }
+        return $this->return;
+    }
+
+    public function __destruct() {
+        parent::__destruct();
+        $this->jsonReturn($this->return['status'], $this->return['msg'], $this->return['data']);
+    }
+
+}

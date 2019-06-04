@@ -1,0 +1,45 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: Administrator
+ * Date: 2018/8/23 0023
+ * Time: 14:14
+ */
+namespace Service\Integral\Logic;
+
+
+use Service\Integral\Model\UserSigninModel;
+use Service\Integral\Model\UserTaskModel;
+
+class TaskLogic{
+
+
+    /**新手任务
+     * @param $userID
+     * @return mixed
+     */
+    public function getTaskListByNewbie($userID) {
+        $model = new UserTaskModel();
+        return $model->selectNewbieType($userID);
+    }
+
+    /**
+     * 日常任务
+     */
+    public function getTaskListByDays($userID) {
+        $model = new UserTaskModel();
+        return $model->selectDaysType($userID);
+    }
+
+
+    /**
+     * 添加
+     */
+    public function addTaskLog($data) {
+        if(empty($data)) {
+            return false;
+        }
+        $model = new UserTaskModel();
+        return $model->add($data);
+    }
+}

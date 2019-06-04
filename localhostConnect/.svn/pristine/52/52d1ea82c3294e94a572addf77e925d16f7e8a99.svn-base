@@ -1,0 +1,54 @@
+<?php
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+namespace Service\Search\Logic;
+
+class SearchLogic {
+
+    private $model = null;
+
+    public function __construct() {
+        $this->model = new \Service\Search\Model\SearchModel();
+    }
+
+    /**
+     * 接口调用历史
+     */
+    public function getRequestList($where, $whereArr, $limit) {
+        $result = $this->model->getRequestList($where, $whereArr, $limit);
+        foreach ($result['rows'] as $k => $val) {
+            $result['rows'][$k]['timeDiff'] = strtotime($val['endDatetime']) - strtotime($val['requestDatetime']);
+        }
+        return $result;
+    }
+
+    /**
+     * 用户搜素分类统计
+     */
+    public function getUserSearchCount($where, $whereArr, $limit) {
+        $result = $this->model->getUserSearchCount($where, $whereArr, $limit);
+        return $result;
+    }
+
+    /**
+     * 用户搜素历史
+     */
+    public function userSearchList($where, $whereArr, $limit) {
+        $result = $this->model->userSearchList($where, $whereArr, $limit);
+        return $result;
+    }
+
+    /**
+     * 搜素历史
+     */
+    public function searchList($where, $whereArr, $limit) {
+        $result = $this->model->searchList($where, $whereArr, $limit);
+        return $result;
+    }
+
+}

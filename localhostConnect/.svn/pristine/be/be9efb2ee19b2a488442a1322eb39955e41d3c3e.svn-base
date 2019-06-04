@@ -1,0 +1,191 @@
+/*
+Navicat MySQL Data Transfer
+
+Source Server         : 钱盒子测试
+Source Server Version : 50631
+Source Host           : 120.25.85.171:3306
+Source Database       : devmbox_hx
+
+Target Server Type    : MYSQL
+Target Server Version : 50631
+File Encoding         : 65001
+
+Date: 2018-08-08 10:22:18
+*/
+
+SET FOREIGN_KEY_CHECKS=0;
+
+-- ----------------------------
+-- Table structure for d_console_menu
+-- ----------------------------
+DROP TABLE IF EXISTS `d_console_menu`;
+CREATE TABLE `d_console_menu` (
+  `menuID` int(11) NOT NULL AUTO_INCREMENT COMMENT '菜单ID',
+  `menuName` varchar(50) NOT NULL COMMENT '菜单名称',
+  `menuCode` varchar(50) DEFAULT NULL COMMENT '模块代码 Action(模块)名称 Function(方法)名称',
+  `menuUrl` varchar(100) DEFAULT NULL COMMENT '菜单URl',
+  `parentID` int(11) DEFAULT '1' COMMENT '父菜单ID',
+  `parentName` varchar(50) DEFAULT NULL COMMENT '父级菜单',
+  `menuSort` smallint(6) DEFAULT '0' COMMENT '排序',
+  `IfRight` tinyint(4) DEFAULT '1' COMMENT '是否菜单',
+  `IfDisplay` tinyint(4) DEFAULT '1' COMMENT '是否显示',
+  `levelType` tinyint(2) unsigned NOT NULL DEFAULT '1' COMMENT '节点类型：1:表示应用（模块）；2:表示控制器；3：表示方法',
+  `remark` varchar(200) DEFAULT NULL COMMENT '备注',
+  `addUserID` int(11) NOT NULL COMMENT '创建人ID',
+  `addUserName` varchar(50) DEFAULT NULL COMMENT '创建人',
+  `addDatetime` int(11) NOT NULL COMMENT '创建时间',
+  `editUserID` int(11) DEFAULT NULL COMMENT '修改人ID',
+  `editUserName` varchar(50) DEFAULT NULL COMMENT '修改人',
+  `editDatetime` int(11) DEFAULT NULL COMMENT '修改时间',
+  `operateIP` varchar(50) DEFAULT NULL COMMENT '操作IP',
+  PRIMARY KEY (`menuID`)
+) ENGINE=InnoDB AUTO_INCREMENT=162 DEFAULT CHARSET=utf8;
+
+-- ----------------------------
+-- Records of d_console_menu
+-- ----------------------------
+INSERT INTO `d_console_menu` VALUES ('1', '客户管理', '', '', '0', null, '200', '1', '1', '1', '  ', '0', null, '0', '2', '管理员', '1467706970', null);
+INSERT INTO `d_console_menu` VALUES ('2', '用户跟踪记录', 'Service/getTrack', '/Backend/Service/getTrack', '1', null, '25', '1', '1', '3', '  ', '0', null, '0', '2', '管理员', '1467708057', null);
+INSERT INTO `d_console_menu` VALUES ('3', '用户资金查询', 'User', '/Backend/Service/getAcc', '1', null, '31', '1', '1', '3', '    ', '0', null, '0', '2', '管理员', '1467708417', null);
+INSERT INTO `d_console_menu` VALUES ('4', '个人用户信息', 'User/getUser', '/Backend/User/getUser', '1', null, '101', '1', '1', '3', ' 123       ', '0', null, '0', '14', 'jiangt', '1521100230', null);
+INSERT INTO `d_console_menu` VALUES ('5', '用户邀请查询', 'User', '/Backend/User/getInvite', '1', null, '22', '1', '1', '3', '  ', '0', null, '0', '2', '管理员', '1467708257', null);
+INSERT INTO `d_console_menu` VALUES ('6', '文案管理', null, null, '0', null, '180', '1', '1', '1', null, '0', null, '0', null, null, null, null);
+INSERT INTO `d_console_menu` VALUES ('7', '文章管理', 'Spread', '/Backend/Spread/getArticle', '6', null, '20', '1', '1', '3', ' ', '0', null, '0', '15', 'mbox', '1473387625', null);
+INSERT INTO `d_console_menu` VALUES ('8', '友情链接', 'Spread', '/Backend/Spread/getlink', '6', null, '13', '1', '1', '3', ' ', '0', null, '0', '15', 'mbox', '1473387703', null);
+INSERT INTO `d_console_menu` VALUES ('9', 'TDK管理', 'Spread', '/Backend/Spread/getTDK', '6', null, '15', '1', '1', '3', ' ', '0', null, '0', '15', 'mbox', '1473387667', null);
+INSERT INTO `d_console_menu` VALUES ('10', '微信分享', 'Spread', '/Backend/Spread/getShare', '6', null, '17', '1', '1', '3', ' ', '0', null, '0', '15', 'mbox', '1473387653', null);
+INSERT INTO `d_console_menu` VALUES ('11', '广告位', 'Spread', '/Backend/Spread/getBanner', '6', null, '19', '1', '1', '3', ' ', '0', null, '0', '15', 'mbox', '1473387641', null);
+INSERT INTO `d_console_menu` VALUES ('12', '文字碎片', 'Spread', '/Backend/Spread/getPatch', '6', null, '10', '1', '1', '3', ' ', '0', null, '0', '15', 'mbox', '1473387720', null);
+INSERT INTO `d_console_menu` VALUES ('13', '运营管理', null, null, '0', null, '170', '1', '1', '1', null, '0', null, '0', null, null, null, null);
+INSERT INTO `d_console_menu` VALUES ('15', '业务管理', null, null, '0', null, '100', '1', '1', '1', null, '0', null, '0', null, null, null, null);
+INSERT INTO `d_console_menu` VALUES ('16', '发布融资', 'Borrow/getpublish', '/Backend/Borrow/getpublish', '15', null, '100', '1', '1', '3', null, '0', null, '0', null, null, null, null);
+INSERT INTO `d_console_menu` VALUES ('17', '初审融资', 'Borrow/getAudit', '/Backend/Borrow/getAudit', '15', null, '99', '1', '1', '3', null, '0', null, '0', null, null, null, null);
+INSERT INTO `d_console_menu` VALUES ('18', '复审融资', 'Borrow/getReview', '/Backend/Borrow/getReview', '15', null, '98', '1', '1', '3', null, '0', null, '0', null, null, null, null);
+INSERT INTO `d_console_menu` VALUES ('19', '融资管理', 'Borrow/getBor', '/Backend/Borrow/getBor', '15', null, '97', '1', '1', '3', null, '0', null, '0', null, null, null, null);
+INSERT INTO `d_console_menu` VALUES ('20', '投资记录', 'Record/getTender', '/Backend/Record/getTender', '15', null, '50', '1', '1', '3', null, '0', null, '0', null, null, null, null);
+INSERT INTO `d_console_menu` VALUES ('21', '收款记录', 'Record/getCollect', '/Backend/Record/getCollect', '15', null, '51', '1', '1', '3', null, '0', null, '0', null, null, null, null);
+INSERT INTO `d_console_menu` VALUES ('22', '还款记录', 'Record/getRepay', '/Backend/Record/getRepay', '15', null, '52', '1', '1', '3', null, '0', null, '0', null, null, null, null);
+INSERT INTO `d_console_menu` VALUES ('23', '实际融资人', 'BorrowType/getUser', '/Backend/BorrowType/getUser', '15', null, '10', '1', '1', '3', ' ', '0', null, '0', '15', 'mbox', '1521529328', null);
+INSERT INTO `d_console_menu` VALUES ('24', '平台融资人', 'Record/getFina', '/Backend/Record/getFina', '15', null, '9', '1', '1', '3', null, '0', null, '0', null, null, null, null);
+INSERT INTO `d_console_menu` VALUES ('25', '审核管理', null, null, '0', null, '80', '1', '1', '1', null, '0', null, '0', null, null, null, null);
+INSERT INTO `d_console_menu` VALUES ('26', '个人实名审核', 'Audit/getRealName', '/Backend/Audit/getRealName', '25', null, '80', '1', '1', '3', ' ', '0', null, '0', '14', 'jiangt', '1519439117', null);
+INSERT INTO `d_console_menu` VALUES ('27', '充值审核', 'Audit/getRec', '/Backend/Audit/getRec', '25', null, '70', '1', '1', '3', null, '0', null, '0', null, null, null, null);
+INSERT INTO `d_console_menu` VALUES ('28', '提现审核', 'Audit/getCash', '/Backend/Audit/getCash', '25', null, '62', '1', '1', '3', null, '0', null, '0', null, null, null, null);
+INSERT INTO `d_console_menu` VALUES ('29', '银行卡绑定', 'Audit/getBank', '/Backend/Audit/getBank', '25', null, '61', '1', '1', '3', null, '0', null, '0', null, null, null, null);
+INSERT INTO `d_console_menu` VALUES ('30', '数据报表', null, null, '0', null, '70', '1', '1', '1', null, '0', null, '0', null, null, null, null);
+INSERT INTO `d_console_menu` VALUES ('31', '平台用户统计', 'Report/getUser', '/Backend/Report/getUser', '30', null, '95', '1', '1', '3', '   ', '0', null, '0', '15', 'mbox', '1476776032', null);
+INSERT INTO `d_console_menu` VALUES ('32', '周数据统计', 'Report/getWeekDatas', '/Backend/Report/getWeekDatas', '30', null, '98', '1', '1', '3', ' 周数据统计   ', '0', null, '0', '1', 'weilei', '1481677465', null);
+INSERT INTO `d_console_menu` VALUES ('33', '月数据统计', 'Report/getMonthDatas', '/Backend/Report/getMonthDatas', '30', null, '99', '1', '1', '3', ' 月数据统计 ', '0', null, '0', '44', 'liup', '1476439000', null);
+INSERT INTO `d_console_menu` VALUES ('34', '注册登录统计', 'Report/getRstCollect', '/Backend/Report/getRstCollect', '30', null, '95', '1', '1', '3', '  ', '0', null, '0', '1', 'weilei', '1481677309', null);
+INSERT INTO `d_console_menu` VALUES ('35', 'APP数据统计', 'Report/getAppCount', '/Backend/Report/getAppCount', '30', null, '30', '1', '1', '3', ' ', '0', null, '0', '15', 'mbox', '1492413924', null);
+INSERT INTO `d_console_menu` VALUES ('36', '提现统计', 'Report/getCash', '/Backend/Report/getCash', '30', null, '92', '1', '1', '3', '    ', '0', null, '0', '15', 'mbox', '1476776106', null);
+INSERT INTO `d_console_menu` VALUES ('37', '充值统计', 'Report/getRecharge', '/Backend/Report/getRecharge', '30', null, '91', '1', '1', '3', '     ', '0', null, '0', '15', 'mbox', '1476776123', null);
+INSERT INTO `d_console_menu` VALUES ('38', '未还款趋势图', '/Report/getCollect', '/Backend/Report/getCollect', '30', null, '80', '1', '1', '3', '   ', '0', null, '0', '15', 'mbox', '1473489764', null);
+INSERT INTO `d_console_menu` VALUES ('39', '已收款趋势图', 'Report/getPayCollect', '/Backend/Report/getPayCollect', '30', null, '81', '1', '1', '3', '  ', '0', null, '0', '15', 'mbox', '1473489746', null);
+INSERT INTO `d_console_menu` VALUES ('40', 'APP渠道', 'Report/getAppChannel', '/Backend/Report/getAppChannel', '30', null, '29', '1', '1', '3', ' ', '0', null, '0', '15', 'mbox', '1492670002', null);
+INSERT INTO `d_console_menu` VALUES ('41', '终端统计', 'Report/getTerminal', '/Backend/Report/getTerminal', '30', null, '51', '1', '1', '3', '      ', '0', null, '0', '1', 'weilei', '1481677566', null);
+INSERT INTO `d_console_menu` VALUES ('42', '账户趋势', 'Report/getAccount', '/Backend/Report/getAccount', '30', null, '100', '1', '1', '3', '   ', '0', null, '0', '15', 'mbox', '1476775983', null);
+INSERT INTO `d_console_menu` VALUES ('43', '系统管理', null, null, '0', null, '60', '1', '1', '1', null, '0', null, '0', null, null, null, null);
+INSERT INTO `d_console_menu` VALUES ('44', '后台用户管理', 'Backend/getUser', '/Backend/Backend/getUser', '43', null, '30', '1', '1', '3', ' ', '0', null, '0', '15', 'mbox', '1476149880', null);
+INSERT INTO `d_console_menu` VALUES ('45', '后台角色管理', 'Backend/getRole', '/Backend/Backend/getRole', '43', null, '28', '1', '1', '3', ' ', '0', null, '0', '15', 'mbox', '1476149892', null);
+INSERT INTO `d_console_menu` VALUES ('46', '后台菜单管理', 'Backend/getMenu', '/Backend/Backend/getMenu', '43', null, '27', '1', '1', '3', ' ', '0', null, '0', '15', 'mbox', '1476149905', null);
+INSERT INTO `d_console_menu` VALUES ('47', '系统日志', 'System/getSysLog', '/Backend/System/getSysLog', '43', null, '100', '1', '1', '3', '   ', '0', null, '0', '15', 'mbox', '1476150611', null);
+INSERT INTO `d_console_menu` VALUES ('48', 'Redis缓存', 'System/getSysRedis', '/Backend/System/getSysRedis', '43', null, '48', '1', '1', '3', ' ', '0', null, '0', '15', 'mbox', '1476149861', null);
+INSERT INTO `d_console_menu` VALUES ('49', '前台菜单', 'System/getMenu', '/Backend/System/getMenu', '43', null, '20', '1', '1', '3', ' ', '0', null, '0', '15', 'mbox', '1476149919', null);
+INSERT INTO `d_console_menu` VALUES ('50', '页面点击量', 'Spread/getViews', '/Backend/Spread/getViews', '6', null, '0', '1', '1', '3', null, '0', null, '0', null, null, null, null);
+INSERT INTO `d_console_menu` VALUES ('51', '敏感词', 'System/getSen', '/Backend/System/getSen', '43', null, '0', '1', '1', '3', null, '0', null, '0', null, null, null, null);
+INSERT INTO `d_console_menu` VALUES ('52', '账户管理', null, null, '0', null, '81', '1', '1', '1', null, '0', null, '0', null, null, null, null);
+INSERT INTO `d_console_menu` VALUES ('53', '个人账户查询', 'Account/getAccList', '/Backend/Account/getAccList', '52', null, '51', '1', '1', '3', '   ', '0', null, '0', '14', 'jiangt', '1519438872', null);
+INSERT INTO `d_console_menu` VALUES ('54', '账户流水', 'Account/getDetailList', '/Backend/Account/getDetailList', '52', null, '49', '1', '1', '3', ' ', '0', null, '0', '15', 'mbox', '1474621808', null);
+INSERT INTO `d_console_menu` VALUES ('55', '账户结余', 'Account/getBalanceList', '/Backend/Account/getBalanceList', '52', null, '30', '1', '1', '3', ' ', '0', null, '0', '15', 'mbox', '1474621824', null);
+INSERT INTO `d_console_menu` VALUES ('56', '担保管理', null, null, '0', null, '90', '1', '1', '1', null, '0', null, '0', null, null, null, null);
+INSERT INTO `d_console_menu` VALUES ('57', '担保公司', 'Guarantee/getCompany', '/Backend/Guarantee/getCompany', '56', null, '10', '1', '1', '3', ' ', '0', null, '0', '15', 'mbox', '1474958510', null);
+INSERT INTO `d_console_menu` VALUES ('58', '担保额度', 'Guarantee/getAmount', '/Backend/Guarantee/getAmount', '56', null, '20', '1', '1', '3', ' ', '0', null, '0', '15', 'mbox', '1474958528', null);
+INSERT INTO `d_console_menu` VALUES ('59', '担保统计', 'Guarantee/getCount', '/Backend/Guarantee/getCount', '56', null, '5', '1', '1', '3', ' ', '0', null, '0', '15', 'mbox', '1474958537', null);
+INSERT INTO `d_console_menu` VALUES ('60', '转账记录', 'Account/getTransfer', '/Backend/Account/getTransfer', '52', null, '20', '1', '1', '3', ' ', '0', null, '0', '15', 'mbox', '1474621834', null);
+INSERT INTO `d_console_menu` VALUES ('61', '商户待转账', 'Account/getWaiting', '/Backend/Account/getWaiting', '52', null, '1', '1', '0', '3', ' ', '0', null, '0', '16', 'liup', '1473319462', null);
+INSERT INTO `d_console_menu` VALUES ('62', '标类型配置', 'BorrowType/getType', '/Backend/BorrowType/getType', '15', null, '0', '1', '1', '3', null, '0', null, '0', null, null, null, null);
+INSERT INTO `d_console_menu` VALUES ('63', '积分商城', 'Goods/getGoods', '/Backend/Goods/getGoods', '13', null, '55', '1', '1', '3', ' ', '0', null, '0', '15', 'mbox', '1476149632', null);
+INSERT INTO `d_console_menu` VALUES ('64', '积分兑换', 'Integral/getExc', '/Backend/Integral/getExc', '13', null, '0', '1', '0', '3', ' ', '0', null, '0', '2', '管理员', '1467551928', null);
+INSERT INTO `d_console_menu` VALUES ('65', '体验金发送记录', 'Experience/getRecord', '/Backend/Experience/getRecord', '13', null, '0', '1', '0', '3', null, '0', null, '0', null, null, null, null);
+INSERT INTO `d_console_menu` VALUES ('66', '体验金账户', 'Experience/getAccount', '/Backend/Experience/getAccount', '13', null, '0', '1', '0', '3', null, '0', null, '0', null, null, null, null);
+INSERT INTO `d_console_menu` VALUES ('67', '体验金投资记录', 'Experience/getTender', '/Backend/Experience/getTender', '13', null, '0', '1', '0', '3', null, '0', null, '0', null, null, null, null);
+INSERT INTO `d_console_menu` VALUES ('68', '积分类型', 'Integral/getType', '/Backend/Integral/getType', '13', null, '53', '1', '1', '3', ' ', '0', null, '0', '15', 'mbox', '1476149583', null);
+INSERT INTO `d_console_menu` VALUES ('69', '积分记录', 'Integral/getItem', '/Backend/Integral/getItem', '13', null, '59', '1', '1', '3', '   ', '0', null, '0', '15', 'mbox', '1476149540', null);
+INSERT INTO `d_console_menu` VALUES ('70', '验证码查询', 'Service', '/Backend/Service/getCode', '1', null, '20', '1', '1', '3', ' ', '0', null, '0', '2', '管理员', '1467708006', null);
+INSERT INTO `d_console_menu` VALUES ('71', '短信记录', 'Service', '/Backend/Service/getSms', '1', null, '21', '1', '1', '3', ' ', '0', null, '0', '2', '管理员', '1465284477', null);
+INSERT INTO `d_console_menu` VALUES ('72', '融资还款', 'Borrow/getRepay', '/Backend/Borrow/getRepay', '15', null, '60', '1', '1', '3', null, '0', null, '0', null, null, null, null);
+INSERT INTO `d_console_menu` VALUES ('73', '积分账户', 'Integral/getAccount', '/Backend/Integral/getAccount', '13', null, '60', '1', '1', '3', ' ', '0', null, '0', '15', 'mbox', '1476149527', null);
+INSERT INTO `d_console_menu` VALUES ('74', '字典管理', 'System/getDic', '/Backend/System/getDic', '43', null, '47', '1', '1', '3', '   ', '0', null, '0', '15', 'mbox', '1476149937', null);
+INSERT INTO `d_console_menu` VALUES ('75', '服务待收统计', 'Service', '/Backend/Service/getTrack', '1', null, '30', '1', '0', '3', 'asd    ', '2', '管理员', '1465265792', '2', '管理员', '1467708280', null);
+INSERT INTO `d_console_menu` VALUES ('83', '用户次数查询', 'Service', '/Backend/Service/getcount', '1', null, '29', '1', '1', '3', ' ', '2', '管理员', '1465712511', '2', '管理员', '1467708221', null);
+INSERT INTO `d_console_menu` VALUES ('84', '服务投资查询', 'Service', '/Backend/Service/getTrack', '1', null, '12', '1', '0', '3', ' 1   ', '2', '管理员', '1466157561', '2', '管理员', '1467708234', null);
+INSERT INTO `d_console_menu` VALUES ('85', '消费理财', 'Operate/getConsumer', '/Backend/Operate/getConsumer', '137', null, '47', '1', '1', '3', '     ', '2', '管理员', '1466495486', '15', 'mbox', '1489124241', null);
+INSERT INTO `d_console_menu` VALUES ('86', '优惠券管理', 'Ticket/index', '/Backend/Ticket/index', '13', null, '99', '1', '1', '3', ' 优惠券管理 ', '2', '管理员', '1467016666', '2', '管理员', '1467707105', null);
+INSERT INTO `d_console_menu` VALUES ('87', '券规则条件', 'Ticket/ruleList', '/Backend/Ticket/ruleList', '13', null, '100', '1', '1', '3', '券规则条件 ', '2', '管理员', '1467084955', '2', '管理员', '1467707064', null);
+INSERT INTO `d_console_menu` VALUES ('88', '积分订单信息', 'Goods/getOrder', '/Backend/Goods/getOrder', '13', null, '56', '1', '1', '3', ' 积分订单信息  ', '2', '管理员', '1467098631', '15', 'mbox', '1476149554', null);
+INSERT INTO `d_console_menu` VALUES ('89', '客服沟通统计', 'Service', '/Backend/Service/getsercount', '1', null, '24', '1', '1', '3', '       ', '2', '管理员', '1467179800', '2', '管理员', '1467708623', null);
+INSERT INTO `d_console_menu` VALUES ('90', '券来源', 'Ticket/sourceList', '/Backend/Ticket/sourceList', '13', null, '98', '1', '1', '3', ' 券来源 ', '2', '管理员', '1467276392', '2', '管理员', '1467707078', null);
+INSERT INTO `d_console_menu` VALUES ('91', '系统参数', 'System/getParameter', '/Backend/System/getParameter', '43', null, '49', '1', '1', '3', ' 系统参数 ', '2', '管理员', '1467351968', '15', 'mbox', '1476149851', null);
+INSERT INTO `d_console_menu` VALUES ('93', '富翁抽奖配置', 'Operate/getGame', '/Backend/Operate/getGame', '137', null, '99', '1', '1', '3', '运营活动      ', '2', '管理员', '1467682145', '15', 'mbox', '1489124644', null);
+INSERT INTO `d_console_menu` VALUES ('94', '客服跟踪统计', 'Service', '/Backend/Service/getsercount', '1', null, '26', '1', '0', '3', '   ', '2', '管理员', '1467707970', '2', '管理员', '1467708329', null);
+INSERT INTO `d_console_menu` VALUES ('95', '用户跟踪维护', 'Service', '/Backend/Service/getinfo', '1', null, '90', '1', '1', '3', '    ', '2', '管理员', '1467708112', '14', 'jiangt', '1470967961', null);
+INSERT INTO `d_console_menu` VALUES ('96', '用户登录记录', 'User', '/Backend/User/getLogin', '1', null, '98', '1', '1', '3', '   ', '2', '管理员', '1467709402', '14', 'jiangt', '1470967952', null);
+INSERT INTO `d_console_menu` VALUES ('97', '活动奖品', 'Operate/getPrizes', '/Backend/Operate/getPrizes', '13', null, '1', '1', '0', '3', '  ', '2', '管理员', '1467768753', '2', '管理员', '1467769731', null);
+INSERT INTO `d_console_menu` VALUES ('98', 'VIP等级规则', 'System/getLevel', '/Backend/System/getLevel', '43', null, '50', '1', '1', '3', ' VIP等级规则 ', '2', '管理员', '1467940237', '15', 'mbox', '1476149839', null);
+INSERT INTO `d_console_menu` VALUES ('99', '活动中心配置', 'HdCenter/getActivity', '/Backend/HdCenter/getActivity', '137', null, '100', '1', '1', '3', ' 活动中心     ', '7', 'liyy', '1469496019', '15', 'mbox', '1489124368', null);
+INSERT INTO `d_console_menu` VALUES ('101', '额度申请信息 ', 'UserApply', '/Backend/UserApply/applyList', '118', null, '9', '1', '0', '3', '额度申请信息   ', '16', 'liup', '1470987012', '15', 'mbox', '1477550286', null);
+INSERT INTO `d_console_menu` VALUES ('102', 'APP查询', 'Spread', '/Backend/Spread/getAPP', '6', null, '0', '1', '1', '3', ' ', '0', null, '0', '15', 'mbox', '1473387594', null);
+INSERT INTO `d_console_menu` VALUES ('103', '用户来源', 'User', '/Backend/User/getSourceList', '13', null, '7', '1', '1', '3', ' ', '14', 'jiangt', '1471311486', null, null, null, null);
+INSERT INTO `d_console_menu` VALUES ('104', '投资奖励', '', '/Backend/Record/getAward', '15', null, '5', '1', '1', '3', ' 活动券实际使用奖励 ', '16', 'liup', '1472263912', '16', 'liup', '1472263982', null);
+INSERT INTO `d_console_menu` VALUES ('105', '存管查询', '', '/Backend/Borrow/gethx', '15', null, '96', '1', '1', '3', ' 存管查询', '15', 'mbox', '1472286185', null, null, null, null);
+INSERT INTO `d_console_menu` VALUES ('106', 'CPS审核', '', '/Backend/Cps/getApplyList', '25', null, '0', '1', '1', '3', ' CPS审核', '16', 'liup', '1473153724', null, null, null, null);
+INSERT INTO `d_console_menu` VALUES ('107', 'CPS推广会员列表', '', '/Backend/Cps/getSpreadList', '25', null, '0', '1', '1', '3', ' CPS推广会员列表', '16', 'liup', '1473218851', null, null, null, null);
+INSERT INTO `d_console_menu` VALUES ('108', '活动支出审核', '', '/Backend/ActivityOutlay/getOutlayList', '25', null, '0', '1', '1', '3', ' 活动支出审核', '16', 'liup', '1473300924', null, null, null, null);
+INSERT INTO `d_console_menu` VALUES ('109', '华兴对账', '/Account/hxAccount', '/Backend/Account/hxAccount', '52', null, '10', '1', '1', '3', '华兴对账  ', '16', 'liup', '1473318801', '15', 'mbox', '1474621844', null);
+INSERT INTO `d_console_menu` VALUES ('110', '抽奖记录', 'Operate/turntable/', '/Backend/Operate/turntable/', '137', null, '98', '1', '1', '3', ' 前台抽奖大转盘    ', '39', 'yaocy', '1473489186', '38', 'lxx', '1532575419', null);
+INSERT INTO `d_console_menu` VALUES ('111', '持券用户列表', 'Ticket/getUserTicketList', '/Backend/Ticket/getUserTicketList', '13', null, '97', '1', '1', '3', '  ', '9', 'luoy', '1473731989', '15', 'mbox', '1476149481', null);
+INSERT INTO `d_console_menu` VALUES ('112', '资金迁移', null, '/Backend/Audit/getCollect', '25', null, '60', '1', '0', '1', null, '0', null, '0', null, null, null, null);
+INSERT INTO `d_console_menu` VALUES ('113', '担保明细', 'Guarantee/getDid', '/Backend/Guarantee/getDid', '56', null, '9', '1', '1', '3', ' ', '15', 'mbox', '1476338971', null, null, null, null);
+INSERT INTO `d_console_menu` VALUES ('114', '客服业绩', 'Service/achievement', '/Backend/Service/achievement', '1', null, '99', '1', '1', '3', ' 客服业绩  ', '44', 'liup', '1476349123', '14', 'jiangt', '1496136378', null);
+INSERT INTO `d_console_menu` VALUES ('115', '最近3天还款', '', '/Backend/Record/getRepayment', '1', null, '28', '1', '1', '3', ' ', '15', 'mbox', '1476412527', null, null, null, null);
+INSERT INTO `d_console_menu` VALUES ('116', '投标统计', 'Report/getTender', '/Backend/Report/getTender', '30', null, '93', '1', '1', '3', '    ', '14', 'jiangt', '1476416071', '15', 'mbox', '1476776048', null);
+INSERT INTO `d_console_menu` VALUES ('117', '卡券趋势图', '', '/Backend/Report/getTicketCollect', '30', null, '50', '1', '1', '3', ' ', '15', 'mbox', '1476931205', null, null, null, null);
+INSERT INTO `d_console_menu` VALUES ('118', '贷后管理', '/', '', '0', null, '190', '1', '1', '3', '    ', '15', 'mbox', '1477550263', '15', 'mbox', '1523409439', null);
+INSERT INTO `d_console_menu` VALUES ('119', '借款申请', 'UserApply/apply', '/Backend/UserApply/apply', '118', null, '10', '1', '1', '3', ' ', '15', 'mbox', '1477550392', null, null, null, null);
+INSERT INTO `d_console_menu` VALUES ('120', '后台日志', 'Backend/getBackActLog', '/Backend/Backend/getBackActLog', '43', null, '99', '1', '1', '3', '  后台日志    ', '44', 'liup', '1478843270', '44', 'liup', '1478843338', null);
+INSERT INTO `d_console_menu` VALUES ('121', '前台日志', 'Backend/getActLog', '/Backend/Backend/getActLog', '43', null, '99', '1', '1', '3', ' 前台日志 ', '44', 'liup', '1478843304', '44', 'liup', '1478843376', null);
+INSERT INTO `d_console_menu` VALUES ('122', '现金奖励', 'Audit/getGrant', '/Backend/Audit/getGrant', '25', null, '6', '1', '1', '3', '  ', '15', 'mbox', '1479793781', '15', 'mbox', '1489117704', null);
+INSERT INTO `d_console_menu` VALUES ('123', '广告统计', 'Report/getEsnCollect', '/Backend/Report/getEsnCollect', '30', null, '49', '1', '1', '3', ' ', '15', 'mbox', '1480313862', null, null, null, null);
+INSERT INTO `d_console_menu` VALUES ('124', '投资协议查询', 'AgreementSign/agreementList', '/Backend/AgreementSign/agreementList', '15', null, '1', '1', '1', '3', '    ', '44', 'liup', '1481078346', '15', 'mbox', '1530849142', null);
+INSERT INTO `d_console_menu` VALUES ('125', '合作渠道', '', '', '0', null, '181', '1', '1', '3', '  ', '15', 'mbox', '1486368716', '15', 'mbox', '1486368774', null);
+INSERT INTO `d_console_menu` VALUES ('126', '网格用户', 'WgeUser/getUserList', '/Backend/WgeUser/getUserList', '125', null, '50', '0', '0', '3', '  ', '15', 'mbox', '1486368840', '56', 'zhongfangying', '1531453225', null);
+INSERT INTO `d_console_menu` VALUES ('127', '网格统计', '', '/Backend/WgeUser/getMonthData', '125', null, '50', '0', '0', '3', '   ', '15', 'mbox', '1486368887', '58', 'xiangjie', '1532075852', null);
+INSERT INTO `d_console_menu` VALUES ('128', '网格期限统计', '', '/Backend/WgeUser/getLimitTender', '125', null, '18', '0', '0', '3', '  ', '15', 'mbox', '1486369013', '56', 'zhongfangying', '1531453257', null);
+INSERT INTO `d_console_menu` VALUES ('129', '网格月底分成', '', '/Backend/WgeUser/getPartnerIncome', '125', null, '17', '0', '0', '3', '  ', '15', 'mbox', '1486369052', '56', 'zhongfangying', '1531453271', null);
+INSERT INTO `d_console_menu` VALUES ('130', '网格月底待收', '', '/Backend/WgeUser/getMonthCollection', '125', null, '16', '0', '0', '3', '  ', '15', 'mbox', '1486369094', '56', 'zhongfangying', '1531453280', null);
+INSERT INTO `d_console_menu` VALUES ('137', '平台活动', '', '', '0', null, '150', '1', '1', '3', '  ', '15', 'mbox', '1489117356', '15', 'mbox', '1489124126', null);
+INSERT INTO `d_console_menu` VALUES ('138', '邀请规则', 'FriendActive/ruleList', '/Backend/FriendActive/ruleList', '137', null, '80', '1', '1', '3', ' ', '15', 'mbox', '1489117442', null, null, null, null);
+INSERT INTO `d_console_menu` VALUES ('139', '邀请活动列表', '', '/Backend/FriendActive/activityList', '137', null, '79', '1', '1', '3', '  ', '15', 'mbox', '1489117478', '15', 'mbox', '1489124188', null);
+INSERT INTO `d_console_menu` VALUES ('140', '邀请礼品列表', '', '/Backend/FriendActive/giftList', '137', null, '78', '1', '1', '3', '  ', '15', 'mbox', '1489117509', '15', 'mbox', '1489124206', null);
+INSERT INTO `d_console_menu` VALUES ('141', '邀请奖励记录', '', '/Backend/FriendActive/rewardList', '137', null, '75', '1', '1', '3', '  ', '15', 'mbox', '1489117543', '15', 'mbox', '1489124217', null);
+INSERT INTO `d_console_menu` VALUES ('142', 'APP版本管理', 'Spread/getAppVer', '/Backend/Spread/getAppVer', '43', null, '60', '1', '1', '3', 'APP版本管理 ', '14', 'jiangt', '1489717117', '14', 'jiangt', '1489717394', null);
+INSERT INTO `d_console_menu` VALUES ('143', '意见反馈', 'Service/getProp', '/Backend/Service/getProp', '1', null, '19', '1', '1', '3', ' 意见反馈 ', '14', 'jiangt', '1489717681', '14', 'jiangt', '1489717742', null);
+INSERT INTO `d_console_menu` VALUES ('144', '标奖励支出', 'Report/getAwardCollect', '/Backend/Report/getAwardCollect', '30', null, '82', '1', '1', '3', '   ', '14', 'jiangt', '1490346242', '15', 'mbox', '1490346507', null);
+INSERT INTO `d_console_menu` VALUES ('145', 'APP消息推送', 'Jpush/getJpushInfo', '/Backend/Jpush/getJpushInfo', '13', null, '6', '1', '1', '3', 'APP 消息推送（极光推送） ', '14', 'jiangt', '1493971354', '14', 'jiangt', '1493971789', null);
+INSERT INTO `d_console_menu` VALUES ('146', '微信回复', 'Spread/getWxReplys', '/Backend/Spread/getWxReplys', '6', null, '16', '1', '1', '3', ' 微信回复消息管理', '14', 'jiangt', '1493971861', null, null, null, null);
+INSERT INTO `d_console_menu` VALUES ('147', '微信菜单管理', 'Spread/getWxMenu', '/Backend/Spread/getWxMenu', '6', null, '16', '1', '1', '3', ' ', '14', 'jiangt', '1493971902', null, null, null, null);
+INSERT INTO `d_console_menu` VALUES ('148', '新邀请好友奖励', '/Backend/UserInvite/index ', '/Backend/UserInvite/index ', '137', null, '1', '1', '1', '3', '   ', '44', 'liup', '1495706775', '38', 'lxx', '1531970091', null);
+INSERT INTO `d_console_menu` VALUES ('149', '积分商城VIP折扣', 'System/getVipdst', '/Backend/System/getVipdst', '13', null, '5', '1', '1', '3', '  ', '14', 'jiangt', '1497513847', '14', 'jiangt', '1497514001', null);
+INSERT INTO `d_console_menu` VALUES ('150', '测评等级类型', 'Problem/probType', '/Backend/Problem/probType', '13', null, '4', '1', '1', '3', '  ', '14', 'jiangt', '1503972567', '14', 'jiangt', '1503972601', null);
+INSERT INTO `d_console_menu` VALUES ('151', '风险评测问卷', 'Problem/probList', '/Backend/Problem/probList', '13', null, '3', '1', '1', '3', ' ', '14', 'jiangt', '1503972718', null, null, null, null);
+INSERT INTO `d_console_menu` VALUES ('152', '风险评测结果', 'Problem/getProbAnw', '/Backend/Problem/getProbAnw', '13', null, '2', '1', '1', '3', ' ', '14', 'jiangt', '1503972750', null, null, null, null);
+INSERT INTO `d_console_menu` VALUES ('153', '逾期还款', 'Borrow/getAdvance', '/Backend/Borrow/getAdvance', '15', null, '59', '1', '1', '3', ' 垫付还款   ', '14', 'jiangt', '1512458247', null, null, null, null);
+INSERT INTO `d_console_menu` VALUES ('154', '企业账户查询', 'Account/getCompanyAccount', '/Backend/Account/getCompanyAccount', '52', null, '50', '1', '1', '3', ' 企业账户查询', '14', 'jiangt', '1519438845', null, null, null, null);
+INSERT INTO `d_console_menu` VALUES ('155', '企业实名审核', 'Audit/companyRealName', '/Backend/Audit/companyRealName', '25', null, '79', '1', '1', '3', ' ', '14', 'jiangt', '1519439106', null, null, null, null);
+INSERT INTO `d_console_menu` VALUES ('156', '经办人信息审核', 'Audit/companyInfoDetail', '/Backend/Audit/companyInfoDetail', '25', null, '77', '1', '1', '3', '  ', '14', 'jiangt', '1519439173', '14', 'jiangt', '1519630804', null);
+INSERT INTO `d_console_menu` VALUES ('157', '申请融资', 'Borrow/getapply', '/Backend/Borrow/getapply', '15', null, '110', '1', '1', '3', ' ', '15', 'mbox', '1519439877', null, null, null, null);
+INSERT INTO `d_console_menu` VALUES ('158', '融资企业', 'Audit/companyInfo', '/Backend/Audit/companyInfo', '25', null, '8', '1', '1', '3', '  ', '14', 'jiangt', '1519630782', '15', 'mbox', '1523951981', null);
+INSERT INTO `d_console_menu` VALUES ('159', '企业用户信息', 'User/getCompany', '/Backend/User/getCompany', '1', null, '100', '1', '1', '3', ' ', '14', 'jiangt', '1521100179', null, null, null, null);
+INSERT INTO `d_console_menu` VALUES ('160', '贷后管理', 'LoanContent/loanContentList', '/Backend/LoanContent/loanContentList', '118', null, '0', '1', '1', '3', '   ', '44', 'liup', '1523260590', '44', 'liup', '1523351543', null);
+INSERT INTO `d_console_menu` VALUES ('161', 'CPS投资记录', 'Cps/getTendList', '/Backend/Cps/getTendList', '125', null, '88', '1', '1', '3', '  ', '56', 'zhongfangying', '1531445712', '56', 'zhongfangying', '1531445799', null);

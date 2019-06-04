@@ -1,0 +1,196 @@
+<?php
+namespace Service\JavaService\Logic;
+
+
+use Common\Common\CodeGenerator;
+
+/**
+ * 调取java的一些服务
+ * Class SiteLogic
+ * @package Service\JavaService\Logic
+ */
+class SiteLogic {
+
+
+    private  $return = array('msg'=>"","code"=>1);
+    /**
+     * 查询用户
+     */
+    public function SearchPeople($userID,$searchText,$page=array(1,15)) {
+        $url = JAVASERVICE.'/searchservice/search/'.$userID.'/user/'.urlencode($searchText).'?pageNum='.$page[0].'&pageSize='.$page[1];
+        $json =  $this->curl_request($url);
+        $data = json_decode($json,true);
+
+        $ErrMsg = $this->switchErrMsg($data);
+        if($ErrMsg['code'] != 0 ) {
+            return $ErrMsg;
+        }
+        $datalist = $data['data']['datas'];
+        $info['list'] = array();
+        foreach ($datalist as $key=>$value) {
+            $one['companyName'] = $value['companyName'];
+            $one['name']  = $value['nickname'];
+            $one['userHeadUrl'] = $value['headUrl'];
+            $one['job'] = $value['job'];
+            $one['userID'] = $value['userID'];
+            $gen = new CodeGenerator();
+            $one['userKey'] = $gen->createCode($one['userID']);
+            $info['list'][] = $one;
+        }
+        $info['totalRecords'] = $data['data']['page']['totalRecords'];
+        return $ErrMsg['info'] = $info;
+    }
+
+
+    /**
+     * 查询公司
+     */
+    public function SearchCompany($userID,$searchText,$page = array(1,15)) {
+        $url = JAVASERVICE.'/searchservice/search/'.$userID.'/company/'.urlencode($searchText).'?pageNum='.$page[0].'&pageSize='.$page[1];
+        $json =  $this->curl_request($url);
+        $data = json_decode($json,true);
+        $ErrMsg = $this->switchErrMsg($data);
+        if($ErrMsg['code'] != 0 ) {
+            return $ErrMsg;
+        }
+        $datalist = $data['data']['datas'];
+        $info['list'] = array();
+        foreach ($datalist as $key=>$value) {
+            $one['legalName'] = $value['legalName']; //法人
+            $one['companyName']  = $value['name'];
+            $one['regDatetime'] = $value['startDate'];
+            $one['registeredCapital'] = $value['regCapital'];
+            $one['corpKey'] = $value['corpKey'];
+            $one['companyId'] = $value['companyId'];
+            $info['list'][] = $one;
+        }
+        $info['totalRecords'] = $data['data']['page']['totalRecords'];
+        return $ErrMsg['info'] = $info;
+    }
+
+
+    /**
+     * 热门查询
+     * @param $data
+     * @return array
+     */
+    public function hotSearchWorld() {
+        $url = JAVASERVICE.'/searchservice/search/hot?pageNum=0&pageSize=20';
+        $json =  $this->curl_request($url);
+        $data = json_decode($json,true);
+        $ErrMsg = $this->switchErrMsg($data);
+        if($ErrMsg['code'] != 0 ) {
+            return $ErrMsg;
+        }
+        $datalist = $data['data']['datas'];
+        $info['list'] = array();
+        foreach ($datalist as $key=>$value) {
+            $one['companyName'] = $value['companyName'];
+            $one['name']  = $value['nickname'];
+            $one['headUrl'] = $value['userHeadUrl'];
+            $one['job'] = $value['job'];
+            $one['userID'] = $value['userID'];
+            $gen = new CodeGenerator();
+            $one['userKey'] = $gen->createCode($one['userID']);
+            $info['list'][] = $one;
+        }
+        $info['totalRecords'] = $data['data']['page']['totalRecords'];
+        return $ErrMsg['info'] = $info;
+    }
+
+
+    /**
+     * 高管
+     * @param $data
+     * @return array
+     */
+    public function getManagers($id) {
+        $url = JAVASERVICE.'/companyservice/company/managers/'.$id;
+        $json =  $this->curl_request($url);
+        $data = json_decode($json,true);
+        $ErrMsg = $this->switchErrMsg($data);
+        if($ErrMsg['code'] != 0 ) {
+            return $ErrMsg;
+        }
+        $datalist = $data['data']['datas'];
+        $info['list'] = array();
+        foreach ($datalist as $key=>$value) {
+            $one['userID'] = $value['userID'];
+            $gen = new CodeGenerator();
+            $one['userKey'] = $gen->createCode($one['userID']);
+            $info['list'][] = $one;
+        }
+        $info['totalRecords'] = $data['data']['page']['totalRecords'];
+        return $ErrMsg['info'] = $info;
+    }
+
+
+
+    private function switchErrMsg($data) {
+        $code = $data['status'];
+        $this->return['code'] = 1;
+        switch ($code) {
+            case 200:
+                $this->return['code'] = 0;
+                $this->return['msg'] = "请求成功";
+                break;
+            case 303:
+                $this->return['msg'] = "请求失败";
+                break;
+            case 400:
+                $this->return['msg'] = "指代环请求(参数错误)";
+                break;
+            case 404:
+                $this->return['msg'] = "资源不存在";
+                break;
+            case 500:
+                $this->return['msg'] = "通用错误响应";
+                break;
+            case 503:
+                $this->return['msg'] = "服务端无法处理请求";
+                break;
+            case 601:
+                $this->return['msg'] = "第三方请求错误";
+                break;
+            default:
+                $this->return['msg'] = "未知错误";
+        }
+        if(empty($data['data']['datas'])) {
+            $this->return['msg'] = "暂无数据";
+        }
+        return $this->return;
+    }
+
+
+
+
+    //参数1：访问的URL，参数2：post数据(不填则为GET)，参数3：提交的$cookies,参数4：是否返回$cookies
+    private function curl_request($url){
+        $ch = curl_init ();
+        curl_setopt( $ch, CURLOPT_URL, $url );
+        curl_setopt( $ch, CURLOPT_HTTPHEADER, array(
+                'Content-Type: text/html; charset=utf-8'   //json版本需要填写  Content-Type: application/json;
+            )
+        );
+        curl_setopt($ch, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V4);
+        curl_setopt( $ch, CURLOPT_RETURNTRANSFER, 1 );
+        curl_setopt( $ch, CURLOPT_TIMEOUT,60);
+        curl_setopt( $ch, CURLOPT_SSL_VERIFYHOST, 0);
+        curl_setopt( $ch, CURLOPT_SSL_VERIFYPEER, 0);
+        $ret = curl_exec ( $ch );
+        if (false == $ret) {
+            $result = curl_error(  $ch);
+        } else {
+            $rsp = curl_getinfo( $ch, CURLINFO_HTTP_CODE);
+            if (200 != $rsp) {
+                $result = "请求状态 ". $rsp . " " . curl_error($ch);
+            } else {
+                $result = $ret;
+            }
+        }
+        curl_close ( $ch );
+        return $result;
+    }
+
+
+}

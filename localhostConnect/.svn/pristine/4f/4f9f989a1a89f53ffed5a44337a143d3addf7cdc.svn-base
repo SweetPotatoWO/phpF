@@ -1,0 +1,592 @@
+/* 
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+$(function($) {
+    $(".mainmenuclick").click(function(e) {
+        var id = $(this).attr("id");
+        var name = $(this).attr("name");
+        $(".children-menu").removeClass("active");
+        outputHtml(id, name);
+        e.preventDefault();
+        return false;
+    });
+    //主菜单点击
+    $(".children-menu").click(function(e) {
+        var url = $(this).attr("href");
+        $('.reght-content').empty();
+        $(".reght-content").prepend("<div class='sub-content'></div>");
+        $(".sub-content").showLoading();
+        $(".sub-content").load(url, function() {
+            $(".sub-content").fadeIn('slow');
+            $(".sub-content").hideLoading();
+        });
+        $(".children-menu").removeClass("active");
+        $(this).addClass("active");
+        e.preventDefault();
+        return false;
+    });
+    $Valdate.init();
+    $PopImage.init();
+});
+
+//子菜单DIV收缩功能
+
+function slideiconlick() {
+    $(".rightbox").toggleClass("closesidebar");
+    $(".icon-indent-right").toggle();
+    $(".icon-indent-left").toggle();
+}
+$win = function() {
+    var html = '<div id="[ID]" class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">' +
+            '<div class="modal-dialog" role="document" style="width:[width]px;">' +
+            '<div class="modal-content">' +
+            '<div class="modal-header">' +
+            '<button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>' +
+            '<h4 class="modal-title" id="myModalLabel">[Title]</h4>' +
+            '</div>' +
+            '<div class="modal-body">' +
+            '<div><i class="[Ico] mr-10"></i>[Message]</div>' +
+            '</div>' +
+            '<div class="modal-footer">' +
+            '<button type="button" class="btn btn-default cancel" data-dismiss="modal">[BtnCancel]</button>' +
+            '<button type="button" class="btn btn-primary ok" data-dismiss="modal">[BtnOk]</button>' +
+            '</div>' +
+            '</div>' +
+            '</div>';
+    var dialogdHtml = '<div id="[ID]" class="modal fade" id="myModaldialog" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">' +
+            '<div class="modal-dialog" role="document" style="width:[width]px;">' +
+            '<div class="modal-content" style="height:[height]px">' +
+            '<div class="modal-header">' +
+            '<button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>' +
+            '<h4 class="title modal-title" id="dialogdModalLabel">[Title]</h4>' +
+            '</div>' +
+            '<div class="modalcontent" style="max-height:[height2]px;overflow: auto;" >' +
+            '</div>' +
+            '</div>' +
+            '</div>' +
+            '</div>';
+    var reg = new RegExp("\\[([^\\[\\]]*?)\\]", 'igm');
+    var generateId = function() {
+        var date = new Date();
+        return 'mdl' + date.valueOf();
+    };
+    var init = function(options) {
+        options = $.extend({}, {
+            title: "提示",
+            message: "提示内容",
+            btnok: "确定",
+            btncl: "取消",
+            Ico: "icon-info-sign icon-3x text-warning",
+            width: 500,
+            auto: false
+        }, options || {});
+        var modalId = generateId();
+        var content = html.replace(reg, function(node, key) {
+            return {
+                ID: modalId,
+                Title: options.title,
+                Message: options.message,
+                BtnOk: options.btnok,
+                width: options.width,
+                Ico: options.Ico,
+                BtnCancel: options.btncl
+            }[key];
+        });
+        $('body').append(content);
+        $('#' + modalId).modal({
+            width: options.width,
+            backdrop: 'static'
+        });
+        $('#' + modalId).on('hide.bs.modal', function(e) {
+            $('body').find('#' + modalId).remove();
+        });
+        return modalId;
+    };
+    return {
+        message: function(options) {
+            if (typeof options == 'string') {
+                options = {
+                    message: options,
+                    Ico: "icon-ok icon-3x text-success",
+                    title: "提示"
+                };
+            }
+            var id = init(options);
+            var modal = $('#' + id);
+            modal.find('.ok').removeClass('btn-success').addClass('btn-primary');
+            modal.find('.cancel').hide();
+            return {
+                id: id,
+                on: function(callback) {
+                    if (callback && callback instanceof Function) {
+                        modal.find('.ok').click(function() {
+                            callback(true);
+                        });
+                        modal.find('.cancel').click(function() {
+                            callback(false);
+                        });
+                    }
+                },
+                hide: function(callback) {
+                    if (callback && callback instanceof Function) {
+                        modal.on('hide.bs.modal', function(e) {
+                            callback(e);
+                        });
+                    }
+                }
+            };
+        },
+        warn: function(options) {
+            if (typeof options == 'string') {
+                options = {
+                    message: options,
+                    Ico: "icon-warning-sign icon-3x text-warning",
+                    title: "警告"
+                };
+            }
+            var id = init(options);
+            var modal = $('#' + id);
+            modal.find('.ok').removeClass('btn-success').addClass('btn-primary');
+            modal.find('.cancel').hide();
+        },
+        error: function(options) {
+            if (typeof options == 'string') {
+                options = {
+                    message: options,
+                    Ico: "icon-remove icon-2x text-error ",
+                    title: "错误"
+                };
+            }
+            var id = init(options);
+            var modal = $('#' + id);
+            modal.find('.ok').removeClass('btn-success').addClass('btn-primary');
+            modal.find('.cancel').hide();
+        },
+        confirm: function(options) {
+            if (typeof options == 'string') {
+                options = {
+                    message: options,
+                    Ico: "icon-question-sign icon-3x text-info",
+                    title: "咨询"
+                };
+            }
+            var id = init(options);
+            var modal = $('#' + id);
+            modal.find('.ok').removeClass('btn-primary').addClass('btn-success');
+            modal.find('.cancel').show();
+            return {
+                id: id,
+                on: function(callback) {
+                    if (callback && callback instanceof Function) {
+                        modal.find('.ok').click(function() {
+                            callback(true);
+                        });
+                    }
+                },
+                hide: function(callback) {
+                    if (callback && callback instanceof Function) {
+                        modal.on('hide.bs.modal', function(e) {
+                            callback(e);
+                        });
+                    }
+                }
+            };
+        },
+        dialog: function(obj, e, options) {
+            var href = $(obj).attr("href");
+            var title = $(obj).attr("title");
+            e.preventDefault();
+            var options = $.extend({}, {
+                title: title,
+                url: href,
+                width: 800,
+                height: 550,
+                onReady: function() {
+                },
+                onShown: function(e) {
+                }
+            }, options || {});
+            var modalId = generateId();
+            var content = dialogdHtml.replace(reg, function(node, key) {
+                return {
+                    ID: modalId,
+                    width: options.width,
+                    height: options.height,
+                    Title: options.title,
+                    height2: options.height - 100
+                }[key];
+            });
+            $('body').append(content);
+            var target = $('#' + modalId);
+            $('.sub-content').showLoading();
+            target.find('.modalcontent').load(options.url, null, function(response, status) {
+                if (status == "success") {
+                    $('.sub-content').hideLoading();
+                }
+            });
+            if (options.onReady())
+                options.onReady.call(target);
+            target.modal({
+                backdrop: 'static'
+            });
+            target.on('shown.bs.modal', function(e) {
+                if (options.onReady(e))
+                    options.onReady.call(target, e);
+            });
+            target.on('hide.bs.modal', function(e) {
+                $("body").find(target).remove();
+                if ($(this).find('#hidAction').val() == "view") {
+                    return;
+                }
+                $Util.openQuery();
+            });
+        },
+        dialog2: function(obj, e, options) {
+            var href = $(obj).attr("href");
+            var title = $(obj).attr("title");
+            e.preventDefault();
+            var options = $.extend({}, {
+                title: title,
+                url: href,
+                width: 1100,
+                height: 800,
+                onReady: function() {
+                },
+                onShown: function(e) {
+                }
+            }, options || {});
+            var modalId = generateId();
+            var content = dialogdHtml.replace(reg, function(node, key) {
+                return {
+                    ID: modalId,
+                    width: options.width,
+                    height: options.height,
+                    Title: options.title,
+                    height2: options.height - 100
+                }[key];
+            });
+            $('body').append(content);
+            var target = $('#' + modalId);
+            $('.sub-content').showLoading();
+            target.find('.modalcontent').load(options.url, null, function(response, status) {
+                if (status == "success") {
+                    $('.sub-content').hideLoading();
+                }
+            });
+            if (options.onReady())
+                options.onReady.call(target);
+            target.modal({
+                backdrop: 'static'
+            });
+            target.on('shown.bs.modal', function(e) {
+                if (options.onReady(e))
+                    options.onReady.call(target, e);
+            });
+            target.on('hide.bs.modal', function(e) {
+                $("body").find(target).remove();
+                if ($(this).find('#hidAction').val() == "view") {
+                    return;
+                }
+            });
+        }
+    };
+}();
+
+
+
+//子菜单的加载功能
+function submenuclick(obj, e) {
+    var url = $(obj).attr("href");
+    $(".sub-content").showLoading();
+    $(".sub-content").load(url, null, function(response, status) {
+        if (status == "success") {
+            $(".sub-content").fadeIn('slow');
+            $(".sub-content").hideLoading();
+        } else {
+            $win.error("系统出错！");
+            $(".sub-content").hideLoading();
+        }
+    });
+    $(".sub-menu-sidebar").removeClass("active");
+    $(obj).addClass("active");
+    e.preventDefault();
+    return false;
+}
+$Util = function() {
+    var open = function(title) {
+        var $d = $(".rightbox");
+        return $d;
+    };
+    var ajaxLoad = function($dialog, options) {
+        var $content = $dialog.find(".sub-content");
+        $content.children().hide();
+        var ajaxOptions = $.extend({}, options);
+        ajaxOptions.complete = function() {
+            $content.hideLoading();
+        };
+        ajaxOptions.success = function(context) {
+            $content.hideLoading();
+            $content.prepend(context);
+        };
+        ajaxOptions.error = function(e) {
+            $content.hideLoading();
+            $win.error("系统出错！");
+        };
+        $content.showLoading();
+        $.ajax(ajaxOptions);
+    };
+    var Query = function(obj, id) {
+        var $form = $("#" + id).length > 0 ? $("#" + id) : $("form[id^=query_]");
+        var href = $("#" + id).length > 0 ? $(obj).attr("href").replace(/\/p\/[1-9][0-9]*\.html/, "") : $(obj).attr("href");
+        var url = href || $("#hidrefurl").val();
+        var data = $Util.getData($form);
+        $(".sub-content").load(url, data, function(response, status) {
+            if (status == "success") {
+                $(".sub-content").fadeIn('slow');
+                $(".sub-content").hideLoading();
+                $("[data-toggle='tooltip']").tooltip();
+            }
+        });
+        $(".sub-content").showLoading();
+    };    
+    var Export = function(obj, id) {
+        var $form = $("#" + id).length > 0 ? $("#" + id) : $("form[id^=query_]");
+        var href = $("#" + id).length > 0 ? $(obj).attr("href").replace(/\/p\/[1-9][0-9]*\.html/, "") : $(obj).attr("href");
+        var url = href || $("#hidrefurl").val();
+        var data = $Util.getData($form);
+        var shallowEncoded = $.param(data, true);
+        var shallowDecoded = decodeURIComponent(shallowEncoded);
+        window.location.href = url + "?" + shallowDecoded;
+    };
+    var Refresh = function() {
+        var $dialog = $(".rightbox");
+        var $content = $dialog.find(".sub-content");
+        if ($content.children().find('#hidAction').val() == "view") {
+            $content.children().get(0).remove();
+            $content.children().show();
+            return;
+        } else {
+            $content.children().get(0).remove();
+            $content.children().show();
+        }
+        Query();
+    };
+    //获取表单数据
+    var formData = function($form) {
+        var data = {};
+        var getInputValue = function($input) {
+            if ($input.is(":checkbox")) {
+                return $input.prop("checked") ? $input.val() : "";
+            }
+            return $input.val();
+        };
+        $form.find("input:not([for]), select:not([for]), textarea:not([for])").each(function() {
+            data[$(this).attr("name")] = getInputValue($(this));
+        });
+        $form.find("table[for]").each(function() {
+            var datatTable = [];
+            $(this).find("tbody tr:not(.row-template)").each(function() {
+                var datatr = {};
+                var hasValue = false;
+                $(this).find("input[for], select[for], textarea[for]").each(function() {
+                    datatr[$(this).attr("for")] = getInputValue($(this));
+                    hasValue = true;
+                });
+                if (hasValue) {
+                    datatTable.push(datatr);
+                }
+            });
+            data[$(this).attr("for")] = datatTable;
+        });
+        return data;
+    }
+    return {
+        open: open,
+        openWin: function(obj, e) {
+            var href = $(obj).attr("href");
+            var title = $(obj).attr("title");
+            var content = {url: href};
+            var ajaxOptions = content;
+            var onLoad = function() {
+            };
+            content = content || '';
+            if (typeof ajaxOptions !== 'string') {
+                onLoad = function($dialog) {
+                    ajaxLoad($dialog, ajaxOptions);
+                };
+            }
+            var $d = open(title);
+            onLoad($d);
+            e.preventDefault();
+            return $d;
+        },
+        getData: function($form) {
+            return formData($form);
+        },
+        returnRefresh: function() {
+            Refresh();
+        },
+        openQuery: function(obj, e, id) {
+            Query(obj, id);
+            if (e) {
+                e.preventDefault();
+            }
+            return false;
+        },
+        openExport: function(obj, e, id) {
+            if (e) {
+                e.preventDefault();
+            }
+            Export(obj, id);
+            return false;
+        }
+    };
+}();
+
+$PopImage = function() {
+    var init = function() {
+        $.fn.popImage = function(options) {
+            var s = $.extend({}, $.fn.popImage.defaultSettings, options || {});
+            if ($("#popImage_cache").length == 0) {
+                $("<div id='popImage_cache'></div><div class='popImage_close'></div>").appendTo("body");
+            }
+            var item_num = $("#popImage_cache img").length;
+            return this.each(function(index) {
+                var $$ = $(this),
+                        iw = $$.outerWidth(),
+                        ih = $$.outerHeight(),
+                        imgUrl = this[s.tagName],
+                        index = item_num + index,
+                        this_id = "slide" + index;
+                if (!imgUrl) {
+                    imgUrl = $$.attr(s.tagName);
+                }
+                $('<img src="' + imgUrl + '" class="popImage_cached ' + this_id + '" title="click to close"/>').appendTo("#popImage_cache").hide();
+                $$.click(function(e) {
+                    var animate_image = $('#popImage_cache .' + this_id),
+                            w_w = $(window).width(),
+                            w_h = $(window).height(),
+                            st = $(window).scrollTop();
+                    $('.popImage_close').hide();
+                    e.preventDefault();
+                    position = $$.offset(),
+                            o_h = animate_image.height(),
+                            o_w = animate_image.width();
+
+                    var t = st + (w_h - o_h) / 2,
+                            l = (w_w - o_w) / 2;
+
+                    animate_image.css({'left': position.left, 'top': position.top, 'height': ih, 'width': iw});
+                    $('.popImage_cached').hide();
+                    animate_image.show().fadeTo(0, 0.9);
+                    animate_image.animate({'left': l, 'top': t, 'height': o_h, 'width': o_w, 'opacity': 1}, s.timeOut, function() {
+                        var position2 = animate_image.offset();
+                        $('.popImage_close').css({'left': position2.left + o_w - 6, 'top': position2.top - 15}).show();
+                    });
+                });
+                $('.popImage_close,.popImage_cached').bind('click', function(a) {
+                    $('.popImage_close').hide();
+                    $('.popImage_cached').fadeOut(400);
+                    a.preventDefault();
+                });
+            });
+        };
+        $.fn.popImage.defaultSettings = {
+            "tagName": "href",
+            "timeOut": "600"
+        };
+    }
+    return {init: init};
+}();
+
+$Valdate = function() {
+    var init = function() {
+        //设置默认显示样式
+        $.validator.setDefaults({
+            errorPlacement: function(error, element) {
+                if (element.data("haveTip")) {
+                    try {
+                        element.qtip('api').destroy()
+                    }
+                    catch (ex) {
+                        alert(ex);
+                    }
+                }
+                else {
+                    element.data("haveTip", 1);
+                }
+                element.qtip({
+                    content: error,
+                    position: {target: 'mouse', adjust: {x: 10}}
+                });
+                error.data("element", element);
+            },
+            success: function(label) {
+                var element = label.data("element");
+                if (element !== undefined && element.length > 0) {
+                    label.removeData("element");
+                    element.removeData("haveTip");
+                    element.qtip('api').destroy()
+                }
+            }
+        });
+        funCheckValidate();
+    };
+    var funCheckValidate = function() {
+        jQuery.validator.addMethod("funCheck", function(value, element, param) {
+            if (param && param.fun && typeof param.fun == "function") {
+                return param.fun(value, element);
+            }
+            return true;
+        });
+    };
+    return {
+        init: init
+    }
+}();
+
+
+
+function outputHtml(id, name) {
+    var html = " <div class='rightbox'><div class='sidebar-sub-nav'>";
+    html += "<div class='hd'>" + name + "</div>";
+    html += "<ul class='col-nav'> ";
+    html += "<li class='collapse in'> <ul id='ulhtml'>";
+    html += "</ul> </ul></div>";
+    html += "  <div class='slideicon' onclick='slideiconlick()'>";
+    html += "    <i class='icon-indent-right' style='display:none'></i>";
+    html += "    <i class='icon-indent-left'></i>";
+    html += "  </div> <div class='sub-content'></div> </div>";
+    $('.reght-content').html(html);
+    $(".sidebar-sub-nav").showLoading();
+    $.ajax({
+        type: "post",
+        url: "/Backend/BaseEnd/getSubMenu",
+        data: {'parentID': id},
+        dataType: "json",
+        success: function(data) {
+            if (data.length > 0) {
+                var mhtml = "<li>";
+                $.each(data, function(index, item) {
+                    mhtml += "<a href='" + item.menuUrl + "' onclick='submenuclick(this, event)' class='sub-menu-sidebar'>" + item.menuName + "</a>";
+                });
+                $('#ulhtml').html(mhtml + "</li>");
+                $(".sidebar-sub-nav").hideLoading();
+                $(".sub-content").showLoading();
+                $(".sub-content").load(data[0]["menuUrl"], null, function(response, status) {
+                    if (status == "success") {
+                        $(".sub-content").fadeIn('slow');
+                        $(".sub-content").hideLoading();
+                    } else {
+                        $(".sub-content").hideLoading();
+                        $win.error("系统出错！");
+                    }
+                });
+                $(".sub-menu-sidebar").eq(0).addClass("active");
+            }
+        }
+    });
+}

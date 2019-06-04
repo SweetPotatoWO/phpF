@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+        <meta name = "format-detection" content="telephone = no" />
+        <title>{$seoInfo.title}</title>
+        <meta name="description" content="{$seoInfo.description}" />
+        <meta name="keywords" content="{$seoInfo.keyword}" />
+        <link rel="stylesheet" type="text/css" href="{$Think.WXPATH}css/bootstrap.min.css" />
+        <link rel="stylesheet" type="text/css" href="{$Think.WXPATH}css/common.css" />
+        <script type="text/javascript" src="{$Think.WXPATH}js/jquery.min.js"></script>
+        <script type="text/javascript" src="{$Think.WXPATH}js/qhz.jssdk.js"></script>
+        <script type="text/javascript" src="{$Think.WXPATH}js/common.js"></script>
+        <script type="text/javascript" src="{$Think.WXPATH}js/bootstrap.min.js"></script>
+    </head>
+
+
+

@@ -1,0 +1,114 @@
+<div id="sub-banner-list">
+    <input type="hidden" name="hidrefurl" id="hidrefurl" value="{:U(ACTION_NAME, $_GET)}">
+    <h4 class="title">广告图-维护</h4>
+    <form class="form-inline" id="query_share">      
+        <label class="control-label ">名称: </label>
+        <input type="text" value="{$Think.post.txtName}" name="txtName" placeholder="请输入" class="form-control mr-10"> 
+        <label class="control-label ">类型: </label>
+        <select class="form-control" name="txtType" value="{$Think.post.txtType}">
+            {$htmlType}
+        </select> 
+        <a href="{:U(ACTION_NAME, $_GET)}"  onclick="$Util.openQuery(this, event, 'query_share')"  class="btn btn-info"><i class="icon-search"></i>查询</a>
+        <a href="/Backend/Spread/editBanner" title="增加-广告图"  onclick="$Util.openWin(this, event)"  class="btn btn-success"><i class="icon-plus"></i>新增</a> 
+    </form>
+    <table class="table table-striped table-bordered">
+        <thead>
+            <tr>          
+                <th>广告图名称</th>
+                <th>广告类型</th>     
+                <th>广告封面</th>  
+                <th>广告标题</th>
+                <th>排序</th>  
+                <th>内链</th>
+                <th>开始时间</th>
+                <th>结束时间</th>
+                <th>创建人</th>
+                <th>创建时间</th>              
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody>
+        <volist name='result' id='vo'>
+            <tr>
+                <td  style="text-align: left">{$vo.bannerName}</td>
+                <td>{$vo.dicName}</td>
+                <td> <php> echo (strlen($vo['bannerUrl']) > 0 ? "<a class='image_gall' title='浏览' href='" . UPLOAD . $vo['bannerUrl'] . "'> [浏览]</a>" : "");</php></td>
+            <td  style="text-align: left"><a href="#"   data-toggle="popover" data-placement="bottom" data-content="{$vo.bannerTitle}" title="" data-original-title="提示">{$vo.bannerTitle|sub_str=0,15,'...'}</td>
+            <td>{$vo.bannerSort}</td>
+            <eq name='vo.inLink' value='1'>
+            <td>内链</td>
+            <else/>
+            <td>外链</td>
+            </eq>
+            <td><if condition="$vo.bannerStartTime * 1 gt 0 ">{$vo.bannerStartTime|formatshortDate}<else/>{$vo.bannerStartTime}</if> </td>
+            <td><if condition="$vo.bannerEndTime * 1 gt 0 ">{$vo.bannerEndTime|formatshortDate}<else/>{$vo.bannerEndTime}</if></td>
+            <td>{$vo.addUserName}</td>
+            <td>{$vo.addDatetime|formatlongDate}</td>
+            <td>
+                <a class="btn btn-xs btn-primary pr-10" href="/Backend/Spread/editBanner/key/{$vo.bannerID}"  onclick="$Util.openWin(this, event)"><span class="icon-edit"></span>修改  </a>
+                <a class="btn btn-xs btn-warning pr-10 delete" href="/Backend/Spread/delBanner" data="{$vo.bannerID}"><span class="icon-remove"></span>删除</a>
+            </td>
+            </tr>
+        </volist>
+        </tbody>
+    </table>
+    <nav class=" pagination-centered">
+        <ul class="pagination">  
+            {$page}
+        </ul>
+    </nav>
+    <script type="text/javascript" >
+        $(function($) {
+            $(".image_gall").popImage();
+            $("[data-toggle='popover']").popover().on("mouseenter", function() {
+                var _this = this;
+                $(this).popover("show");
+                $(this).siblings(".popover").on("mouseleave", function() {
+                    $(_this).popover('hide');
+                });
+            }).on("mouseleave", function() {
+                var _this = this;
+                setTimeout(function() {
+                    if (!$(".popover:hover").length) {
+                        $(_this).popover("hide")
+                    }
+                }, 100);
+            });
+            $(".delete").click(function(e) {
+                var url = $(this).attr("href");
+                var key = $(this).attr("data");
+                $win.confirm("确定要删除吗").on(function() {
+                    $.ajax({
+                        type: "post",
+                        url: url,
+                        data: {'key': key},
+                        dataType: "json",
+                        beforeSend: function(XMLHttpRequest) {
+                            $(".sub-content").showLoading();
+                        },
+                        success: function(data, textStatus) {
+                            $(".sub-content").hideLoading();
+                            if (data.status == 1) {
+                                $win.message(data.msg).on(function() {
+                                    $Util.openQuery();
+                                });
+                            } else {
+                                $win.warn(data.msg);
+                            }
+                        },
+                        complete: function(XMLHttpRequest, textStatus) {
+                            $(".sub-content").hideLoading();
+                        },
+                        error: function() {
+                            $(".sub-content").hideLoading();
+                        }
+                    });
+                });
+                e.preventDefault();
+            });
+        });
+    </script>
+</div>
+
+
+

@@ -1,0 +1,179 @@
+<include file="Common:header" />
+<div class="property">
+	<div class="navigation text-center bg-white">
+        <ul class="nav nav-tabs bord-n clearfix" role="tablist">
+            <li role="presentation">
+                <a href="#trademark" aria-controls="trademarkr" role="tab" data-toggle="tab" class="active">商标信息</a>
+            </li>
+            <li role="presentation" data="list">
+                <a href="#patent" aria-controls="patent" role="tab" data-toggle="tab">专利信息</a>
+            </li>
+        </ul>
+    </div>
+    
+    <div class="tab-content">
+    	<div id="trademark" role="tabpanel" class="tab-pane active">
+    		<!--<div class="list bg-white">-->
+    			<!--&lt;!&ndash;单条数据start&ndash;&gt;-->
+    			<!--<div class="bord-b clearfix">-->
+    				<!--<div class="fl portrait"><img src="/Public/wechat/images/company/touxiang.png"></div>-->
+    				<!--<div class="fl pl-15">-->
+    					<!--<p class="mb-5">商标名称</p>-->
+    					<!--<div class="fs-12">-->
+    						<!--<p class="mb-5"><font class="color-deep">商标类别：</font>金融类</p>-->
+    						<!--<p class="mb-0"><font class="color-deep">商标状态：</font>注册</p>-->
+    					<!--</div>-->
+    				<!--</div>-->
+    			<!--</div>    			-->
+    			<!--&lt;!&ndash;单条数据end&ndash;&gt;    	-->
+    		<!--</div>-->
+    		<!--暂无数据-->
+    		<!--<div class="nodata text-center fs-13 color-deep pl-10">暂无数据~</div>-->
+    		<!--点击加载-->
+    		<!--<div id="wxNo" class="wxLast text-center fs-13 color-deep">已经没有更多数据</div>-->
+            <!--<div id="wxLoad" class="wxLast text-center fs-13 color-deep">正在努力加载...</div>-->
+            <!--<div id="wxMore" class="wxLast text-center fs-13 color-deep">点击加载更多</div>-->
+    	</div>
+    	<div id="patent" role="tabpanel" class="tab-pane">
+    		<!--<div class="list bg-white">-->
+    			<!--&lt;!&ndash;单条数据start&ndash;&gt;-->
+    			<!--<a href="/Wechat/Company/patentDetail" class="block bord-b">-->
+    				<!--<h6 class="mb-5">专利名称</h6>-->
+    				<!--<div class="fs-12">-->
+    					<!--<p class="mb-5"><font class="color-deep">申请公布号：</font>CN95236132798</p>-->
+    					<!--<p class="mb-0"><font class="color-deep">申请公布日：</font>2018-10-20</p>-->
+    				<!--</div>    				-->
+    			<!--</a>    			-->
+    			<!--&lt;!&ndash;单条数据end&ndash;&gt;-->
+    		<!--</div>-->
+    		<!--&lt;!&ndash;暂无数据&ndash;&gt;-->
+    		<!--<div class="nodata text-center fs-13 color-deep pl-10">暂无数据~</div>-->
+    		<!--&lt;!&ndash;点击加载&ndash;&gt;-->
+    		<!--<div id="wxNo" class="wxLast text-center fs-13 color-deep">已经没有更多数据</div>-->
+            <!--<div id="wxLoad" class="wxLast text-center fs-13 color-deep">正在努力加载...</div>-->
+            <!--<div id="wxMore" class="wxLast text-center fs-13 color-deep">点击加载更多</div>-->
+    	</div>
+    </div>
+</div>
+</body>
+</html>
+<script type="text/javascript">
+	$(function () {
+        getPropertyList(1);
+        getPatent(1);
+	});
+
+    /**
+	 * 获取到商标的列表
+     * @param page
+     */
+    function getPropertyList(page) {
+        var data = {'page':page,'companyID':"dd"};
+        $.ajax({
+            url:"/wechat/company/getPropertyList",
+            type:"post",
+            data:data,
+            dataType:'json',
+            success:function(data){
+                if(data.code == 0) {   //成功
+                    getCombinationProperty(data.data);
+                } else {   //失败
+                    alert("服务器出错");
+                }
+            },
+            error:function(data){
+                alert("请求错误");
+            },
+        });
+	}
+
+    /**
+	 * 组合对应的商标信息
+     * @param data
+     */
+	function getCombinationProperty(data) {
+        var html = "";
+        if (data == "") {
+            var b = $("#trademark").children();
+            if (b[0]) {
+                html = "<div id=\"wxNo\" class=\"wxLast text-center fs-13 color-deep\">已经没有更多数据</div>";
+                $("#trademark").append(html);
+            } else {
+                html = "<div class=\"nodata text-center fs-13 color-deep pl-10\">暂无数据~</div>";
+                $("#trademark").html(html);
+            }
+        } else {
+            html += '<div class="list bg-white">';
+            for (var a in data) {
+                html += '<div class="bord-b clearfix">\n' +
+                    '    \t\t\t\t<div class="fl portrait"><img src="/Public/wechat/images/company/touxiang.png"></div>\n' +
+                    '    \t\t\t\t<div class="fl pl-15">\n' +
+                    '    \t\t\t\t\t<p class="mb-5">商标名称</p>\n' +
+                    '    \t\t\t\t\t<div class="fs-12">\n' +
+                    '    \t\t\t\t\t\t<p class="mb-5"><font class="color-deep">商标类别：</font>金融类</p>\n' +
+                    '    \t\t\t\t\t\t<p class="mb-0"><font class="color-deep">商标状态：</font>注册</p>\n' +
+                    '    \t\t\t\t\t</div>\n' +
+                    '    \t\t\t\t</div>\n' +
+                    '    \t\t\t</div>';
+            }
+            html += '<div class="list bg-white">';
+            $("#trademark").append(html);
+        }
+    }
+
+    /**
+	 * 获取到专利的信息
+	 * @page
+     */
+    function getPatent(page) {
+        var data = {'page':page,'companyID':"dd"};
+        $.ajax({
+            url:"/wechat/company/getPatentList",
+            type:"post",
+            data:data,
+            dataType:'json',
+            success:function(data){
+                if(data.code == 0) {   //成功
+                    getCombinationPatent(data.data);
+                } else {   //失败
+                    alert("服务器出错");
+                }
+            },
+            error:function(data){
+                alert("请求错误");
+            },
+        });
+    }
+
+    /**
+     * 组合对应的商标信息
+     * @param data
+     */
+    function getCombinationPatent(data) {
+        var html = "";
+        if (data == "") {
+            var b = $("#patent").children();
+            if (b[0]) {
+                html = "<div id=\"wxNo\" class=\"wxLast text-center fs-13 color-deep\">已经没有更多数据</div>";
+                $("#patent").append(html);
+            } else {
+                html = "<div class=\"nodata text-center fs-13 color-deep pl-10\">暂无数据~</div>";
+                $("#patent").html(html);
+            }
+        } else {
+            html += '<div class="list bg-white">';
+            for (var a in data) {
+                html += '<a href="/Wechat/Company/patentDetail" class="block bord-b">\n' +
+                    '    \t\t\t\t<h6 class="mb-5">专利名称</h6>\n' +
+                    '    \t\t\t\t<div class="fs-12">\n' +
+                    '    \t\t\t\t\t<p class="mb-5"><font class="color-deep">申请公布号：</font>CN95236132798</p>\n' +
+                    '    \t\t\t\t\t<p class="mb-0"><font class="color-deep">申请公布日：</font>2018-10-20</p>\n' +
+                    '    \t\t\t\t</div>    \t\t\t\t\n' +
+                    '    \t\t\t</a>';
+            }
+            html += '<div class="list bg-white">';
+            $("#patent").append(html);
+        }
+    }
+
+</script>

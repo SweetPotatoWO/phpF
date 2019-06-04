@@ -1,0 +1,284 @@
+/* 
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+$(function() {
+    var ue = UE.getEditor('description'); //初始化编辑器    
+    $(".butReturn").click(function() {
+        $Util.returnRefresh(); //返回
+    });
+    $("#borrowType").change(function() {
+        var btype = $("#borrowType").val();
+        changeSelect(btype);
+    });
+    $("#repaymentStyle").change(function() {
+        var pay = $("#repaymentStyle").val();
+        StyleChange(pay);
+    });
+    BorrowValid();
+    $(".butSaveBorrow").click(function() {
+        var isOK = $("#form-Borrow").valid();
+        if (isOK) {
+            saveBorrow();
+        }
+    });
+    var borrowNO = "";
+    if ($("#borrowID").val() * 1 === 0 && $("#hidprefix").val()) {
+        borrowNO = $("#hidprefix").val() + $("#hidborrowNO").val();
+    } else {
+        borrowNO = $("#hidborrowNO").val();
+    }
+
+    $('#myTab a').click(function(e) {
+        prefix = $("#hidprefix").val();
+        if (prefix == "") {
+            alert("请先选择融资类型！");
+            return '';
+        }
+        hidUpURL = $("#hidUpURL").val();
+        if (hidUpURL != "" && $("#borrowID").val() * 1 === 0) {
+            $("#borrowType").attr("disabled", true);
+        }
+        if ($("#borrowID").val() * 1 === 0 && $("#hidprefix").val()) {
+            borrowNO = $("#hidprefix").val() + $("#hidborrowNO").val();
+        }
+        e.preventDefault();//阻止a链接的跳转行为 
+        $(this).tab('show');//显示当前选中的链接及关联的content 
+
+        $(".upload-img").InitUploader({filesize: "3",
+            sendurl: "/Backend/Borrow/saveBorImg/bno/" + borrowNO,
+            multiple: true,
+            inputID: "borrowAttest", //路径控件ID
+            browseDIV: "photo-list", //浏览DIV
+            swf: "{$Think.BPATH}js/uploader/uploader.swf",
+            filetypes: "jpg,jpge,png,gif"}
+        );
+    })
+
+
+    if ($("#hidAttest").val()) {
+        var attest = $("#hidAttest").val().substr(1).split("∮");
+        $.each(attest, function(index, item) {
+            var newLi = $('<li>'
+                    + '<input type="hidden" name="hid_photo_name" value="∮' + item + '" />'
+                    + '<div class="img-box" onclick="setFocusImg(this,' + $(".photo-list") + ');">'
+                    + '<img src="' + $("#hidup").val() + item.split("|")[0] + '" />'
+                    + '<span class="remark"><i>' + item.split("|")[1] + '</i></span>'
+                    + '</div>'
+                    + '<a href="javascript:;" onclick="delImg(this);">删除</a>'
+                    + '</li>');
+            newLi.appendTo($(".photo-list").children("ul"));
+        });
+    }
+});
+function changeSelect(value) {
+    var current = "";
+    $.each(eval(typeJson), function(index, item) {
+        if (item.typeCode == value) {
+            current = item;
+        }
+    });
+    $("#hidprefix").val(current.prefix);//新增的时候前缀
+    //是否有密码
+    if (current.password === "0") {
+        $("#borrowPassword").val("");
+        $("#borrowPassword").attr("disabled", "disabled");
+    } else {
+        $("#borrowPassword").removeAttr("disabled");
+    }
+    if (current.password === "1") {
+        $("#borrowPassword").rules("add", {required: true, minlength: 6, maxlength: 6,
+            messages: {
+                required: "请输入密码",
+                minlength: "请输入6位密码",
+                maxlength: "请输入6位密码"
+            }
+        });
+    }
+    if (current.password === "2") {
+        $("#borrowPassword").rules("add", {minlength: 6, maxlength: 6,
+            messages: {
+                required: "请输入密码",
+                minlength: "请输入6位密码",
+                maxlength: "请输入6位密码"
+            }
+        });
+    }
+    if (current.typeCode === "600") {
+        $("#hidUserDiv").hide();
+        $("#userID").val("0");
+        $("#borrowUserID").val("0");
+        $("#userID").rules("remove");
+        $("#borrowUserID").rules("remove");
+    } else {
+        $("#hidUserDiv").show();
+        $("#userID").rules("add", {required: true,
+            messages: {
+                required: "请选择平台融资人"
+            }
+        });
+        $("#borrowUserID").rules("add", {required: true,
+            messages: {
+                required: "请选实际借款人"
+            }
+        });
+    }
+    $("#repaymentStyle option").remove();
+    $("#repaymentStyle").append("<option value=''>--请选择--</option>");
+    $.each(eval(paystyleJson), function(index, item) {
+        if (current.repaymentStyle.indexOf(item.dicID) > -1) {
+            $("#repaymentStyle").append("<option value='" + item.dicID + "'>" + item.dicName + "</option>");
+        }
+    });
+    $("#guaranteeID option").remove();
+    $("#guaranteeID").append("<option value=''>--请选择--</option>");
+    $.each(eval(companyJson), function(index, item) {
+        if (current.projectType.indexOf(item.companyID) > -1) {
+            $("#guaranteeID").append("<option value='" + item.companyID + "' style='color: #09c;font-weight: bold'>" + item.shortName + "</option>");
+        }
+        if (current.projectType.indexOf("5") > -1 && item.companyID > 5) {
+            $("#guaranteeID").append("<option value='" + item.companyID + "'>" + item.shortName + "</option>");
+        }
+    });
+}
+
+function StyleChange(value) {
+    if (value === "3") {
+        $("#borrowLimit").hide();
+        $("#borrowDaysDIV").show();
+    } else {
+        $("#borrowDaysDIV").hide();
+        $("#borrowDays").val("0");
+        $("#borrowLimit").show();
+    }
+}
+
+function saveBorrow() {
+    var data = $Util.getData($("#form-Borrow"));
+    data.realName = $("#userID").find("option:selected").text();
+    if (data.description.length < 2) {
+        $win.warn("融资详情未输入");
+        return;
+    }
+    var hidphoto = "";
+    $('input[name=hid_photo_name]').each(function(index, item) {
+        hidphoto += $(this).val();
+    });
+    if (hidphoto.length < 3) {
+        $win.warn("资质证明未上传");
+        return;
+    }
+    if ($("#borrowID").val() * 1 === 0 && $("#hidprefix").val()) {
+        data.borrowNO = $("#hidprefix").val() + $("#hidborrowNO").val();
+    } else {
+        data.borrowNO = $("#hidborrowNO").val();
+    }
+    data.borrowAttest = hidphoto;
+    $.ajax({
+        type: "post",
+        url: "/Backend/Borrow/saveBorrow",
+        data: {'par': data},
+        dataType: "json",
+        beforeSend: function(XMLHttpRequest) {
+            $(".sub-content").showLoading();
+        },
+        success: function(data, textStatus) {
+            $(".sub-content").hideLoading();
+            if (data.status == 1) {
+                $("#borrowID").val(data.data);
+                $("#borrowType").attr("disabled", "disabled");
+                $("#userID").attr("disabled", "disabled");
+                $("#hidborrowNO").val($("#hidprefix").val() + $("#hidborrowNO").val());
+                $("#hidAction").val("edit");
+                $win.confirm(data.msg + ",是否关闭窗口？").on(function() {
+                    $('.butReturn').trigger("click");
+                });
+            } else {
+                $win.warn(data.msg);
+            }
+        },
+        complete: function(XMLHttpRequest, textStatus) {
+            $(".sub-content").hideLoading();
+        },
+        error: function() {
+            $(".sub-content").hideLoading();
+        }
+    });
+}
+function BorrowValid() {
+    $.validator.addMethod("MaxMoney", function(value, element) {
+        var max2 = $("#hidMaxLoan").val();
+        if (value * 1 > max2 * 1) {
+            return false;
+        }
+        return true;
+    }, "超出总额度");
+    $.validator.addMethod("MinMoney", function(value, element) {
+        var min = $("#hidMinLoan").val();
+        if (value * 1 < min * 1) {
+            return false;
+        }
+        return true;
+    }, "超出总额度");
+    $.validator.addMethod("aprLimit", function(value, element) {
+        value = value * 1 + $("#borrowAprSub").val() * 1;
+        var min = $("#hidMinApr").val();
+        var max = $("#hidMaxApr").val();
+        if (value * 1 > max * 1) {
+            return false;
+        }
+        if (value * 1 < min * 1) {
+            return false;
+        }
+        return true;
+    }, "利率输入错误");
+    $.validator.addMethod("tenderMin", function(value, element) {
+        var min = $("#hidMinTender").val();
+        if (value * 1 > 0) {
+            if (min * 1 > value * 1) {
+                return false;
+            }
+        }
+        return true;
+    }, "最小投标额");
+
+    $.validator.addMethod("feesMoney", function (value, element) {
+        if (value * 1 < 0) {
+            return false;
+        }
+        var regexp = /^([1-9][\d]{0,8}|0)(\.[\d]{1,2})?$/;
+        return   this.optional(element) || (regexp.test(value));
+    }, "两位小数");
+
+    $("#form-Borrow").validate({
+        rules: {
+            borrowType: {required: true},
+            borrowMoney: {IntMoney: true, MaxMoney: true,
+                MinMoney: true},
+            borrowApr: {reqApr: true, aprLimit: true},
+            borrowAprSub: {Apr: true},
+            totalReceipts: {feesMoney: true},
+            guaranteeID: {required: true},
+            repaymentStyle: {required: true},
+            minTender: {Number: true, tenderMin: true},
+            maxTender: {Number: true},
+            borrowTitle: {required: true, maxlength: 17}
+        },
+        messages: {
+            borrowType: {required: "请选择融资类型"},
+            borrowMoney: {IntMoney: "融资金额大于0整数", MaxMoney: "最大融资额度" + $("#hidMaxLoan").val(),
+                MinMoney: "最小融资额度" + $("#hidMinLoan").val()},
+            borrowApr: {reqApr: "利率格式不正确", aprLimit: "利率在 " + $("#hidMinApr").val() + "% 和 " + $("#hidMaxApr").val() + "%之间"},
+            borrowAprSub: {Apr: "利率格式不正确"},
+            totalReceipts: {feesMoney: "总收益格式不正确"},
+            guaranteeID: {required: "请选择担保公司"},
+            repaymentStyle: {required: "请选择还款方式"},
+            minTender: {Number: "格式不正确", tenderMin: "最低投标额" + $("#hidMinTender").val()},
+            maxTender: {Number: "格式不正确"},
+            borrowTitle: {required: "请输入融资标题", maxlength: "标题不大于17个"}
+        }
+    });
+}
+

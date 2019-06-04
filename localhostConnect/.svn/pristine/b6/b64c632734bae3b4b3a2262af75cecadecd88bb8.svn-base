@@ -1,0 +1,360 @@
+<?php
+
+namespace Service\UserCenter\Logic;
+
+use Common\Common\CodeGenerator;
+use Common\Common\Redis;
+use Service\Connect\Logic\OperationLogic;
+use Service\System\Logic\RedisLogic;
+use Service\User\Model\UserModel;
+use Service\UserCenter\Model\UserCompanyModel;
+use Service\UserCenter\Model\UserEducationalModel;
+use Service\UserCenter\Model\UserInfoModel;
+use Service\UserCenter\Model\UserLabelModel;
+use Service\UserCenter\Model\UserWorkexperienceModel;
+
+class UserCenterLogic {
+
+
+    //获取到公司的信息
+    public function getUserCompanyInfo($userID) {
+        $model = new UserCompanyModel();
+        $info = $model->getUserCompanyInfo($userID);
+        $tm = array(
+            "name"=>"",
+            "isShowPhone"=>"",
+            "job"=>"",
+            "group"=>"",
+            "userID"=>"",
+            "phone"=>"",
+            "companyID"=>"",
+            "companyLogo"=>"",
+            "headUrl"=>"",
+            "companyName"=>"",
+            "registeredCapital"=>"",
+            "userKey"=>"",
+            "regDatetime"=>"",
+        );
+        if(empty($info)) {
+            return $tm;
+        }
+        foreach ($info as $key=>$value) {
+            $return[$key] = (empty($info[$key]))? $tm[$key] : $info[$key];
+        }
+        !empty($return['headUrl']) && $return['headUrl'] = UPLOAD .$return['headUrl'];
+        $codeGen = new CodeGenerator();
+        $return['userKey'] = $codeGen->createCode($return['userID']);
+        return $return;
+    }
+
+    //获取到工作经历
+    public function getUserEx($userID) {
+        $model = new UserWorkexperienceModel();
+        $list =  $model->getUserEx($userID);
+        return $list;
+    }
+
+    /**
+     * 映射
+     */
+    protected function getDiplomaString($id=0) {
+        $id = ($id)? $id:0;
+        $list =  array( "0" =>'无', '1'=> '小学', '2'=> '初中', '3'=> '高中/职专',
+                      '4'=>'专科', '5'=>'本科', '6'=>'研究生', '7'=>'硕士', '8'=>'博士');
+        return $list[$id];
+    }
+
+    //获取到教育经历
+    public function getUserEducational($userID) {
+        $model = new UserEducationalModel();
+        $list =  $model->getUserEd($userID);
+        foreach ($list as $k=>$v) {
+            $list[$k]['diploma'] = $this->getDiplomaString($v['diploma']);
+            empty($v['startDatetime']) && $list[$k]['startDatetime'] = '';
+            empty($v['endDatetime']) && $list[$k]['endDatetime'] = '';
+        }
+        return $list;
+    }
+
+
+    //获取个人更多的信息
+    public function  getMoreInfo($userID) {
+        $model = new UserInfoModel();
+        return $model->getMoreInfo($userID);
+    }
+
+    //获取到个人的标签
+    public function getUserLabel($userID) {
+        $labelLogic = new labelLogic();
+        $list = $labelLogic->labelList();
+        $model = new UserInfoModel();
+        $info = $model->getUserlabelInfo($userID);
+        foreach ($info as $key=>$value) {
+            foreach ($list as  $k=>$v) {
+                if($value == $v['labelCode']) {
+                    $v['labelLogo'] = UPLOAD.$v['labelLogo'];
+                    $return[] = $v;
+                }
+            }
+        }
+        return $return;
+    }
+
+    //设置显示手机的状态
+    public function setShowPhoneStatus($userID,$status) {
+        $model = new UserModel();
+        return $model->setShowPhoneStatus($userID,$status);
+    }
+
+    //是否为好友关系
+    public function isFriend($userID,$friend) {
+        $info  = M("UserFriend")->where(array('userID'=>$userID,"friendID"=>$friend))->find();
+        if(empty($info)) {
+            return false;
+        } else {
+            return true;
+        }
+    }
+
+    /**
+     * 根据名字获取到公司的信息
+     */
+    public function getCompanyByName($name) {
+        return M("Company")->where(array("companyName"=>$name))->find();
+    }
+
+    /**
+     * 根据名字获取到行业信息
+     */
+    public function getJobByName($name) {
+        return M("SysJob")->where(array("jobName"=>$name))->find();
+    }
+
+    /**
+     * 添加公司
+     */
+    public function saveCompany($companyName="") {
+        return M("Company")->add(array("companyName"=>$companyName));
+    }
+
+    public function getSchoolInfoByName($name) {
+        return M("SysSchool")->where(array("schoolName"=>$name))->find();
+    }
+
+    /**
+     * 获取当前用户的学校信息
+     */
+    public function getUserSchoolEd($userID,$schoolID,$field="") {
+        $model =  M('userEducational')->where(array('userID'=>$userID,'schoolID'=>$schoolID));
+        if(!empty($field)) {
+            $model = $model->field($field);
+        }
+        return $model->find();
+    }
+
+    /**
+     * 获取当前用户的学校信息
+     */
+    public function getUserCompanyEd($userID,$companyID,$field="") {
+        $model =  M('userWorkexperience')->where(array('userID'=>$userID,'companyID'=>$companyID));
+        if(!empty($field)) {
+            $model = $model->field($field);
+        }
+        return $model->find();
+    }
+
+
+    /**
+     * 获取到学校的信息
+     */
+    public function getSchoolByID($ID,$filed="") {
+        $model =  M("SysSchool")->where(array('schoolID'=>$ID));
+        if(!empty($filed)) {
+            $model = $model->field($filed);
+        }
+        return $model->find();
+    }
+
+
+
+
+    /**
+     * 添加学校
+     */
+    public function saveSchool($schoolName="") {
+        return M("SysSchool")->add(array("name"=>$schoolName));
+    }
+
+    /**
+     * 添加公司
+     */
+    public function saveJob($jobName="") {
+        return M("SysJob")->add(array("jobName"=>$jobName));
+    }
+
+    /**
+     * 添加用户公司的表
+     */
+    public function saveUserCompany($data,$userID) {
+        $model = new UserCompanyModel();
+        return $model->addCompanyUser($data,$userID);
+    }
+
+
+    /**
+     * 模糊查询
+     */
+    public function vague($type,$value) {
+        switch ($type) {
+            case 1:
+               $info =  M("Company")->where('companyName like "%'.$value.'%"')->field("companyLogo as img,companyID as ID,companyName as value")->select();
+                break;
+            case 2:
+                $info = M("SysJob")->where('jobName like "%'.$value.'%"') ->field("jobID as img,jobID as ID,jobName as value")->select();
+                break;
+            case 3:
+                $info = M("SysSchool")->where('schoolName like "%'.$value.'%"') ->field("schoolID as img,schoolID as ID,schoolName as value")->select();
+                break;
+            case 4:
+                $info = M("SysSchoolmajob")->where('name like "%'.$value.'%"') ->field("majobID as img,majobID as ID,name as value")->select();
+                break;
+            case 5:
+                $one =  M("user")->where('nickname like "%'.$value.'%"')->field("headUrl as img,userID as ID,nickname as value, case userID  when true then 1 else 1 end as type")->select();
+                $two = M("company")->where('companyName like "%'.$value.'%"')->field("companyLogo as img,companyID as ID,companyName as value, case companyID  when true then 2 else 2 end as type")->select();
+                $info = array_merge($one,$two);
+                break;
+        }
+        return $info;
+    }
+
+    /**
+     * 操作工作经历
+     */
+    public function workExpOp($data) {
+        $model = new UserWorkexperienceModel();
+        if(empty($data['userWorkExID'])) {  //添加
+            $data['addDatetime'] = time();
+            $res = $model->add($data);
+        } else {  //修改
+            $id = $data['userWorkExID'];
+            $data['editDatetime'] = time();
+            unset($data['userWorkExID']);
+            $res = $model->where(array('userWorkExID'=>$id))->save($data);
+        }
+        return $res;
+    }
+    /**
+     * 操作教育经历
+     */
+    public function EdOp($data) {
+        $model = new UserEducationalModel();
+        if(empty($data['userEdExID'])) {  //添加
+            $data['addDatetime'] = time();
+            $res = $model->add($data);
+
+        } else {  //修改
+            $id = $data['userEdExID'];
+            $data['editDatetime'] = time();
+            unset($data['userEdExID']);
+            $res = $model->where(array('userEdExID'=>$id))->save($data);
+        }
+        return $res;
+    }
+
+    /**
+     * 删除工作经验
+     */
+    public function delExp($ID) {
+        $model = new UserWorkexperienceModel();
+        return $model->delete($ID);
+    }
+
+    /**
+     * 删除教育经验
+     */
+    public function delED($ID) {
+        $model = new UserEducationalModel();
+        $res = $model->delete($ID);
+        return $res;
+    }
+
+    /**
+     * 完善信息s
+     */
+    public function saveMore($data) {
+        $userInfo = $this->getMoreInfo($data['userID']);
+        $model = new UserInfoModel();
+        if(empty($userInfo)) {  //添加
+            $data['addDatetime'] = time();
+            return $model->add($data);
+        } else {   //编辑
+            $data['editDatetime'] = time();
+            return $model->where(array('userID'=>$data['userID']))->save($data);
+        }
+
+    }
+
+    /**
+     * 返回用户是否填写了信息
+     */
+    public function getOneByUserID($userID) {
+        $model = new UserCompanyModel();
+        return $model->getUserCompanyInfo($userID);
+    }
+
+
+    /**
+     * Redis 浏览公司次数
+     */
+    public function saveRedisByCompany($userID,$companyInfo="") {
+        $redis = Redis::GetInstance();
+        $key = strtotime(date('Y-m-d'))."_".$userID."_".mt_rand(10000,99999);
+        return $redis->set($key,json_encode($companyInfo),86400);
+    }
+
+
+    /**
+     * 获取到redis的次数
+     */
+    public function getNowTimeRedisByCompany($userID) {
+        $redis = Redis::GetInstance();
+        $key = strtotime(date('Y-m-d'))."_".$userID."*";
+        $arr = $redis->get($key);
+        return count($arr);
+    }
+
+
+    /**
+     * 添加浏览记录
+     */
+    public function addVisitor($userID,$id) {
+        return M('userVisitor')->add(array('userID'=>$userID,'vID'=>$id,'addDatetime'=>time()));
+    }
+
+
+    /**
+     * 根据教育经历的ID获取到信息
+     */
+    public function getEdOneByID($ID,$field="") {
+        $model = M('userEducational')->where(array("userEdExID"=>$ID));
+        if(!empty($field)) {
+            $model = $model->field($field);
+        }
+        return $model->find();
+    }
+
+
+    /**
+     * 根据教育经历的ID获取到信息
+     */
+    public function getWorkOneByID($ID,$field="") {
+        $model = M('userWorkexperience')->where(array("userWorkExID"=>$ID));
+        if(!empty($field)) {
+            $model = $model->field($field);
+        }
+        return $model->find();
+    }
+
+}
+
+?>

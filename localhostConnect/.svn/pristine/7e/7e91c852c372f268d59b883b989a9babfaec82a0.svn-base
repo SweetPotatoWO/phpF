@@ -1,0 +1,193 @@
+/*
+Navicat MySQL Data Transfer
+
+Source Server         : 钱盒子测试
+Source Server Version : 50631
+Source Host           : 120.25.85.171:3306
+Source Database       : devmbox_hx
+
+Target Server Type    : MYSQL
+Target Server Version : 50631
+File Encoding         : 65001
+
+Date: 2018-08-08 10:41:38
+*/
+
+SET FOREIGN_KEY_CHECKS=0;
+
+-- ----------------------------
+-- Table structure for d_sys_sensitive
+-- ----------------------------
+DROP TABLE IF EXISTS `d_sys_sensitive`;
+CREATE TABLE `d_sys_sensitive` (
+  `sID` int(11) NOT NULL AUTO_INCREMENT COMMENT '敏感词ID',
+  `content` varchar(50) DEFAULT NULL COMMENT '敏感词名称',
+  `addUserID` int(11) NOT NULL COMMENT '创建人ID',
+  `addUserName` varchar(50) DEFAULT NULL COMMENT '创建人',
+  `addDatetime` int(11) NOT NULL COMMENT '创建时间',
+  `editUserID` int(11) DEFAULT NULL COMMENT '修改人ID',
+  `editUserName` varchar(50) DEFAULT NULL COMMENT '修改人',
+  `editDatetime` int(11) DEFAULT NULL COMMENT '修改时间',
+  PRIMARY KEY (`sID`)
+) ENGINE=InnoDB AUTO_INCREMENT=158 DEFAULT CHARSET=utf8 COMMENT='公安部要求的IDCP认证敏感词';
+
+-- ----------------------------
+-- Records of d_sys_sensitive
+-- ----------------------------
+INSERT INTO `d_sys_sensitive` VALUES ('1', '狗屁', '15', 'mbox', '1452157586', null, null, null);
+INSERT INTO `d_sys_sensitive` VALUES ('2', '百家乐', '15', 'mbox', '1452157832', null, null, null);
+INSERT INTO `d_sys_sensitive` VALUES ('3', 'TMD', '15', 'mbox', '1452158073', null, null, null);
+INSERT INTO `d_sys_sensitive` VALUES ('4', '安乐死', '15', 'mbox', '1452240667', null, null, null);
+INSERT INTO `d_sys_sensitive` VALUES ('5', '混蛋', '15', 'mbox', '1459327899', '15', 'mbox', '1459327899');
+INSERT INTO `d_sys_sensitive` VALUES ('6', '草你娘', '1', 'weilei', '1459384696', '1', 'weilei', '1459384696');
+INSERT INTO `d_sys_sensitive` VALUES ('7', '集会', '1', 'weilei', '1459390332', '1', 'weilei', '1459390332');
+INSERT INTO `d_sys_sensitive` VALUES ('8', '六四', '1', 'weilei', '1459390346', '1', 'weilei', '1459390346');
+INSERT INTO `d_sys_sensitive` VALUES ('9', '卖国', '1', 'weilei', '1459390412', '1', 'weilei', '1459390412');
+INSERT INTO `d_sys_sensitive` VALUES ('10', '天安门', '1', 'weilei', '1459390426', '1', 'weilei', '1459390426');
+INSERT INTO `d_sys_sensitive` VALUES ('11', '统独', '1', 'weilei', '1459390447', '1', 'weilei', '1459390447');
+INSERT INTO `d_sys_sensitive` VALUES ('12', '统战', '1', 'weilei', '1459390465', '1', 'weilei', '1459390465');
+INSERT INTO `d_sys_sensitive` VALUES ('13', '台独', '1', 'weilei', '1459390477', '1', 'weilei', '1459390477');
+INSERT INTO `d_sys_sensitive` VALUES ('14', '台湾独', '1', 'weilei', '1459390488', '1', 'weilei', '1459390488');
+INSERT INTO `d_sys_sensitive` VALUES ('15', '台湾独立', '1', 'weilei', '1459390497', '1', 'weilei', '1459390497');
+INSERT INTO `d_sys_sensitive` VALUES ('16', '台湾共合国', '1', 'weilei', '1459390510', '1', 'weilei', '1459390510');
+INSERT INTO `d_sys_sensitive` VALUES ('17', '贪官', '1', 'weilei', '1459390523', '1', 'weilei', '1459390523');
+INSERT INTO `d_sys_sensitive` VALUES ('18', '唐人电视台', '1', 'weilei', '1459390534', '1', 'weilei', '1459390534');
+INSERT INTO `d_sys_sensitive` VALUES ('19', '讨伐', '1', 'weilei', '1459390546', '1', 'weilei', '1459390546');
+INSERT INTO `d_sys_sensitive` VALUES ('20', '蒙独', '1', 'weilei', '1459390559', '1', 'weilei', '1459390559');
+INSERT INTO `d_sys_sensitive` VALUES ('21', '蒙古独', '1', 'weilei', '1459390569', '1', 'weilei', '1459390569');
+INSERT INTO `d_sys_sensitive` VALUES ('22', '六四事件', '1', 'weilei', '1459390580', '1', 'weilei', '1459390580');
+INSERT INTO `d_sys_sensitive` VALUES ('23', '六四学生运动', '1', 'weilei', '1459390590', '1', 'weilei', '1459390590');
+INSERT INTO `d_sys_sensitive` VALUES ('24', '令计划', '1', 'weilei', '1459390607', '1', 'weilei', '1459390607');
+INSERT INTO `d_sys_sensitive` VALUES ('25', '突厥斯坦', '1', 'weilei', '1459390625', '1', 'weilei', '1459390625');
+INSERT INTO `d_sys_sensitive` VALUES ('26', '屠杀', '1', 'weilei', '1459390642', '1', 'weilei', '1459390642');
+INSERT INTO `d_sys_sensitive` VALUES ('27', '第一代领导', '15', 'mbox', '1459393082', '15', 'mbox', '1459393082');
+INSERT INTO `d_sys_sensitive` VALUES ('28', '第二代领导', '15', 'mbox', '1459393108', '15', 'mbox', '1459393108');
+INSERT INTO `d_sys_sensitive` VALUES ('29', '第三代领导', '15', 'mbox', '1459393136', '15', 'mbox', '1459393136');
+INSERT INTO `d_sys_sensitive` VALUES ('30', '第四代领导', '15', 'mbox', '1459393153', '15', 'mbox', '1459393153');
+INSERT INTO `d_sys_sensitive` VALUES ('31', '第五代领导', '15', 'mbox', '1459393165', '15', 'mbox', '1459393165');
+INSERT INTO `d_sys_sensitive` VALUES ('32', '第六代领导', '15', 'mbox', '1459393177', '15', 'mbox', '1459393177');
+INSERT INTO `d_sys_sensitive` VALUES ('33', '第七代领导', '15', 'mbox', '1459393188', '15', 'mbox', '1459393188');
+INSERT INTO `d_sys_sensitive` VALUES ('34', '一位老同志的谈哈', '15', 'mbox', '1459393208', '15', 'mbox', '1459393208');
+INSERT INTO `d_sys_sensitive` VALUES ('35', '国办发', '15', 'mbox', '1459393218', '15', 'mbox', '1459393218');
+INSERT INTO `d_sys_sensitive` VALUES ('36', '中办发', '15', 'mbox', '1459393231', '15', 'mbox', '1459393231');
+INSERT INTO `d_sys_sensitive` VALUES ('37', '腐败中国', '15', 'mbox', '1459393240', '15', 'mbox', '1459393240');
+INSERT INTO `d_sys_sensitive` VALUES ('38', '三个呆婊', '15', 'mbox', '1459393261', '15', 'mbox', '1459393261');
+INSERT INTO `d_sys_sensitive` VALUES ('39', '你办事我放心', '15', 'mbox', '1459393274', '15', 'mbox', '1459393274');
+INSERT INTO `d_sys_sensitive` VALUES ('40', '社会主义灭亡', '15', 'mbox', '1459393291', '15', 'mbox', '1459393291');
+INSERT INTO `d_sys_sensitive` VALUES ('41', '打倒中国', '15', 'mbox', '1459393311', '15', 'mbox', '1459393311');
+INSERT INTO `d_sys_sensitive` VALUES ('42', '灭亡中国', '15', 'mbox', '1459393325', '15', 'mbox', '1459393325');
+INSERT INTO `d_sys_sensitive` VALUES ('43', '亡党亡国', '15', 'mbox', '1459393344', '15', 'mbox', '1459393344');
+INSERT INTO `d_sys_sensitive` VALUES ('44', '粉碎四人帮', '15', 'mbox', '1459393356', '15', 'mbox', '1459393356');
+INSERT INTO `d_sys_sensitive` VALUES ('45', '激流中国', '15', 'mbox', '1459393368', '15', 'mbox', '1459393368');
+INSERT INTO `d_sys_sensitive` VALUES ('46', '特供', '15', 'mbox', '1459393446', '15', 'mbox', '1459393446');
+INSERT INTO `d_sys_sensitive` VALUES ('47', '特贡', '15', 'mbox', '1459393471', '15', 'mbox', '1459393471');
+INSERT INTO `d_sys_sensitive` VALUES ('48', '学潮', '15', 'mbox', '1459393501', '15', 'mbox', '1459393501');
+INSERT INTO `d_sys_sensitive` VALUES ('49', '学百度潮', '15', 'mbox', '1459393536', '15', 'mbox', '1459393536');
+INSERT INTO `d_sys_sensitive` VALUES ('50', '门安天', '15', 'mbox', '1459393552', '15', 'mbox', '1459393552');
+INSERT INTO `d_sys_sensitive` VALUES ('51', '天按门', '15', 'mbox', '1459393563', '15', 'mbox', '1459393563');
+INSERT INTO `d_sys_sensitive` VALUES ('52', '坦克压大学生', '15', 'mbox', '1459393582', '15', 'mbox', '1459393582');
+INSERT INTO `d_sys_sensitive` VALUES ('53', '民主女神', '15', 'mbox', '1459393597', '15', 'mbox', '1459393597');
+INSERT INTO `d_sys_sensitive` VALUES ('54', '历史的伤口', '15', 'mbox', '1459393611', '15', 'mbox', '1459393611');
+INSERT INTO `d_sys_sensitive` VALUES ('55', '高自联', '15', 'mbox', '1459393628', '15', 'mbox', '1459393628');
+INSERT INTO `d_sys_sensitive` VALUES ('56', '北高联', '15', 'mbox', '1459393642', '15', 'mbox', '1459393642');
+INSERT INTO `d_sys_sensitive` VALUES ('57', '维多利亚公园', '15', 'mbox', '1459393654', '15', 'mbox', '1459393654');
+INSERT INTO `d_sys_sensitive` VALUES ('58', '为了忘却的纪念', '15', 'mbox', '1459393674', '15', 'mbox', '1459393674');
+INSERT INTO `d_sys_sensitive` VALUES ('59', '血洗京城', '15', 'mbox', '1459393689', '15', 'mbox', '1459393689');
+INSERT INTO `d_sys_sensitive` VALUES ('60', '四二六社论', '15', 'mbox', '1459393707', '15', 'mbox', '1459393707');
+INSERT INTO `d_sys_sensitive` VALUES ('61', '王丹', '15', 'mbox', '1459393716', '15', 'mbox', '1459393716');
+INSERT INTO `d_sys_sensitive` VALUES ('62', '柴玲', '15', 'mbox', '1459393730', '15', 'mbox', '1459393730');
+INSERT INTO `d_sys_sensitive` VALUES ('63', '封从德', '15', 'mbox', '1459393751', '15', 'mbox', '1459393751');
+INSERT INTO `d_sys_sensitive` VALUES ('64', '王超华', '15', 'mbox', '1459393801', '15', 'mbox', '1459393801');
+INSERT INTO `d_sys_sensitive` VALUES ('65', '来复枪', '15', 'mbox', '1459393826', '15', 'mbox', '1459393826');
+INSERT INTO `d_sys_sensitive` VALUES ('66', '冲锋枪', '15', 'mbox', '1459393836', '15', 'mbox', '1459393836');
+INSERT INTO `d_sys_sensitive` VALUES ('67', '散弹枪', '15', 'mbox', '1459393847', '15', 'mbox', '1459393847');
+INSERT INTO `d_sys_sensitive` VALUES ('68', '卡宾枪', '15', 'mbox', '1459393861', '15', 'mbox', '1459393861');
+INSERT INTO `d_sys_sensitive` VALUES ('69', '枪支', '15', 'mbox', '1459393869', '15', 'mbox', '1459393869');
+INSERT INTO `d_sys_sensitive` VALUES ('70', '枪械', '15', 'mbox', '1459393878', '15', 'mbox', '1459393878');
+INSERT INTO `d_sys_sensitive` VALUES ('71', '占领台湾', '15', 'mbox', '1459393891', '15', 'mbox', '1459393891');
+INSERT INTO `d_sys_sensitive` VALUES ('72', '统一台湾', '15', 'mbox', '1459393903', '15', 'mbox', '1459393903');
+INSERT INTO `d_sys_sensitive` VALUES ('73', '收复台湾', '15', 'mbox', '1459393916', '15', 'mbox', '1459393916');
+INSERT INTO `d_sys_sensitive` VALUES ('74', '登陆台湾', '15', 'mbox', '1459393930', '15', 'mbox', '1459393930');
+INSERT INTO `d_sys_sensitive` VALUES ('75', '解放台湾', '15', 'mbox', '1459393944', '15', 'mbox', '1459393944');
+INSERT INTO `d_sys_sensitive` VALUES ('76', '光复民国', '15', 'mbox', '1459393981', '15', 'mbox', '1459393981');
+INSERT INTO `d_sys_sensitive` VALUES ('77', '台湾独立', '15', 'mbox', '1459393993', '15', 'mbox', '1459393993');
+INSERT INTO `d_sys_sensitive` VALUES ('78', '台海危机', '15', 'mbox', '1459394011', '15', 'mbox', '1459394011');
+INSERT INTO `d_sys_sensitive` VALUES ('79', '台海统一', '15', 'mbox', '1459394022', '15', 'mbox', '1459394022');
+INSERT INTO `d_sys_sensitive` VALUES ('80', '台海大战', '15', 'mbox', '1459394038', '15', 'mbox', '1459394038');
+INSERT INTO `d_sys_sensitive` VALUES ('81', '台海战争', '15', 'mbox', '1459394052', '15', 'mbox', '1459394052');
+INSERT INTO `d_sys_sensitive` VALUES ('82', '台海局势', '15', 'mbox', '1459394065', '15', 'mbox', '1459394065');
+INSERT INTO `d_sys_sensitive` VALUES ('83', '入联', '15', 'mbox', '1459394078', '15', 'mbox', '1459394078');
+INSERT INTO `d_sys_sensitive` VALUES ('84', '入耳联', '15', 'mbox', '1459394093', '15', 'mbox', '1459394093');
+INSERT INTO `d_sys_sensitive` VALUES ('85', '中华联邦', '15', 'mbox', '1459394106', '15', 'mbox', '1459394106');
+INSERT INTO `d_sys_sensitive` VALUES ('86', '国民党', '15', 'mbox', '1459394117', '15', 'mbox', '1459394117');
+INSERT INTO `d_sys_sensitive` VALUES ('87', 'X民党', '15', 'mbox', '1459394128', '15', 'mbox', '1459394128');
+INSERT INTO `d_sys_sensitive` VALUES ('88', '民进党', '15', 'mbox', '1459394143', '15', 'mbox', '1459394143');
+INSERT INTO `d_sys_sensitive` VALUES ('89', '青天白日', '15', 'mbox', '1459394157', '15', 'mbox', '1459394157');
+INSERT INTO `d_sys_sensitive` VALUES ('90', '闹独立', '15', 'mbox', '1459394166', '15', 'mbox', '1459394166');
+INSERT INTO `d_sys_sensitive` VALUES ('91', '藏暴乱', '15', 'mbox', '1459394182', '15', 'mbox', '1459394182');
+INSERT INTO `d_sys_sensitive` VALUES ('92', '金盾工程', '15', 'mbox', '1459394302', '15', 'mbox', '1459394302');
+INSERT INTO `d_sys_sensitive` VALUES ('93', '无界浏览', '15', 'mbox', '1459394319', '15', 'mbox', '1459394319');
+INSERT INTO `d_sys_sensitive` VALUES ('94', '自由门', '15', 'mbox', '1459394329', '15', 'mbox', '1459394329');
+INSERT INTO `d_sys_sensitive` VALUES ('95', '中国的陷阱', '15', 'mbox', '1459394342', '15', 'mbox', '1459394342');
+INSERT INTO `d_sys_sensitive` VALUES ('96', '记者无疆界', '15', 'mbox', '1459394355', '15', 'mbox', '1459394355');
+INSERT INTO `d_sys_sensitive` VALUES ('97', '信号枪', '15', 'mbox', '1459394395', '15', 'mbox', '1459394395');
+INSERT INTO `d_sys_sensitive` VALUES ('98', '麻醉枪', '15', 'mbox', '1459394406', '15', 'mbox', '1459394406');
+INSERT INTO `d_sys_sensitive` VALUES ('99', '狙击枪', '15', 'mbox', '1459394419', '15', 'mbox', '1459394419');
+INSERT INTO `d_sys_sensitive` VALUES ('100', '吾尔', '15', 'mbox', '1459394443', '15', 'mbox', '1459394443');
+INSERT INTO `d_sys_sensitive` VALUES ('101', '热比娅', '15', 'mbox', '1459394455', '15', 'mbox', '1459394455');
+INSERT INTO `d_sys_sensitive` VALUES ('102', '伊力哈木', '15', 'mbox', '1459394486', '15', 'mbox', '1459394486');
+INSERT INTO `d_sys_sensitive` VALUES ('103', '疆独', '15', 'mbox', '1459394496', '15', 'mbox', '1459394496');
+INSERT INTO `d_sys_sensitive` VALUES ('104', '东突厥斯坦解放组织', '15', 'mbox', '1459394523', '15', 'mbox', '1459394542');
+INSERT INTO `d_sys_sensitive` VALUES ('105', '东突解放组织', '15', 'mbox', '1459394655', '15', 'mbox', '1459394655');
+INSERT INTO `d_sys_sensitive` VALUES ('106', '蒙古分裂分子', '15', 'mbox', '1459394672', '15', 'mbox', '1459394672');
+INSERT INTO `d_sys_sensitive` VALUES ('107', '列确', '15', 'mbox', '1459394688', '15', 'mbox', '1459394688');
+INSERT INTO `d_sys_sensitive` VALUES ('108', '阿旺晋美', '15', 'mbox', '1459394708', '15', 'mbox', '1459394708');
+INSERT INTO `d_sys_sensitive` VALUES ('109', '藏人', '15', 'mbox', '1459394716', '15', 'mbox', '1459394716');
+INSERT INTO `d_sys_sensitive` VALUES ('110', '藏民', '15', 'mbox', '1459394727', '15', 'mbox', '1459394727');
+INSERT INTO `d_sys_sensitive` VALUES ('111', '达赖', '15', 'mbox', '1459394746', '15', 'mbox', '1459394746');
+INSERT INTO `d_sys_sensitive` VALUES ('112', 'dl喇嘛', '15', 'mbox', '1459394783', '15', 'mbox', '1459394783');
+INSERT INTO `d_sys_sensitive` VALUES ('113', '丹增嘉措', '15', 'mbox', '1459394821', '15', 'mbox', '1459394821');
+INSERT INTO `d_sys_sensitive` VALUES ('114', '打砸抢', '15', 'mbox', '1459394839', '15', 'mbox', '1459394839');
+INSERT INTO `d_sys_sensitive` VALUES ('115', '西独', '15', 'mbox', '1459394874', '15', 'mbox', '1459394874');
+INSERT INTO `d_sys_sensitive` VALUES ('116', '藏独', '15', 'mbox', '1459394885', '15', 'mbox', '1459394885');
+INSERT INTO `d_sys_sensitive` VALUES ('117', '葬独', '15', 'mbox', '1459394898', '15', 'mbox', '1459394898');
+INSERT INTO `d_sys_sensitive` VALUES ('118', '制作', '15', 'mbox', '1459394910', '15', 'mbox', '1459394910');
+INSERT INTO `d_sys_sensitive` VALUES ('119', '收购', '15', 'mbox', '1459394920', '15', 'mbox', '1459394920');
+INSERT INTO `d_sys_sensitive` VALUES ('120', '求购', '15', 'mbox', '1459394927', '15', 'mbox', '1459394927');
+INSERT INTO `d_sys_sensitive` VALUES ('121', '电话', '15', 'mbox', '1459394935', '15', 'mbox', '1459394935');
+INSERT INTO `d_sys_sensitive` VALUES ('122', '手机', '15', 'mbox', '1459394942', '15', 'mbox', '1459394942');
+INSERT INTO `d_sys_sensitive` VALUES ('123', '销售', '15', 'mbox', '1459394949', '15', 'mbox', '1459394949');
+INSERT INTO `d_sys_sensitive` VALUES ('124', '联系', '15', 'mbox', '1459394959', '15', 'mbox', '1459394959');
+INSERT INTO `d_sys_sensitive` VALUES ('125', 'qq', '15', 'mbox', '1459394965', '15', 'mbox', '1459394965');
+INSERT INTO `d_sys_sensitive` VALUES ('126', '出售', '15', 'mbox', '1459394975', '15', 'mbox', '1459394975');
+INSERT INTO `d_sys_sensitive` VALUES ('127', '买', '15', 'mbox', '1459394984', '15', 'mbox', '1459394984');
+INSERT INTO `d_sys_sensitive` VALUES ('128', '卖', '15', 'mbox', '1459394991', '15', 'mbox', '1459394991');
+INSERT INTO `d_sys_sensitive` VALUES ('129', '匕首', '15', 'mbox', '1459395002', '15', 'mbox', '1459395002');
+INSERT INTO `d_sys_sensitive` VALUES ('130', '管制刀具', '15', 'mbox', '1459395020', '15', 'mbox', '1459395020');
+INSERT INTO `d_sys_sensitive` VALUES ('131', '弹药', '15', 'mbox', '1459395081', '15', 'mbox', '1459395081');
+INSERT INTO `d_sys_sensitive` VALUES ('132', 'bb弹', '15', 'mbox', '1459395101', '15', 'mbox', '1459395101');
+INSERT INTO `d_sys_sensitive` VALUES ('133', '违禁品', '15', 'mbox', '1459395117', '15', 'mbox', '1459395117');
+INSERT INTO `d_sys_sensitive` VALUES ('134', '军用品', '15', 'mbox', '1459395128', '15', 'mbox', '1459395128');
+INSERT INTO `d_sys_sensitive` VALUES ('135', '电棍', '15', 'mbox', '1459395177', '15', 'mbox', '1459395177');
+INSERT INTO `d_sys_sensitive` VALUES ('136', '手枪', '15', 'mbox', '1459395196', '15', 'mbox', '1459395196');
+INSERT INTO `d_sys_sensitive` VALUES ('137', '机枪', '15', 'mbox', '1459395205', '15', 'mbox', '1459395205');
+INSERT INTO `d_sys_sensitive` VALUES ('138', '步枪', '15', 'mbox', '1459395219', '15', 'mbox', '1459395219');
+INSERT INTO `d_sys_sensitive` VALUES ('139', '气枪', '15', 'mbox', '1459395229', '15', 'mbox', '1459395229');
+INSERT INTO `d_sys_sensitive` VALUES ('140', '电狗', '15', 'mbox', '1459395237', '15', 'mbox', '1459395237');
+INSERT INTO `d_sys_sensitive` VALUES ('141', '手狗', '15', 'mbox', '1459395256', '15', 'mbox', '1459395256');
+INSERT INTO `d_sys_sensitive` VALUES ('142', '枪模', '15', 'mbox', '1459395267', '15', 'mbox', '1459395317');
+INSERT INTO `d_sys_sensitive` VALUES ('143', '枪型模', '15', 'mbox', '1459395285', '15', 'mbox', '1459395327');
+INSERT INTO `d_sys_sensitive` VALUES ('144', '仿真模', '15', 'mbox', '1459395304', '15', 'mbox', '1459395304');
+INSERT INTO `d_sys_sensitive` VALUES ('145', '特供', '15', 'mbox', '1459395343', '15', 'mbox', '1459395343');
+INSERT INTO `d_sys_sensitive` VALUES ('146', '特共', '15', 'mbox', '1459395357', '15', 'mbox', '1459395357');
+INSERT INTO `d_sys_sensitive` VALUES ('147', '用刀横向切腹', '15', 'mbox', '1459395390', '15', 'mbox', '1459395390');
+INSERT INTO `d_sys_sensitive` VALUES ('148', '完全自杀手册', '15', 'mbox', '1459395414', '15', 'mbox', '1459395414');
+INSERT INTO `d_sys_sensitive` VALUES ('149', '四海帮', '15', 'mbox', '1459395424', '15', 'mbox', '1459395424');
+INSERT INTO `d_sys_sensitive` VALUES ('150', '足球投注', '15', 'mbox', '1459395444', '15', 'mbox', '1459395444');
+INSERT INTO `d_sys_sensitive` VALUES ('151', '地下钱庄', '15', 'mbox', '1459395457', '15', 'mbox', '1459395457');
+INSERT INTO `d_sys_sensitive` VALUES ('152', '中国复兴党', '15', 'mbox', '1459395476', '15', 'mbox', '1459395476');
+INSERT INTO `d_sys_sensitive` VALUES ('153', '六合彩', '15', 'mbox', '1459395498', '15', 'mbox', '1459395498');
+INSERT INTO `d_sys_sensitive` VALUES ('154', '改卷内幕', '15', 'mbox', '1459395510', '15', 'mbox', '1459395510');
+INSERT INTO `d_sys_sensitive` VALUES ('155', '替考试', '15', 'mbox', '1459395529', '15', 'mbox', '1459395529');
+INSERT INTO `d_sys_sensitive` VALUES ('156', '股市圈钱', '15', 'mbox', '1459395548', '15', 'mbox', '1459395548');
+INSERT INTO `d_sys_sensitive` VALUES ('157', '崩盘', '15', 'mbox', '1459395557', '15', 'mbox', '1459395557');

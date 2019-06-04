@@ -1,0 +1,21 @@
+<?php
+
+/* ぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇ
+ *
+ * Copyright (c) 2014 Darren, Inc. All Rights Reserved
+ * Dream
+ *
+ * ぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇぇ
+ * @File           siteConfig.php
+ * @Author         DREAM
+ * @Date           2014-06-17 15:37:58
+ * @Description   站点配置
+ * @Modify
+ */
+
+if (!defined('DARREN'))
+    exit();
+return array(
+    'SHORT_CODE' => 'QIMAI_', //简称Code 用于缓存，cookie 的前缀
+    'COMPANY' => '合伙人(官网)', //公司简称用于SEO的前缀
+);

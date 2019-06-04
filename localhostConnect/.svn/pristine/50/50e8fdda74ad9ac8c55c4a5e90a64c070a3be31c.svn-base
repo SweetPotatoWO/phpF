@@ -1,0 +1,175 @@
+<?php
+
+namespace MobileApi\Api;
+
+use MobileApi\Common\MobileApiBase;
+use Service\User\Logic\UserAuthLogic;
+use Service\User\Logic\UserLogic;
+use Service\UserCenter\Logic\UserCenterLogic;
+
+
+/**
+ * Description of index
+ *
+ * @author Administrator
+ */
+class ApiAuth extends MobileApiBase
+{
+
+
+    private $return  = array("code"=>1,"msg"=>"","info"=>array());
+
+    public function getRules()
+    {
+        return array(
+            "jobAuth"=>array(
+                "mailBox"=>array('name' => 'mailBox', 'require' => false, "default"=>"", 'desc' => '邮箱的图片 可不传'),
+                "certificate"=>array('name' => 'certificate', 'require' => false, "default"=>"", 'desc' => '在职证明的图片链接'),
+                "workCard"=>array('name' => 'workCard', 'require' => false, "default"=>"", 'desc' => '工牌的照片'),
+            ),
+
+            "getAuthInfo"=>array(
+
+            ),
+        );
+    }
+
+
+    /**
+     * 添加一条认证信息
+     * @desc 添加一条认证信息
+     * @return  int code  0成功 1失败
+     * @return  string msg 信息
+     */
+    public function jobAuth() {
+        $this->userCheck();
+        $data = array();
+        if($this->mailBox) $data['mailBox'] = str_replace(UPLOAD,"",$this->mailBox);
+        if($this->certificate) $data['certificate'] = str_replace(UPLOAD,"",$this->certificate);
+        if($this->workCard) $data['workCard'] = str_replace( UPLOAD,"",$this->workCard);
+        if(empty($data)) {
+            $this->return['code'] = 1;
+            $this->return['msg'] = "操作失败";
+            return $this->return;
+        }
+        $data['userID'] = $this->userID;
+        $logic = new UserAuthLogic();
+        $authInfo = $logic->getAuthInfo($this->userID);
+
+        if(!empty($authInfo) && ($authInfo['authStatus'] == 1 || $authInfo['authStatus'] == 0)) {   //失败和系统重置可以重新提交
+            $this->return['code'] = 1;
+            $this->return['msg'] = "已经存在认证信息了";
+            return $this->return;
+        }
+        $userLogic = new UserCenterLogic();
+        $companyInfo = $userLogic->getUserCompanyInfo($this->userID);
+        if(empty($companyInfo['companyID'])) {
+            $this->return['code'] = 1;
+            $this->return['msg'] = "未完善公司信息";
+            return $this->return;
+        }
+        $data['companyID'] = $companyInfo['companyID'];
+        $data['job'] = $companyInfo['job'];
+        $data['group'] = $companyInfo['group'];
+        $data['companyName'] = $companyInfo['companyName'];
+        $res = $logic->addAuth($data);
+        if($res) {
+            $this->return['code'] = 0;
+            $this->return['msg'] = "操作成功";
+        } else {
+            $this->return['code'] = 1;
+            $this->return['msg'] = "操作失败";
+        }
+        return $this->return;
+
+    }
+
+
+    /**
+     * 获取到认证的详情
+     * @desc 获取到认证的详情
+     * @return int code  0成功 1失败
+     * @return int status 状态 0 认证中 1 认证通过 2认证失败 3 未认证
+     * @return string companyName 认证公司的名字
+     * @return string companyID 认证公司的ID
+     * @return string examReason  审批原因
+     * @return string examRemark  客服备注
+     * @return string msg 信息
+     */
+    public function getAuthInfo() {
+        $this->userCheck();
+        $logic = new UserAuthLogic();
+        $info = $logic->getAuthInfo($this->userID);
+        $return['status'] = $info['authStatus'];
+        $return['companyName'] = ($info['companyName'])?$info['companyName']:"";
+        $return['companyID'] = ($info['companyID'])?$info['companyID']:"";
+        $return['examReason'] = ($info['examReason'])?$info['examReason']:"";
+        $return['examRemark'] = ($info['examRemark'])?$info['examRemark']:"";
+
+        if(empty($info) || $info['authStatus'] == 3 ) {   //空
+            $return['status'] = 3;
+            $return['companyName'] = "";
+            $return['companyID'] = "";
+            $return['examReason'] = "";
+            $return['examRemark'] = "";
+        }
+        $this->return['code'] = 0;
+        $this->return['info'] = $return;
+        $this->return['msg'] = "操作成功";
+        return $this->return;
+    }
+
+
+    /**
+     * 解除认证
+     * @desc 解除当前的认知
+     * @return int code  0成功 1失败
+     * @return string msg 信息
+     */
+    public function resetAuth() {
+        $this->userCheck();
+        $auth = new UserAuthLogic();
+        $info = $auth->getAuthInfo($this->userID);
+        if($info['authStatus'] == 1) {
+            $user = new UserLogic();
+            $user->saveJobAuth($this->userID);
+        }
+        $auth->resetAuthRecord($this->userID);   //重置
+        $this->return['code'] = 0;
+        $this->return['msg'] = "操作成功";
+        return $this->return;
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+}

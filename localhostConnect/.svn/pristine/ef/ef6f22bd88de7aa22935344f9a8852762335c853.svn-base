@@ -1,0 +1,48 @@
+<?php
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+namespace Service\User\Model;
+
+use Common\Common\CodeGenerator;
+use Common\Model\SlaveModel;
+use Think\Model;
+
+/**
+ * 用户邀请
+ *
+ * @author DREAM
+ */
+class UserInviteModel extends SlaveModel {
+
+    /**
+     * 新增邀请记录
+     * @param array $entity
+     * @return type
+     */
+    public function addInvite($entity) {
+        try {
+            if(empty($entity['invitePhone']) || empty($entity['userID'])) {
+                return false;
+            }
+            $info = M("UserInvite")->where(array('userID'=>$entity['userID'],'invitePhone'=>$entity['invitePhone']))->getField('inviteID');
+            if(!empty($info)) {   //不为空 代表已经邀请过一次了
+                return false;
+            }
+            $entity["addDatetime"] = time();
+            $model = M("UserInvite");
+            $result = $model->data($entity)->add();
+            return $result;
+        } catch (Exception $ex) {
+            logger(__METHOD__, $ex->getMessage());
+            return false;
+        }
+    }
+
+
+
+}

@@ -1,0 +1,21 @@
+<?php
+namespace Service\System\Model;
+use Think\Model;
+use Common\Model\SlaveModel;
+use Think\Exception;
+/**
+ * Created by PhpStorm.
+ * User: Administrator
+ * Date: 2018/9/14 0014
+ * Time: 17:45
+ */
+class SysEvaluationModel extends SlaveModel {
+
+    /**
+     * 获取到列表
+     */
+    public function evaContentList() {
+        return $this->field("eID,content,evalue")->select();
+    }
+
+}

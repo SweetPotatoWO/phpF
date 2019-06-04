@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<title></title>
+	<meta name="description" content="" />
+    <meta name="keywords" content="" />
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+	<link rel="stylesheet" href="{$Think.FPATH}css/bootstrap.min.css">
+	<link rel="stylesheet" href="{$Think.FPATH}css/index.css">
+</head>
+<body>
+	<div class="index">
+		<div class="banner">			
+			<div class="container">
+				<div class="clearfix">
+					<nav class="navigation">
+						<ul>
+							<li class="active"><a rel="nofollow" title="首页" href="/Index/index">首页</a></li>
+							<li><a rel="nofollow" title="关于" href="/Index/about">关于</a></li>
+						</ul>
+					</nav>
+				</div>
+				<h2>启脉<br />开启人生机遇</h2>
+				<div class="clearfix">
+					<div class="fl qr-code"></div>
+					<div class="fl download-btn">
+						<a href="#" class="android download"></a>
+						<a href="#" class="ios download"></a>
+					</div>
+				</div>
+			</div>
+		</div>
+		
+		<div class="section section-1">
+			<div class="container clearfix">
+				<div class="fl text">
+					<h3>上启脉，拓圈子</h3>
+					<p>开启人生机遇<br />扩展自己的职场人脉圈，事业蒸蒸日上</p>
+				</div>
+				<div class="fr img"></div>
+			</div>
+		</div>
+		
+		<div class="section section-2">
+			<div class="container clearfix">
+				<div class="fl img"></div>
+				<div class="fr text">
+					<h3>搜公司、搜人脉</h3>
+					<p>拓展更多合作<br />提前了解公司经营状况，让合作更愉快</p>
+				</div>
+			</div>
+		</div>
+		
+		<div class="section section-3">
+			<div class="container clearfix">
+				<div class="fl text">
+					<h3>扫名片、人脉共享</h3>
+					<p>电子名片管理<br />建立自己的客户资源库，共享人脉资源</p>
+				</div>
+				<div class="fr img"></div>
+			</div>
+		</div>
+	</div>
+	
+	<footer class="text-center">
+		<h4>深圳市钱合伙人网络科技有限公司</h4>
+		<p><a rel="nofollow" href="http://www.miitbeian.gov.cn/">粤ICP备00000000号</a></p>
+	</footer>
+</body>
+</html>

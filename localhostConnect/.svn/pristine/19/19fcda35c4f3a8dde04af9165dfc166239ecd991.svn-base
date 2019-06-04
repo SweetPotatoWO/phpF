@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf8" />
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge, chrome=1" />
+        <meta name="description" content="网站后台" />
+        <title>钱盒子网站后台</title>
+        <link rel="stylesheet" href="{$Think.BPATH}style/bootstrap.css?version={$Think.BNO}" />
+        <link rel="stylesheet" href="{$Think.BPATH}style/bootstrap-responsive.css?version={$Think.BNO}" />
+        <link rel="stylesheet" href="{$Think.BPATH}fonts/css/font-awesome.min.css?version={$Think.BNO}" />
+        <!--[if lte IE 7]>
+            <link rel="stylesheet" href="{$Think.BPATH}fonts/css/font-awesome-ie7.min.css?version={$Think.BNO}" />
+        <![endif]-->        
+        <link rel="stylesheet" href="{$Think.BPATH}style/bootstrap-datetimepicker.css?version={$Think.BNO}" />
+        <link rel="stylesheet" href="{$Think.BPATH}style/toastr.css?version={$Think.BNO}" />
+        <link rel="stylesheet" href="{$Think.BPATH}style/gallery.css?version={$Think.BNO}" />   
+        <link rel="stylesheet" href="{$Think.BPATH}style/jquery.treetable.css?version={$Think.BNO}" />           
+        <link rel="stylesheet" href="{$Think.BPATH}style/qianbox.css?version={$Think.BNO}" />   
+
+    </head>
+    <body class="ht">
+        <!--头部导航开始-->
+        <div id="in-nav">
+            <div class="clearfix">
+                <ul class="pull-right">
+                    <li><a href="#">链接1</a></li>
+                    <li><a href="#">链接2</a></li>
+                    <li class="dropdown">
+                        <button class="btn btn-default dropdown-toggle" type="button" id="dropdownMenu1" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+					    等待添加
+					    <span class="caret"></span>
+					    </button>
+                        <ul class="dropdown-menu">
+                            <li><a href="#">等待添加</a></li>
+                        </ul>
+                    </li>
+                    <li class="dropdown">
+                        <a class="dropdown-toggle" data-toggle="dropdown" href="#">we***452@qq.com <b class="caret"></b></a>
+                        <ul class="dropdown-menu">
+                            <li><a href="#">退出</a></li>
+                        </ul>
+                    </li>
+                </ul>
+                <div class="fl">
+                    <ul>
+                        <li>
+                            <a id="logo" href="http://www.qianhezi.cn/" class="logo"></a>
+                        </li>
+                        <li><a href="#">管理控制台</a></li>
+                        <li><a href="#">产品与服务</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <!--头部导航结束-->
+        <div class="row  sidebarfull viewbody">    	
+            <!--左侧菜单开始-->
+            <div class=" sidebar">
+                <div class="sidebaricon">
+                    <i class="icon-reorder"></i>
+                </div>
+                <ul class="col-nav">  
+                    <li>
+                        <a href="#panel" data-toggle="collapse" class="accordion-toggle"><i class="pull-left icon-caret-down"></i>消息中心</a>          	
+                    </li>          
+                    <li id="panel" class="collapse in">
+                        <ul>
+                            <li><a href="#"> <i class="pull-left icon-plane"></i>二级菜单1</a>
+                                <a href="#"> <i class="pull-left icon-fire"></i>按钮</a>
+                                <a href="#" class="active"> <i class="pull-left icon-comment"></i>消息列表</a></li>
+                        </ul>
+                    </li>
+                    <li>
+                        <a href="#pane2" data-toggle="collapse" class="accordion-toggle">
+                            <i class="pull-left icon-caret-down"></i>用户中心</a>          	
+                    </li>          
+                    <li id="pane2" class="collapse in">
+                        <ul>
+                            <li>
+                                <a href="#"> <i class="pull-left icon-plane"></i>二级菜单1</a>
+                                <a href="#"> <i class="pull-left icon-fire"></i>按钮</a>
+                                <a href="account.html"> <i class="pull-left icon-comment"></i>账号管理</a>            
+                                <a href="#section5"> <i class="pull-left icon-user"></i>表单</a>
+                                <a href="#section6"> <i class="pull-left icon-cog"></i>表格</a>
+                                <a href="#section6"><i class="pull-left icon-star"></i>图标</a>
+                            </li>  
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+            <!--左侧菜单结束-->
+            <div class="rightbox">
+                <!--左侧子菜单开始-->
+                <div class="sidebar-sub-nav">
+                    <div class="hd">消息中心</div>
+                    <ul class="col-nav">     
+                        <li>
+                            <a href="#pane3" data-toggle="collapse" class="accordion-toggle">
+                                <i class="pull-left icon-caret-down"></i>站内消息</a>          	
+                        </li>          
+                        <li id="pane3" class="collapse in">
+                            <ul>
+                                <li>
+                                    <a href="#" class="active"> <span class="label label-info pull-right">32</span>全部消息</a>
+                                    <a href="#"><span class="label label-info pull-right">12</span>未读消息</a>
+                                    <a href="#"><span class="label label-info pull-right">20</span>已读消息</a>            
+
+                                </li>		          
+                            </ul>
+                        <li>
+                            <a href="#">用户中心</a>          	
+                        </li>
+                    </ul>     
+                </div>
+                <!--左侧子菜单结束-->
+                <div class="slideicon">
+                    <i class="icon-indent-right"></i>
+                    <i class="icon-indent-left hide"></i>
+                </div>
+                <!--右侧内容主体开始-->
+                <div class="sub-content">
+                    <block name="body"> </block>
+                </div>
+                <!--右侧内容主体结束-->
+            </div>
+            <block name="modal"> </block>
+        </div>
+
+        <script src="{$Think.BPATH}js/jquery.min.js?version={$Think.BNO}"></script>
+        <script src="{$Think.BPATH}js/bootstrap.min.js?version={$Think.BNO}"></script>   
+        <script src="{$Think.BPATH}js/toastr.js?version={$Think.BNO}"></script>
+        <script src="{$Think.BPATH}js/SuperSlide.2.1.js?version={$Think.BNO}"></script>
+        <script src="{$Think.BPATH}js/jquery.treetable.js?version={$Think.BNO}"></script>
+        <script type="text/javascript">
+            //侧边栏收缩
+            $(".slideicon").click(function () {
+                $(".rightbox").toggleClass("closesidebar");
+                $(".icon-indent-right").toggle();
+                $(".icon-indent-left").toggle();
+            });
+        </script>
+    <block name="script"></block>
+</body>
+</html>

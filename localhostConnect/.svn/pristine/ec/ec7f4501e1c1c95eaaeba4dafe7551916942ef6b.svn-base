@@ -1,0 +1,59 @@
+<div id="sub-User-list">
+    <script type="text/javascript" src="{$Think.BPATH}js/datejs/WdatePicker.js"></script> 
+    <input type="hidden" name="hidrefurl" id="hidrefurl" value="{:U(ACTION_NAME, $_GET)}">
+    <h4 class="title">用户评价信息<span class="titleqit">默认查询一周内记录</span></h4>
+    <form class="form-inline" id="query_log"> 
+        <div class="form-group">
+            <label class="control-label">评价用户信息:</label>
+            <input type="text" class="form-control mr-10" value="{$Think.post.txtname}" name="txtname" placeholder="姓名">
+            <input type="text" class="form-control mr-10" value="{$Think.post.txtphone}" name="txtphone" placeholder="电话">
+        </div>
+        <div class="form-group">
+            <label class="control-label">被评价用户信息:</label>
+            <input type="text" class="form-control mr-10" value="{$Think.post.txtfphone}" name="txtfphone" placeholder="电话">
+        </div>
+        <div class="form-group mr-10">
+            <label class="control-label">评价时间:</label>
+            <input type="text" class="form-control mr-5" onclick="WdatePicker({isShowClear: true, readOnly: true, maxDate: '%y-%M-%d'})" value="{$Think.post.txtDateStart}" id="txtDateStart" name="txtDateStart" placeholder="开始日期">     
+            <label class="control-label">～</label>
+            <input type="text" class="form-control mr-5" onclick="WdatePicker({isShowClear: true, readOnly: true, maxDate: '%y-%M-%d'})" value="{$Think.post.txtDateEnd}" id="txtDateEnd" name="txtDateEnd" placeholder="结束日期">   
+        </div>
+        <div class="form-group">
+            <a href="{:U(ACTION_NAME, $_GET)}"  onclick="$Util.openQuery(this, event, 'query_log')"  class="btn btn-info"><i class="icon-search"></i>查询</a>
+        </div>
+    </form>
+    <table class="table table-striped table-bordered">
+        <thead>
+            <tr> 
+                <th>评价用户</th>
+                <th>评价用户电话</th>
+                <th>被评价用户号码</th>
+                <th>评价内容</th>
+                <th>分值</th>
+                <th>评价时间</th>
+            </tr>           
+        </thead>
+        <tbody>
+        <volist name="result" id="vo">
+            <tr>  
+                <td>{$vo.nickname}</td>
+                <td>{$vo.phone}</td>
+                <td>{$vo.evaPhone}</td>
+                <td>{$vo.content}</td>
+                <td>{$vo.eValue}</td>
+                <td>{$vo.addDatetime|formatlongDate}</td>
+            </tr>
+        </volist>
+        </tbody>
+    </table>
+    <nav class=" pagination-centered">
+        <ul class="pagination">  
+            {$page}
+        </ul>
+    </nav>  
+    <script>
+    </script>
+</div>
+
+
+

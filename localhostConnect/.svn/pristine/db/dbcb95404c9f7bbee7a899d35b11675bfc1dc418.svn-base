@@ -1,0 +1,245 @@
+<?php
+
+namespace MobileApi\Api;
+
+use Common\Common\CodeGenerator;
+use Common\Common\ThirdApi\ChuanglanSmsApi;
+use MobileApi\Common\MobileApiBase;
+use Service\Connect\Logic\ConnectRelationLogic;
+use Service\Integral\Model\UserCardModel;
+use Service\JavaService\Logic\SiteLogic;
+use Service\News\Logic\SendSMSLogic;
+use Service\System\Logic\SysMajobLogic;
+use Service\System\Logic\TagLogic;
+use Service\User\Logic\IndexLogic;
+use Service\User\Logic\UserFriendLogic;
+use Service\User\Logic\UserLogic;
+use Service\User\Logic\userMaillistLogic;
+use Service\UserCenter\Logic\UserCenterLogic;
+use Think\Upload;
+
+/**
+ * Description of index
+ *
+ * @author Administrator
+ */
+class ApiTag extends MobileApiBase
+{
+
+
+    private $return  = array("code"=>1,"msg"=>"","info"=>array());
+
+    public function getRules()
+    {
+        return array(
+            'index' => array(),
+            "handleUserTag"=>array(
+                "tagIdStr"=>array("name" => "tagIdStr", "type" => "string",'require'=>false,  "desc" => "类型1,2,3","default"=>""),
+            ),
+            "handleWantTag"=>array(
+                "tagIdStr"=>array("name" => "tagIdStr", "type" => "string",'require'=>false,  "desc" => "类型1,2,3","default"=>""),
+            ),
+            "getTag"=>array(),
+
+        );
+    }
+
+
+    /**
+     * 处理用户熟悉标签的接口
+     * @desc 处理用户熟悉标签的接口
+     * @return int    code         操作码，0表示成功， 1表示失败
+     * @return  array  info         返回数据
+     * @return  string msg          提示信息
+     */
+    public function handleUserTag() {
+        $this->userCheck();
+        $tagLogic = new TagLogic();
+        $str = trim($this->tagIdStr,',');
+        $choseTagIdArr = explode(',',$str);
+        $delWhere['userID'] = $this->userID;  //组合删除条件
+        if(count($choseTagIdArr)>5) {
+            $this->return['code'] = 1;
+            $this->return['msg'] = "选择的标签大于5个";
+            return $this->return;
+        } else if(count($choseTagIdArr) == 0) {    //为0代表全部删除
+            $tagLogic->delUserTag($delWhere);
+            $this->return['code'] = 0;
+            $this->return['msg'] = "操作成功";
+            return $this->return;
+        }
+        $SysRegionLogic = new SysMajobLogic();
+        $where = array(
+            "majobID"=>array('in',$choseTagIdArr),
+            "status"=>1,
+        );
+        $jobList = $SysRegionLogic->getList($where);  //获取到用户传递的信息
+        $userList = $tagLogic->getUserTag($this->userID);   //用户当前的标签
+        $userTagIdArr = array_column($userList,'tagID');   //获取到当前用户的标签ID集合
+        foreach ($jobList as $key=>$value) {   //排序整合
+            $tmp['tagID'] = $value['majobID'];
+            $tmp['tagName'] = $value['jobname'];
+            $tmp['userID'] = $this->userID;
+            $tmp['addDatetime']  = time();
+            if(!in_array($value['majobID'],$userTagIdArr)) $addUserTag[] = $tmp;   //在选择中新增的数量
+        }
+        foreach ($userList as $k=>$v) {
+            if(!in_array($v['tagID'],$choseTagIdArr)) $delUserTag[] = $v['tagID'];   //在选择中去除的数量
+        }
+        if(empty($addUserTag) && empty($delUserTag)) {    //全部为空代表无需操作
+            $this->return['code'] = 1;
+            $this->return['msg'] = "无效操作";
+            return $this->return;
+        }
+        $delWhere['tagID'] = array("in",$delUserTag);   //组合删除条件
+        if($tagLogic->addMore($addUserTag) || $tagLogic->delUserTag($delWhere)) {   //添加新增的删除不要的
+            $tagLogic->updateHot($choseTagIdArr);   //更新热度
+            $this->return['code'] = 0;
+            $this->return['msg'] = "操作成功";
+        } else {
+            $this->return['code'] = 1;
+            $this->return['msg'] = "操作失败";
+        }
+        return $this->return;
+    }
+
+
+
+    /**
+     * 处理用户想要的标签
+     * @desc 处理用户想要的标签
+     * @return int    code         操作码，0表示成功， 1表示失败
+     * @return  array  info         返回数据
+     * @return  string msg          提示信息
+     */
+    public function handleWantTag() {
+        $this->userCheck();
+        $tagLogic = new TagLogic();
+        $str = trim($this->tagIdStr,',');
+        $choseTagIdArr = explode(',',$str);
+        $delWhere['userID'] = $this->userID;  //组合删除条件
+        if(count($choseTagIdArr)>5) {
+            $this->return['code'] = 1;
+            $this->return['msg'] = "选择的标签大于5个";
+            return $this->return;
+        } else if(count($choseTagIdArr) == 0) {    //为0代表全部删除
+            $tagLogic->delUserWantTag($delWhere);
+            $this->return['code'] = 0;
+            $this->return['msg'] = "操作成功";
+            return $this->return;
+        }
+        $SysRegionLogic = new SysMajobLogic();
+        $where = array(
+            "majobID"=>array('in',$choseTagIdArr),
+            "status"=>1,
+        );
+        $jobList = $SysRegionLogic->getList($where);  //获取到用户传递的信息
+        $userList = $tagLogic->getUserWantTag($this->userID);   //用户当前的标签
+        $userTagIdArr = array_column($userList,'tagID');   //获取到当前用户的标签ID集合
+        foreach ($jobList as $key=>$value) {   //排序整合
+            $tmp['tagID'] = $value['majobID'];
+            $tmp['tagName'] = $value['jobname'];
+            $tmp['userID'] = $this->userID;
+            $tmp['addDatetime']  = time();
+            if(!in_array($value['majobID'],$userTagIdArr)) $addUserTag[] = $tmp;   //在选择中新增的数量
+        }
+        foreach ($userList as $k=>$v) {
+            if(!in_array($v['tagID'],$choseTagIdArr)) $delUserTag[] = $v['tagID'];   //在选择中去除的数量
+        }
+        if(empty($addUserTag) && empty($delUserTag)) {    //全部为空代表无需操作
+            $this->return['code'] = 1;
+            $this->return['msg'] = "无效操作";
+            return $this->return;
+        }
+        $delWhere['tagID'] = array("in",$delUserTag);   //组合删除条件
+        if($tagLogic->addWantMore($addUserTag) || $tagLogic->delUserWantTag($delWhere)) {   //添加新增的删除不要的
+            $tagLogic->updateHot($choseTagIdArr);   //更新热度
+            $this->return['code'] = 0;
+            $this->return['msg'] = "操作成功";
+        } else {
+            $this->return['code'] = 1;
+            $this->return['msg'] = "操作失败";
+        }
+        return $this->return;
+    }
+
+
+
+    /**
+     * 获取到用户的标签列表
+     * @desc 获取到用户的标签列表
+     * @return array user 用户熟悉的标签
+     * @return int user.tagID 标签ID
+     * @return string user.tagName 标签
+     * @return int user.selected  1 代表用户选中的 0代表不是
+     *
+     * @return array want 用户想要的标签
+     * @return int want.tagID 标签ID
+     * @return string want.tagName 标签
+     * @return int want.selected  1 代表用户选中的 0代表不是
+     */
+    public function getTag() {
+        $this->userCheck();
+
+        $tagLogic = new TagLogic();
+        $list = $tagLogic->getUserTag($this->userID);
+        foreach ($list as $k=>$v) {
+            $list[$k]['selected'] = 1;
+        }
+        $recommend = $tagLogic->getRecommendTag($this->userID);
+        foreach ($recommend as $k=>$v) {
+            $recommend[$k]['selected'] = 0;
+        }
+        $user = array_merge($list,$recommend);
+        $info['user'] = $user;  //用户自己熟悉的行业
+
+        $wantList = $tagLogic->getUserWantTag($this->userID);
+        foreach ($wantList as $k=>$v) {
+            $wantList[$k]['selected'] = 1;
+        }
+        $recommendWant = $tagLogic->getRecommendWantTag($this->userID);
+        foreach ($recommendWant as $k=>$v) {
+            $recommendWant[$k]['selected'] = 0;
+        }
+        $want = array_merge($wantList,$recommendWant);
+        $info["want"] = $want;
+
+        $this->return['code'] = 0;
+        $this->return['msg'] = "操作成功";
+        $this->return['info'] = $info;
+        return $this->return;
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+}

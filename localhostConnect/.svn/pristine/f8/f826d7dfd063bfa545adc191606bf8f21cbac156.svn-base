@@ -1,0 +1,66 @@
+<?php
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+namespace Service\Backend\Logic;
+
+use Service\Backend\Model;
+
+/**
+ * Description of ConsoleNodeLogic
+ *
+ * @author Administrator
+ */
+class ConsoleNodeLogic extends BaseLogic {
+
+    /**
+     * 获取几点集合。
+     * @return type
+     */
+    public function getNodeList() {
+        $nodemodel = new Model\ConsoleNodeModel();
+        $modules = $nodemodel->getNodeListByLevel();
+        $controllers = $nodemodel->getNodeListByLevel(2);
+        $actions = $nodemodel->getNodeListByLevel(3);
+        $nodelist = array();
+        foreach ($modules as $key => $value) {
+            $nodelist[] = $value;
+            foreach ($controllers as $ckey => $cvalue) {
+                if ($cvalue["pid"] * 1 === $value["id"] * 1) {
+                    $nodelist[] = $cvalue;
+                    foreach ($actions as $akey => $avalue) {
+                        if ($avalue["pid"] * 1 === $cvalue["id"] * 1) {
+                            $nodelist[] = $avalue;
+                        }
+                    }
+                }
+            }
+        }
+        return $nodelist;
+    }
+
+    /**
+     * 添加节点。
+     * @param type $data
+     * @return type
+     */
+    public function addNode($data) {
+        if (empty($data) || empty($data["name"]) || empty($data["pid"]))
+            return $this->returnResult(false, "非法操作！");
+        $nodemodel = new Model\ConsoleNodeModel();
+        $isexist = $nodemodel->nodeNameIsExist($data["name"], $data["pid"]);
+        if ($isexist) {
+            return $this->returnResult(false, "该节点名称已存在！");
+        }
+        $result = $nodemodel->addNode($data);
+        if ($result) {
+            return $this->returnResult(true, "添加成功！");
+        }
+        return $this->returnResult(false, "添加失败！");
+    }
+
+}

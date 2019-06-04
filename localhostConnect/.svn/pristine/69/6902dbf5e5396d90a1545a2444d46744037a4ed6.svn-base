@@ -1,0 +1,626 @@
+<?php
+
+/**
+ * Created by PhpStorm.
+ * User: zhoull
+ * Date: 2018/8/14
+ * Time: 9:29
+ */
+namespace Service\Connect\Logic;
+use Common\Common\GraphDbHelper;
+use Service\Connect\Model\CompanyModel;
+use Service\Connect\Model\ConnectModel;
+use Service\Connect\Model\ConnectStudyModel;
+use Service\Connect\Model\ConnectTypeEnum;
+use Service\Connect\Model\ConnectWorkModel;
+use Service\Connect\Model\PersonModel;
+use Service\Connect\Model\SchoolModel;
+
+class ConnectRelationLogic
+{
+    //别名-类名映射
+    private $map_person = ['m'=>PersonModel::class];
+    private $db_handler = null;
+    function __construct()
+    {
+        $this->db_handler = GraphDbHelper::getInstance();
+    }
+
+    //region 查询
+    /**
+     * 获取指定用户的好友人脉列表
+     * @param $user_id
+     * @param string $limit 格式：limit 或 skip,limit
+     * @return PersonModel[]
+     */
+    public function getConnectList($user_id,$limit)
+    {
+        $q = "MATCH (n:Person)-[r]->(m:Person)
+WHERE n.user_id={user_id} AND m.user_id is not null AND m.name is not null AND m.mobile is not null
+RETURN m";
+        return $this->db_handler->query($q,$limit,$this->map_person,['user_id'=>$user_id]);
+    }
+
+    /**
+     * 获取共同好友
+     * @param $user_id1
+     * @param $user_id2
+     * @param string $limit 格式：limit 或 skip,limit
+     * @return PersonModel[]
+     */
+    public function getCommonFriends($user_id1,$user_id2,$limit)
+    {
+        $q = "MATCH (:Person {user_id:{user_id1}})-[r]->(m:Person)<-[r]-(:Person {user_id:{user_id2}})
+WHERE m.user_id is not null AND m.mobile is not null
+RETURN m";
+        return $this->db_handler->query($q,$limit,$this->map_person,['user_id1'=>$user_id1,'user_id2'=>$user_id2]);
+    }
+
+    /**
+     * 获取所有公司
+     * @param $limits 格式：limit 或 skip,limit
+     * @return CompanyModel[]
+     */
+    public function getCompanys($limits)
+    {
+        return $this->db_handler->findBy(CompanyModel::class,null,null,$limits);
+    }
+
+    /**
+     * 获取所有学校
+     * @param $limits 格式：limit 或 skip,limit
+     * @return SchoolModel[]
+     */
+    public function getSchools($limits)
+    {
+        return $this->db_handler->findBy(SchoolModel::class,null,null,$limits);
+    }
+
+    /**
+     * 获取所有个人
+     * @param $limits 格式：limit 或 skip,limit
+     * @return SchoolModel[]
+     */
+    public function getPersons($limits)
+    {
+        return $this->db_handler->findBy(PersonModel::class,null,null,$limits);
+    }
+
+    /**
+     * 获取某公司的员工
+     * @param $user_id 发起查询的用户的编号
+     * @param $company_id 公司编号
+     * @param $limits 格式：limit 或 skip,limit
+     * @return SchoolModel[]
+     */
+    public function getPersonsByCompany($user_id,$company_id,$limits)
+    {
+        $param = ['user_id' => $user_id,'company_id' => $company_id];
+        $q = "MATCH (n:Person{user_id:{user_id}}),(m:Person{company_id:{company_id}})
+WHERE m.user_id is not null AND m.mobile is not null
+WITH DISTINCT n,m
+RETURN n.company_id AS company_id,m,
+    CASE WHEN exists((n)-[:FRIEND]->(m)) THEN 1 ELSE 0 END AS c1,
+    CASE WHEN exists((n)-[:CONTACT]->(m)) THEN 1 ELSE 0 END AS c2,
+    CASE WHEN exists((n)-[:CARD]->(m)) THEN 1 ELSE 0 END AS c3,
+    CASE WHEN exists((n)-[:FRIEND]->(:Person)<-[:FRIEND]-(m)) THEN 1 ELSE 0 END AS c4
+ORDER BY m.active_grade DESC";
+        $list = $this->db_handler->query($q,$limits,$this->map_person,$param);
+        $result = [];
+        if($list){
+            foreach ($list as $item) {
+                $person = $item['m'];
+                if($person->getUserId()!=$user_id) {
+                    $lbls = [];
+                    if ($item['c1'])
+                        $lbls[] = '好友';
+                    else if ($item['c2']) {
+                        $lbls[] = '通讯录好友';
+                    }
+                    else if ($item['c3']) {
+                        $lbls[] = '有对方名片';
+                    }
+                    else if ($item['c4']) {
+                        $lbls[] = '有共同好友';
+                    }
+                    $lbl = implode(',', $lbls);
+                    $person->setLabel($lbl);
+                }
+                $result[] = $person;
+            }
+        }
+        return $result;
+    }
+
+    /**
+     * 统计某公司的员工
+     * @param $user_id 发起查询的用户的编号
+     * @param $company_id 公司编号
+     * @return int
+     */
+    public function countPersonsByCompany($user_id,$company_id)
+    {
+        $param = ['user_id' => $user_id,'company_id' => $company_id];
+        $q = "MATCH (m:Person{company_id:{company_id}})
+WHERE m.user_id is not null AND m.mobile is not null
+WITH DISTINCT m
+RETURN count(m) as c";
+        $result = $this->db_handler->query($q,'','',$param);
+        return $result[0]['c'];
+    }
+    //endregion
+
+    //region 推荐
+    /**
+     * 获取指定用户的推荐好友列表
+     * 用于首页推荐
+     * @param $user_id
+     * @param string $limit 格式：limit 或 skip,limit
+     * @param bool $is_th 是否同行
+     * @param bool $is_tc 是否同城
+     * @param bool $is_active 是否活跃
+     * @return PersonModel[]
+     */
+    public function getRecommendFriend($user_id, $limit, $is_th=false, $is_tc=false, $is_active=false)
+    {
+
+        $param = ['user_id' => $user_id];
+        $q = "MATCH (n:Person{user_id:{user_id}})
+MATCH (m:Person)
+WHERE m.user_id<>n.user_id AND m.user_id is not null AND m.name is not null %s AND NOT (n)-[:FRIEND]->(m)
+WITH n,m,abs(sign(m.industry_id-n.industry_id)) as industry,abs(sign(m.city_id-n.city_id)) as city
+RETURN m,industry,city,
+    CASE WHEN exists((n)-[:FRIEND]->(:Person)<-[:FRIEND]-(m)) THEN 1 ELSE 0 END AS c1,
+    CASE WHEN exists((n)-[:APPLY]->(m)) THEN 1 ELSE 0 END AS a,
+    CASE WHEN exists((n)-[:CARD]->(m)) THEN 1 ELSE 0 END AS c
+ORDER BY a,c DESC,c1 DESC,industry,m.active_grade DESC,city";
+        //活跃度
+        $q_hy = "";
+        if($is_active){
+            $q_hy=" AND m.active_grade>{last_active} ";
+            $dt = time()-7*24*3600;
+            $param['last_active']=$dt;
+        }
+        //同行
+        $q_th = "";
+        if($is_th){
+            $q_th = " AND m.industry_id=n.industry_id ";
+        }
+        //同城
+        $q_tc = "";
+        if($is_tc){
+            $q_tc = " AND m.city_id=n.city_id ";
+        }
+        $q = sprintf($q,$q_th.$q_tc.$q_hy);
+        $list = $this->db_handler->query($q,$limit,$this->map_person,$param);
+        $result = [];
+        if($list){
+            foreach ($list as $item) {
+                $person = $item['m'];
+                $lbls = [];
+                if($item['industry']=='0')
+                    $lbls[]='同行';
+                if($item['city']=='0')
+                    $lbls[]='同城';
+                if($item['c1'])
+                    $lbls[]='有共同好友';
+                if($item['c'])
+                    $lbls[]='名片好友';
+                $lbl = implode(',',$lbls);
+                $person->setLabel($lbl);
+                $result[] = $person;
+            }
+        }
+
+
+        return $result;
+    }
+
+    /**
+     * 获取指定用户的推荐人脉列表
+     * 用于人脉页推荐
+     * @param $user_id
+     * @param string $limit 格式：limit 或 skip,limit
+     * @param bool $is_work 是否仅同事
+     * @param bool $is_study 是否仅校友
+     * @return array|mixed
+     */
+    public function getRecommendConnect($user_id,$limit,$is_work=false,$is_study=false)
+    {
+
+        $param = ['user_id' => $user_id];
+        $q = "MATCH (n:Person{user_id:{user_id}}),(m:Person)
+WHERE NOT (n)-[:FRIEND]-(m) AND m.user_id is not null AND m.name is not null AND ((n)-->(:School)<--(m) OR (n)-->(:Company)<--(m))
+WITH DISTINCT n,m
+RETURN n.company_id AS company_id,m,
+    CASE WHEN exists((n)-->(:School)<--(m)) THEN 1 ELSE 0 END AS c1,
+    CASE WHEN exists((n)-->(:Company)<--(m)) THEN 1 ELSE 0 END AS c2,
+    CASE WHEN exists((n)-[:APPLY]->(m)) THEN 1 ELSE 0 END AS a
+ORDER BY a,c1+c2 DESC,m.active_grade DESC";
+        if($is_work){
+            $q = "MATCH (n:Person{user_id:{user_id}})-->(:Company)<--(m:Person)
+WHERE not (n)-[:FRIEND]-(m) AND m.user_id is not null AND m.mobile is not null
+WITH DISTINCT n,m
+RETURN n.company_id AS company_id,m,
+    CASE WHEN exists((n)-->(:School)<--(m)) THEN 1 ELSE 0 END AS c1,
+    1 as c2,
+    CASE WHEN exists((n)-[:APPLY]->(m)) THEN 1 ELSE 0 END AS a
+ORDER BY a,c1+c2 DESC,m.active_grade DESC";
+        }else if($is_study){
+            $q = "MATCH (n:Person{user_id:{user_id}})-->(:School)<--(m:Person)
+WHERE not (n)-[:FRIEND]-(m) AND m.user_id is not null AND m.mobile is not null
+WITH DISTINCT n,m
+RETURN n.company_id AS company_id,m,
+    1 as c1,
+    CASE WHEN exists((n)-->(:Company)<--(m)) THEN 1 ELSE 0 END AS c2,
+    CASE WHEN exists((n)-[:APPLY]->(m)) THEN 1 ELSE 0 END AS a
+ORDER BY a,c1+c2 DESC,m.active_grade DESC";
+        }
+        $list = $this->db_handler->query($q,$limit,$this->map_person,$param);
+        $result = [];
+        if($list){
+            foreach ($list as $item) {
+                $person = $item['m'];
+                $lbl = [];
+                if($item['c2']){
+                    if($item['company_id']==$person->getCompanyId())
+                        $lbl[] = '同事';
+                    else
+                        $lbl[] = '同事'; //前同事
+                }
+                if($item['c1']){
+                    $lbl[] = '校友';
+                }
+                $person->setLabel(implode(',',$lbl));
+                $result[] = $person;
+            }
+        }
+        return $result;
+    }
+
+    /**
+     * 根据共同好友数量（倒序）获取推荐列表
+     * @param $user_id
+     * @param string $limit 格式：limit 或 skip,limit
+     * @return PersonModel[]
+     */
+    public function getRecommendByCommonFriends($user_id,$limit)
+    {
+        $q = "MATCH (n:Person {user_id:{user_id}})-[]->(friend)<-[]-(m:Person) 
+        WHERE  m.user_id is not null
+        RETURN m,COUNT(*) AS comCount ORDER BY comCount DESC";
+        return $this->db_handler->query($q,$limit,$this->map_person,['user_id'=>$user_id]);
+    }
+    //endregion
+
+    //region 编辑
+    /**
+     * 添加或编辑个人信息(以手机为标识)
+     * @param PersonModel $person
+     * @return bool
+     */
+    public function upsertPerson(PersonModel $person)
+    {
+        if(!$person->getMobile()) return false;
+        $param = $person->getEditParam('n',['mobile']);
+        $q = "MERGE (n:Person {mobile:'".$person->getMobile()."'})";
+        if($param)
+            $q .= "
+ON CREATE SET ".$param['query']."
+ON MATCH SET ".$param['query'];
+        return $this->db_handler->execute($q,$param['param']);
+    }
+
+    /**
+     * 批量更新活跃度
+     * @param $list
+     * @return bool
+     */
+    public function batchUpsertActive($list)
+    {
+        $q = "merge (n%d:Person{user_id:%d}) set n%d.active_grade=%d
+        ";
+        $arr = [];
+        foreach ($list as $idx=>$item) {
+            $arr[] = sprintf($q,$idx,$item['user_id'],$idx,$item['active']);
+            if(count($arr)>=20){
+                $this->db_handler->execute(implode('',$arr));
+                $arr = [];
+            }
+        }
+        if(count($arr)>0){
+            $this->db_handler->execute(implode('',$arr));
+        }
+        return true;
+    }
+
+    /**
+     * 修改手机号码
+     * @param $user_id
+     * @param $phone
+     * @return bool
+     */
+    public function modifyPhone($user_id,$phone)
+    {
+        if(!$user_id || !$phone) return false;
+        $q = "MATCH (n:Person {user_id:{$user_id}})
+SET n.mobile='$phone';";
+        return $this->db_handler->execute($q);
+    }
+
+    /**
+     * 添加好友申请
+     * @param $from_id
+     * @param $to_id
+     * @param $time
+     * @return bool
+     */
+    public function addApply($from_id,$to_id,$time)
+    {
+        $q = "MERGE (n:Person{user_id:".$from_id."})
+            MERGE (m:Person{user_id:".$to_id."})
+            MERGE (n)-[r:APPLY]->(m)
+            SET r.add_time=".$time;
+        return $this->db_handler->execute($q);
+    }
+
+    /**
+     * 删除好友申请
+     * @param $from_id
+     * @param $to_id
+     * @return bool
+     */
+    public function delApply($from_id,$to_id)
+    {
+        $q = "MATCH (n:Person{user_id:".$from_id."})-[r:APPLY]-(m:Person{user_id:".$to_id."})
+            DELETE r";
+        return $this->db_handler->execute($q);
+    }
+
+    /**
+     * 处理过期的好友申请
+     * @param $outtime
+     * @return bool
+     */
+    public function dealApplyOuttime($outtime)
+    {
+        $q = "MATCH (:Person)-[r:APPLY]->(:Person)
+            WHERE r.add_time<=".$outtime."
+            DELETE r";
+        return $this->db_handler->execute($q);
+    }
+    
+    /**
+     * 新增或修改人脉关系
+     * @param ConnectModel $connect
+     * @return bool
+     */
+    public function upsertConnect(ConnectModel $connect)
+    {
+        $from = $connect->getFrom();
+        $to = $connect->getTo();
+        if(!$from->getUserId() || !$to->getUserId()) return false;
+        /*$param1 = $connect->getEditParam('r1');
+        $param2 = $connect->getEditParam('r2');*/
+        $q = "MERGE (n:Person{user_id:".$from->getUserId()."})
+            MERGE (m:Person{user_id:".$to->getUserId()."})
+            MERGE (n)-[r1:".ConnectTypeEnum::getKey($connect->getType())."]->(m)
+            MERGE (n)<-[r2:".ConnectTypeEnum::getKey($connect->getType())."]-(m)";
+        /*if($param1 && $param1['query']) {
+            $q .= "
+ON CREATE SET " . $param1['query'] . "
+ON MATCH SET " . $param1['query'];
+        }
+        $q .= "
+MERGE (n)<-[r2:".ConnectTypeEnum::getKey($connect->getType())."]-(m)";
+        if($param2 && $param2['query']) {
+            $q .= "
+ON CREATE SET " . $param2['query'] . "
+ON MATCH SET " . $param2['query'];
+        }
+        $param = array_merge($param1['param'],$param2['param']);*/
+        $flag = $this->db_handler->execute($q);
+        if($flag){
+            $this->delApply($from->getUserId(),$to->getUserId());
+        }
+        return $flag;
+    }
+    /**
+     * 删除人脉关系
+     * @param ConnectModel $connect
+     * @return bool
+     */
+    public function delConnect(ConnectModel $connect)
+    {
+        $from = $connect->getFrom();
+        $to = $connect->getTo();
+        if(!$from->getUserId() || !$to->getUserId()) return false;
+        $q = "MATCH (n:Person{user_id:".$from->getUserId()."})-[r]->(m:Person{user_id:".$to->getUserId()."})
+            DELETE r;";
+        return $this->db_handler->execute($q);
+    }
+
+    /**
+     * 添加或编辑当前工作信息
+     * @param ConnectWorkModel $connect
+     * @return bool
+     */
+    public function upsertCompany(ConnectWorkModel $connect)
+    {
+        $person = $connect->getStaff();
+        $company = $connect->getCompany();
+        if(!$person->getUserId() || !$company->getCompanyId()) return false;
+        if(!$person->getCompanyId() && $company->getCompanyId()){
+            $person->setCompanyId($company->getCompanyId());
+            $person->setCompany($company->getCompanyName());
+            $person->setJobTitle($connect->getJobtitle());
+        }
+        $param = $connect->getUpsertQuery();
+        $flag = $this->db_handler->execute($param['query'],$param['param']);
+        $this->synWork($person->getUserId());
+        return $flag;
+    }
+
+    /**
+     * 添加或编辑工作经历
+     * @param ConnectWorkModel $connect
+     * @return bool
+     */
+    public function upsertWork(ConnectWorkModel $connect)
+    {
+        $person = $connect->getStaff();
+        $company = $connect->getCompany();
+        if(!$person->getUserId() || !$company->getCompanyId()) return false;
+        $param = $connect->getUpsertQuery();
+        $flag = $this->db_handler->execute($param['query'],$param['param']);
+        $this->synWork($person->getUserId());
+        return $flag;
+    }
+
+    /**
+     * 删除工作经历
+     * @param ConnectWorkModel $connect
+     * @return bool
+     */
+    public function delWork(ConnectWorkModel $connect)
+    {
+        $from = $connect->getStaff();
+        $to = $connect->getCompany();
+        $q = "MATCH (n:Person{user_id:".$from->getUserId()."})-[r]->(m:Company{company_id:'".$to->getCompanyId()."'})
+            WHERE n.company_id<>m.company_id
+            DELETE r;";
+        return $this->db_handler->execute($q);
+    }
+
+    /**
+     * 同步工作经历数据
+     * @param $user_id
+     * @return bool
+     */
+    public function synWork($user_id){
+        $db = M();
+        $q = "MATCH (n:Person{user_id:".$user_id."})-[r]->(m:Company)
+            WHERE n.company_id<>m.company_id
+            DELETE r;";
+        $this->db_handler->execute($q);
+        $list = $db->query("select companyID,companyName,job,startDatetime,endDatetime,'group' from d_user_workexperience where userID=%d",$user_id);
+        foreach ($list as $item) {
+            if(!$item['companyID'] || !$item['companyName'])continue;
+            $staff = new PersonModel();
+            $staff->setUserId($user_id);
+            $company = new CompanyModel();
+            $company->setCompanyId($item['companyID']);
+            $company->setCompanyName($item['companyName']);
+            $connect=new ConnectWorkModel($staff,$company);
+            $connect->setJobtitle($item['job']);
+            $connect->setDepartment($item['group']);
+            $connect->setStarttime($item['startDatetime']);
+            $connect->setEndTime($item['endDatetime']);
+            $param = $connect->getUpsertQuery();
+            $this->db_handler->execute($param['query'],$param['param']);
+        }
+        return true;
+    }
+
+    /**
+     * 添加或编辑教育经历
+     * @param ConnectStudyModel $connect
+     * @return bool
+     */
+    public function upsertStudy(ConnectStudyModel $connect)
+    {
+        $person = $connect->getStudent();
+        $school = $connect->getSchool();
+        if(!$person->getUserId() || !$school->getSchoolId()) return false;
+        $param = $connect->getUpsertQuery();
+        $flag = $this->db_handler->execute($param['query'],$param['param']);
+        $this->synStudy($person->getUserId());
+        return $flag;
+    }
+
+    /**
+     * 删除教育经历
+     * @param ConnectStudyModel $connect
+     * @return bool
+     */
+    public function delStudy(ConnectStudyModel $connect)
+    {
+        $from = $connect->getStudent();
+        $to = $connect->getSchool();
+        $q = "MATCH (n:Person{user_id:".$from->getUserId()."})-[r]->(m:School{school_id:".$to->getSchoolId()."})
+            DELETE r;";
+        return $this->db_handler->execute($q);
+    }
+
+    /**
+     * 同步教育经历数据
+     * @param $user_id
+     * @return bool
+     */
+    public function synStudy($user_id){
+        $db = M();
+        $q = "MATCH (n:Person{user_id:".$user_id."})-[r]->(m:School)
+            DELETE r;";
+        $this->db_handler->execute($q);
+        $list = $db->query("select schoolID,schoolName,major,startDatetime,endDatetime,diploma from d_user_educational where userID=%d",$user_id);
+        foreach ($list as $item) {
+            if(!$item['schoolID'] || !$item['schoolName'])continue;
+            $student = new PersonModel();
+            $student->setUserId($user_id);
+            $school = new SchoolModel();
+            $school->setSchoolId($item['schoolID']);
+            $school->setSchoolName($item['schoolName']);
+            $connect=new ConnectStudyModel($student,$school);
+            $connect->setMajor($item['major']);
+            $connect->setStarttime($item['startDatetime']);
+            $connect->setEndTime($item['endDatetime']);
+            $param = $connect->getUpsertQuery();
+            $this->db_handler->execute($param['query'],$param['param']);
+        }
+        return true;
+    }
+    //endregion
+
+    //region 转发
+
+    /**
+     * 通知导入名片与用户、名片与公司的关系
+     * @param $user_id  上传名片的用户编号
+     * @param $card_id  纯净名片编号-该名片未注册用户的情况
+     * @param $tar_user_id  名片用户编号-该名片已经注册了用户的情况
+     */
+    public function notifyImport4Cards($user_id,$card_id,$tar_user_id)
+    {
+        $data['user_id']=$user_id;
+        $data['card_id']=$card_id;
+        $data['tar_user_id']=$tar_user_id;
+        $returnurl = SITE . "Callback/import4Cards";
+        $callLogic = new \Service\Common\CallBackLogic();
+        $callLogic->sendCallbackInfo($returnurl, $data);
+    }
+
+    /**
+     * 通知导入名片注册用户与其他用户的关系
+     * @param $mobile
+     */
+    public function notifyImport4CardsReg($mobile)
+    {
+        $data['mobile']=$mobile;
+        $returnurl = SITE . "Callback/import4CardsReg";
+        $callLogic = new \Service\Common\CallBackLogic();
+        $callLogic->sendCallbackInfo($returnurl, $data);
+    }
+
+    /**
+     * 通知导入指定用户的通讯录
+     * @param $user_id
+     */
+    public function notifyImportContacts($user_id)
+    {
+        $data['user_id']=$user_id;
+        $returnurl = SITE . "Callback/importContacts";
+        $callLogic = new \Service\Common\CallBackLogic();
+        $callLogic->sendCallbackInfo($returnurl, $data);
+    }
+    //endregion
+}

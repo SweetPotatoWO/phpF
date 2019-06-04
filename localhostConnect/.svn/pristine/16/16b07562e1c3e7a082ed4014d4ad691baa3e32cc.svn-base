@@ -1,0 +1,41 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: Administrator
+ * Date: 2018/9/14 0014
+ * Time: 17:09
+ */
+
+namespace Service\Integral\Model;
+use Common\Model\SlaveModel;
+
+class CardGroupModel extends SlaveModel {
+
+
+    /**
+     * 根据姓名来获取到名片
+     */
+    public function getGroupByName($name,$userID) {
+        return $this->where(array('groupName'=>$name,'userID'=>$userID))->find();
+    }
+
+
+    /**
+     * 添加
+     */
+    public function saveOne($saveData,$where) {
+        return $this->where(array('userID'=>$where['userID'],'groupID'=>$where['groupID']))->save($saveData);
+    }
+
+    /**
+     *获取到组的列表
+     */
+    public function groupList($userID) {
+        return $this->where(array('userID'=>$userID))->select();
+    }
+
+    public function getGroupNameField($groupID)
+    {
+        return $this->where(array('groupID'=>$groupID))->getField("groupName");
+    }
+}

@@ -1,0 +1,41 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: tony
+ * Date: 2018/10/17
+ * Time: 17:11
+ */
+namespace Service\User\Model;
+
+use Common\Model\SlaveModel;
+
+class UserMiniProgramModel extends SlaveModel {
+
+    public function getUserByOpenId($field, $where)
+    {
+        $model = M("UserMiniProgram");
+        $result = $model->field($field)->where($where)->find();
+        return $result;
+    }
+
+    public function getUserInfo($userId)
+    {
+        $sql = "SELECT B.userID,B.headUrl,B.headUrl,A.companyName,A.name,A.job,B.phone,C.headUrl headUrlWx FROM d_user B
+left JOIN d_user_company A ON A.userId=B.userID left join  d_user_mini_program C ON B.userID=C.userId WHERE B.userID=%s;";
+        $result = $this->SlaveDB()->query($sql, $userId);
+        return $result[0];
+    }
+
+    /**
+     * 编辑小程序用户
+     * @param $data
+     * @param $where
+     * @return bool
+     */
+    public function editUser($data, $where)
+    {
+        $model = M("UserMiniProgram");
+        $result = $model->where($where)->data($data)->save();
+        return $result;
+    }
+}

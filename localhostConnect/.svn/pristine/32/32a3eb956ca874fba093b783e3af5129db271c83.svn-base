@@ -1,0 +1,129 @@
+<div id="sub-share-edit">
+    <script type="text/javascript" src="{$Think.BPATH}js/article/ueditor.config.js?version={$Think.BNO}" ></script>    
+    <script type="text/javascript" charset="utf-8" src="{$Think.BPATH}js/uploader/webuploader.min.js"></script>
+    <script type="text/javascript" charset="utf-8" src="{$Think.BPATH}js/uploader/uploader.js"></script>
+    <h4 class="title">编辑-微信分享</h4>   
+    <input  type="hidden" name="hidAction" id="hidAction" value="view" >
+    <form class="form-horizontal" id="form-share">
+        <ul id="myTab" class="nav nav-tabs">
+            <li class="share"><a href="#home" data-toggle="tab">基本信息</a></li>
+        </ul>
+        <input type="hidden" id="shareID" name="shareID" value="{$data.shareID}">
+        <input type="hidden" id="hidUpURL" value="{$Think.UPLOAD}">
+        <div id="myTabContent" class="tab-content">
+            <div class="tab-pane fade in active" id="home" style="position: relative;">
+                <div style="position: absolute;top:5px;left:45%;margin-left: 10px;">
+                    <div class="uppic">	
+                        <if condition="strlen($data['shareImg']) gt 0">
+                            <img src="{$Think.UPLOAD}{$data.shareImg}" id="shareImg1" style="width: 240px;height: 180px;display: block;margin-bottom: 15px;" />
+                            <else /> <img src="/Public/backend/images/graybox.jpg" id="shareImg1" style="width: 240px;height: 180px;display: block;margin-bottom: 15px;" />
+                        </if>                        
+                    </div>
+                    <div class="upfilebox">                      
+                        <label class="upload-box upload-img">上传图片</label>                    
+                    </div>                  
+                </div>
+                <div class="form-group  has-info pt-10">
+                    <label class="col-sm-1 control-label" >分享名称：</label>
+                    <div class="col-sm-4">
+                        <input class="form-control" type="text" id="shareName" placeholder="分享名称" name="shareName" value="{$data.shareName}">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-1 control-label" >分享标识：</label>
+                    <div class="col-sm-4">
+                        <input class="form-control" type="text" id="shareCode" name="shareCode" placeholder="分享标识"  value="{$data.shareCode}"  <if condition="$data.shareID neq ''">disabled="disabled"</if> >
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-1 control-label" for="inputInfo">分享图片：</label>
+                    <div class="col-sm-4">
+                        <input type="text" id="shareImg" name="shareImg" value="{$data.shareImg}" readonly="readonly"  class="form-control">         
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-1 control-label" for="inputInfo">分享标题：</label>
+                    <div class="col-sm-4">
+                        <input type="text" id="shareTitle" name="shareTitle" value="{$data.shareTitle}" placeholder="分享标题" class="form-control">         
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="col-sm-1 control-label">分享描述：</label>
+                    <div class="col-sm-4">
+                        <textarea  class="area_edit span12" cols="50" rows="4" name="shareDesc" id="shareDesc">{$data.shareDesc}</textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="col-sm-1 control-label" ></label>
+            <div class="col-sm-4">      
+                <a class="btn btn-primary mt_10 butSaveShare" href="javascript:;">保存</a>  
+                <a class="btn btn-info mt_10 butReturn" href="javascript:;">返回</a> 
+            </div>
+        </div>   
+
+    </form>
+    <script type="text/javascript" >
+        $(function() {
+            $(".upload-img").InitUploader({
+                filesize: "3",
+                sendurl: "/Backend/Spread/saveShareImg",
+                inputID: "shareImg", //路径控件ID
+                browseID: "shareImg1", //浏览ID
+                swf: "{$Think.BPATH}js/uploader/uploader.swf",
+                filetypes: "jpg,jpge,png,gif",
+            });
+            $(".butReturn").click(function() {
+                $Util.returnRefresh();
+            });
+            sharevalid();
+            $(".butSaveShare").click(function() {
+                var isOK = $("#form-share").valid();
+                if (isOK) {
+                    saveShare();
+                }
+            });
+        });
+        function saveShare() {
+            var data = $Util.getData($("#form-share"));
+            $.ajax({
+                type: "post",
+                url: "/Backend/Spread/saveShare",
+                data: {'par': data},
+                dataType: "json",
+                beforeSend: function(XMLHttpRequest) {
+                    $(".sub-content").showLoading();
+                },
+                success: function(data, textStatus) {
+                    $(".sub-content").hideLoading();
+                    if (data.status == 1) {
+                        $("#shareID").val(data.data);
+                        $("#hidAction").val("edit");
+                        $win.confirm(data.msg + ",是否关闭窗口？").on(function() {
+                            $('.butReturn').trigger("click");
+                        });
+                    } else {
+                        $win.warn(data.msg);
+                    }
+                },
+                complete: function(XMLHttpRequest, textStatus) {
+                    $(".sub-content").hideLoading();
+                },
+                error: function() {
+                    $(".sub-content").hideLoading();
+                }
+            });
+        }
+        function sharevalid() {
+            $("#form-share").validate({
+                rules: {
+                    shareName: {required: true, maxlength: 30},
+                },
+                messages: {
+                    shareName: {required: "名称不能为空!", maxlength: "最大长度30个字符"},
+                }
+            });
+        }
+    </script>
+</div>

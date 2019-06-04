@@ -1,0 +1,31 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: Administrator
+ * Date: 2018/8/23 0023
+ * Time: 19:31
+ */
+namespace Service\Integral\Model;
+use Common\Model\SlaveModel;
+
+class UserTaskModel extends SlaveModel {
+
+    public function selectNewbieType($userID) {
+        return $this->where(array("userID"=>$userID,"typeWeight"=>array("in",array('supplementaryInformation','businessCard'))))
+                ->field("taskWeight")->select();
+    }
+
+
+    public function selectDaysType($userID) {
+        $where = array(
+                       "userID"=>$userID,
+                       "typeWeight"=>array("in",array("socialContact","browseEnterprise")),
+                       "addDatetime"=>array("egt",strtotime(date("Y-m-d")))
+                       );
+        return $this->where($where)->field(array('taskWeight'))
+                ->select();
+    }
+
+
+
+}

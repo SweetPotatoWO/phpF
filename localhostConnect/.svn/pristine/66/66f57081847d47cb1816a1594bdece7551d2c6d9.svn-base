@@ -1,0 +1,533 @@
+<?php
+
+namespace Service\Connect\Model;
+
+use GraphAware\Neo4j\OGM\Annotations as OGM;
+use GraphAware\Neo4j\OGM\Common\Collection;
+
+/**
+ *个人节点实体模型
+ * @OGM\Node(label="Person")
+ */
+class PersonModel extends BaseGraphModel
+{
+    /**
+     * @var int
+     *
+     * @OGM\GraphId()
+     */
+    protected $id;
+
+
+    /**
+     * 用户编号
+     * @OGM\Property(type="int")
+     * @var int
+     */
+    protected $user_id;
+
+    /**
+     * 姓名
+     * @OGM\Property(type="string")
+     * @var string
+     */
+    protected $name;
+
+    /**
+     * 头像
+     * @OGM\Property(type="string")
+     * @var string
+     */
+    protected $head_pic;
+
+    /**
+     * 手机号码
+     * @OGM\Property(type="string")
+     * @var string
+     */
+    protected $mobile;
+    /**
+     * 城市
+     * @OGM\Property(type="string")
+     * @var string
+     */
+    protected $city;
+    /**
+     * 城市编号
+     * @OGM\Property(type="int")
+     * @var int
+     */
+    protected $city_id;
+    /**
+     * 籍贯
+     * @OGM\Property(type="string")
+     * @var string
+     */
+    protected $city_born;
+    /**
+     * 籍贯编号
+     * @OGM\Property(type="int")
+     * @var int
+     */
+    protected $city_born_id;
+
+    /**
+     * 公司
+     * @OGM\Property(type="string")
+     * @var string
+     */
+    protected $company;
+
+    /**
+     * 行业
+     * @OGM\Property(type="string")
+     * @var string
+     */
+    protected $industry;
+    /**
+     * 行业编号
+     * @OGM\Property(type="int")
+     * @var int
+     */
+    protected $industry_id;
+
+    /**
+     * 职业
+     * @OGM\Property(type="string")
+     * @var string
+     */
+    protected $profession;
+
+    /**
+     * 头衔
+     * @OGM\Property(type="string")
+     * @var string
+     */
+    protected $job_title;
+
+    /**
+     * 职业认证
+     * @OGM\Property(type="string")
+     * @var string
+     */
+    protected $job_grade;
+
+    /**
+     * VIP
+     * @OGM\Property(type="string")
+     * @var string
+     */
+    protected $vip_grade;
+
+    /**
+     * 活跃度-最后活跃时间
+     * @OGM\Property(type="int")
+     * @var int
+     */
+    protected $active_grade;
+
+    /**
+     * 标签
+     * @var
+     */
+    protected $label;
+
+    /**
+     * @var ConnectModel[]|Collection
+     *
+     * @OGM\Relationship(relationshipEntity="ConnectModel",type="FOLLOW", direction="OUTGOING", collection=true, mappedBy="from")
+     */
+    protected $friends;
+
+    /**
+     * @var ConnectWorkModel[]|Collection
+     *
+     * @OGM\Relationship(relationshipEntity="ConnectWorkModel",type="WORK_IN", direction="OUTGOING", collection=true, mappedBy="staff")
+     */
+    protected $jobs;
+
+    /**
+     * @var ConnectStudyModel[]|Collection
+     *
+     * @OGM\Relationship(relationshipEntity="ConnectStudyModel",type="STUDY_IN", direction="OUTGOING", collection=true, mappedBy="student")
+     */
+    protected $studies;
+
+    public function __construct()
+    {
+        $this->friends = new Collection();
+        $this->jobs = new Collection();
+        $this->studies = new Collection();
+    }
+
+    /**
+     * @return int
+     */
+    public function getId()
+    {
+        return $this->id;
+    }
+
+    /**
+     * @return int
+     */
+    public function getUserId()
+    {
+        return $this->user_id;
+    }
+
+    /**
+     * @param int $user_id
+     * @return PersonModel
+     */
+    public function setUserId($user_id)
+    {
+        $this->user_id = (int)$user_id;
+        return $this;
+    }
+
+    /**
+     * @return string
+     */
+    public function getName()
+    {
+        return $this->name;
+    }
+
+    /**
+     * @param string $name
+     * @return PersonModel
+     */
+    public function setName($name)
+    {
+        $this->name = $name;
+        return $this;
+    }
+
+    /**
+     * @return string
+     */
+    public function getHeadPic()
+    {
+        return $this->head_pic;
+    }
+
+    /**
+     * @param string $head_pic
+     * @return PersonModel
+     */
+    public function setHeadPic($head_pic)
+    {
+        $this->head_pic = $head_pic;
+        return $this;
+    }
+
+    /**
+     * @return string
+     */
+    public function getMobile()
+    {
+        return $this->mobile;
+    }
+
+    /**
+     * @param string $mobile
+     * @return PersonModel
+     */
+    public function setMobile($mobile)
+    {
+        $this->mobile = $mobile;
+        return $this;
+    }
+
+    /**
+     * @return string
+     */
+    public function getCity()
+    {
+        return $this->city;
+    }
+
+    /**
+     * @param string $city
+     * @return PersonModel
+     */
+    public function setCity($city)
+    {
+        $this->city = $city;
+        return $this;
+    }
+
+    /**
+     * @return string
+     */
+    public function getCityBorn()
+    {
+        return $this->city_born;
+    }
+
+    /**
+     * @param string $city_born
+     * @return PersonModel
+     */
+    public function setCityBorn($city_born)
+    {
+        $this->city_born = $city_born;
+        return $this;
+    }
+
+    /**
+     * @return string
+     */
+    public function getCompany()
+    {
+        return $this->company;
+    }
+
+    /**
+     * @param string $company
+     * @return PersonModel
+     */
+    public function setCompany($company)
+    {
+        $this->company = $company;
+        return $this;
+    }
+
+    /**
+     * @return string
+     */
+    public function getIndustry()
+    {
+        return $this->industry;
+    }
+
+    /**
+     * @param string $industry
+     * @return PersonModel
+     */
+    public function setIndustry($industry)
+    {
+        $this->industry = $industry;
+        return $this;
+    }
+
+
+
+    /**
+     * @return int
+     */
+    public function getCityId()
+    {
+        return $this->city_id;
+    }
+
+    /**
+     * @param int $city_id
+     * @return PersonModel
+     */
+    public function setCityId($city_id)
+    {
+        $this->city_id = $city_id;
+        return $this;
+    }
+
+    /**
+     * @return int
+     */
+    public function getCityBornId()
+    {
+        return $this->city_born_id;
+    }
+
+    /**
+     * @param int $city_born_id
+     * @return PersonModel
+     */
+    public function setCityBornId($city_born_id)
+    {
+        $this->city_born_id = $city_born_id;
+        return $this;
+    }
+
+    /**
+     * @return int
+     */
+    public function getIndustryId()
+    {
+        return $this->industry_id;
+    }
+
+    /**
+     * @param int $industry_id
+     * @return PersonModel
+     */
+    public function setIndustryId($industry_id)
+    {
+        $this->industry_id = $industry_id;
+        return $this;
+    }
+
+    /**
+     * @return string
+     */
+    public function getProfession()
+    {
+        return $this->profession;
+    }
+
+    /**
+     * @param string $profession
+     * @return PersonModel
+     */
+    public function setProfession($profession)
+    {
+        $this->profession = $profession;
+        return $this;
+    }
+
+    /**
+     * @return string
+     */
+    public function getJobTitle()
+    {
+        return $this->job_title;
+    }
+
+    /**
+     * @param string $job_title
+     * @return PersonModel
+     */
+    public function setJobTitle($job_title)
+    {
+        $this->job_title = $job_title;
+        return $this;
+    }
+
+    /**
+     * @return string
+     */
+    public function getJobGrade()
+    {
+        return $this->job_grade;
+    }
+
+    /**
+     * @param string $job_grade
+     * @return PersonModel
+     */
+    public function setJobGrade($job_grade)
+    {
+        $this->job_grade = $job_grade;
+        return $this;
+    }
+
+    /**
+     * @return int
+     */
+    public function getActiveGrade()
+    {
+        return $this->active_grade;
+    }
+
+    /**
+     * @param int $active_grade
+     * @return PersonModel
+     */
+    public function setActiveGrade($active_grade)
+    {
+        $this->active_grade = $active_grade;
+        return $this;
+    }
+
+    /**
+     * @return string
+     */
+    public function getVipGrade()
+    {
+        return $this->vip_grade;
+    }
+
+    /**
+     * @param string $vip_grade
+     * @return PersonModel
+     */
+    public function setVipGrade($vip_grade)
+    {
+        $this->vip_grade = $vip_grade;
+        return $this;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getLabel()
+    {
+        return $this->label;
+    }
+
+    /**
+     * @param mixed $label
+     * @return PersonModel
+     */
+    public function setLabel($label)
+    {
+        $this->label = $label;
+        return $this;
+    }
+
+    /**
+     * @return ConnectModel[]|Collection
+     */
+    public function getFriends()
+    {
+        return $this->friends;
+    }
+
+    public function addFriend(PersonModel $friend)
+    {
+        $connect = new ConnectModel($this,$friend);
+        $this->getFriends()->add($connect);
+    }
+
+    /**
+     * @return ConnectWorkModel[]|Collection
+     */
+    public function getJobs()
+    {
+        return $this->jobs;
+    }
+
+    public function addJob(CompanyModel $company)
+    {
+        $connect = new ConnectWorkModel($this,$company);
+        $this->getJobs()->add($connect);
+        $company->getStaff()->add($connect);
+    }
+
+    /**
+     * @return ConnectStudyModel[]|Collection
+     */
+    public function getStudies()
+    {
+        return $this->studies;
+    }
+
+    public function addStudy(SchoolModel $school)
+    {
+        $connect = new ConnectStudyModel($this,$school);
+        $this->getStudies()->add($connect);
+        $school->getStudents()->add($connect);
+    }
+
+    /**
+     * 获取实体编辑参数串和参数
+     * @param string $alias
+     * @param array $ignore 不需要获取的字段（一般指查询字段）
+     * @return array
+     */
+    public function getEditParam($alias='n',$ignore=['user_id'])
+    {
+        return $this->getSetArray('user_id,name,head_pic,mobile,city,city_born,city_id,city_born_id,company,industry,industry_id,profession,job_grade,vip_grade,job_title,active_grade',$alias,$ignore);
+    }
+}

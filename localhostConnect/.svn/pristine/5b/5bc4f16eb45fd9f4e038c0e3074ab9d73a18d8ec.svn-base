@@ -1,0 +1,77 @@
+<?php
+
+return array(
+    /* 数据库配置信息  */
+    'DB_TYPE' => 'mysqli', // 数据库类型  
+    'DB_USER' => 'root', // 用户名  
+    'DB_HOST' => '192.168.1.221', // 服务器地址
+    'DB_NAME' => 'connect', // 数据库名
+    'DB_PORT' => '3306', // 端口
+    'DB_PWD' => 'cmKR5jsp@S1UqPQ2', // 密码
+    'DB_PREFIX' => 'd_', // 数据库表前缀 */
+    'DB_CHARSET' => 'utf8', // 数据库编码默认采用utf8
+    'SlaveConfig' => array(
+        'DB_TYPE' => 'mysqli', // 数据库类型
+        'DB_USER' => 'root', // 用户名
+        'DB_HOST' => '192.168.1.221', // 服务器地址
+        'DB_NAME' => 'connect', // 数据库名
+        'DB_PORT' => '3306', // 端口
+        'DB_PWD' => 'cmKR5jsp@S1UqPQ2', // 密码
+        'DB_PREFIX' => 'd_', // 数据库表前缀 */
+        'DB_CHARSET' => 'utf8', // 数据库编码默认采用utf8
+        'DB_PARAMS' => array(\PDO::ATTR_CASE => \PDO::CASE_NATURAL),
+    ),
+    'DB_PARAMS' => array(\PDO::ATTR_CASE => \PDO::CASE_NATURAL),
+    // 允许访问列表和默认模块
+    'MODULE_ALLOW_LIST' => array('Frontend', 'Wechat','Backend', 'Api', 'Hxcg', 'MobileApi'),
+    'DEFAULT_CONTROLLER' => 'Index', // 默认控制器名称
+    'DEFAULT_ACTION' => 'index', // 默认操作名称
+    'DEFAULT_MODULE' => 'Frontend',
+    'URL_HTML_SUFFIX' => 'html', // URL伪静态后缀设置  
+    'ERROR_PAGE' =>'/Public/error.html',
+    'TMPL_ACTION_ERROR' => "/Public/error",
+    'TMPL_ACTION_SUCCESS' => "/Public/success",
+    'LOAD_EXT_CONFIG' => 'messageInfo,siteConfig,ueditorConfig,incConfig',
+    'URL_DENY_SUFFIX' => 'ico|png|gif|jpg', // URL禁止访问的后缀设置
+    /* URL设置 */
+    'URL_CASE_INSENSITIVE' => false, // 默认false 表示URL区分大小写 true则表示不区分大小写
+    'URL_MODEL' => 2, // URL访问模式,可选参数0、1、2、3,代表四种模式
+    /* 系统缓存 */
+    'DATA_CACHE_TYPE' => 'Redis',
+    'REDIS_AUTH' => 'mipr8VaKHWtcHaf2',
+    'REDIS_HOST' => '192.168.1.226',
+    'REDIS_PORT' => 6379,
+    'DATA_CACHE_PREFIX' => '',
+    'DATA_CACHE_TIME' => 3600,  
+    'URL_ROUTER_ON' => true, //开启路由
+    'URL_ROUTE_RULES' => array(//定义路由规则     
+        'JSBPK-2017-MQHZ-KFRWD' => '/Backend?key=KJP&token=a5ec7776b4636a778g842c7360fdbb1c',
+    ),
+    'MAIL_HOST' => 'smtp.exmail.qq.com', //smtp服务器的名称
+    'MAIL_PORT' => 465,
+    'MAIL_SMTPAUTH' => TRUE, //启用smtp认证
+    'MAIL_Secure' => 'ssl', //协议
+    'MAIL_USERNAME' => 'service@qianhezi.cn', //你的邮箱名
+    'MAIL_FROM' => 'service@qianhezi.cn', //发件人地址
+    'MAIL_FROMNAME' => '启脉', //发件人姓名
+    'MAIL_PASSWORD' => 'Qhz1028', //邮箱密码
+    'MAIL_CHARSET' => 'utf-8', //设置邮件编码
+    'MAIL_ISHTML' => TRUE, // 是否HTML格式邮件
+    //Neo4j配置
+//    'Neo_host' => 'http://neo4j:123qwe@localhost:7474',
+    'Neo_host' => 'http://neo4j:A2h1cRbkoiN87pxp@192.168.1.227:7474',
+    /*'Rabbit_host' => [
+        'host' => '172.18.3.177',
+        'port' => 5672,
+        'user' => 'qhzmq007',
+        'password' => 'hy63wPVbVQi61Umm',
+        'vhost' => '/'
+    ],*/
+    'Rabbit_host' => [
+        'host' => '192.168.1.225',
+        'port' => 5672,
+        'user' => 'admin',
+        'password' => 'HOwkKqfQMWpioL78',
+        'vhost' => '/'
+    ],
+);

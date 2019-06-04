@@ -1,0 +1,160 @@
+<?php
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+namespace Backend\Controller;
+
+use Think\Controller;
+use Common\Common\Xxtea;
+use Service\Backend\Logic\ConsoleUserLogic;
+use Common\Common\Redis;
+use Service\News\Logic\SendSMSLogic;
+
+/**
+ * Description of IndexController
+ *
+ * @author Administrator
+ */
+class LoginController extends Controller {
+
+    public function verifyImage() {
+        $config = array(
+            'fontSize' => 38, // 验证码字体大小
+            'length' => 4, // 验证码位数
+            'useNoise' => false, // 关闭验证码杂点
+        );
+        $Verify = new \Think\Verify($config);
+        $Verify->entry("backend");
+    }
+
+    public function login() {
+        if (!APP_DEBUG) {
+            $redis = Redis::GetInstance();
+            $token = "0a4cd9bee2a3217b5a0782e6fe3d2f05";
+            $value = $redis->get("QHZ" . session_id());
+            if (!APP_DEBUG && $value != $token) {
+                $this->redirect('/');
+            }
+        }
+        $this->display();
+    }
+
+    /**
+     * 用户登录
+     */
+    public function loginUser() {
+        $par = I("post.par");
+        if (count($par) * 1 > 0) {
+            if (empty($par["userName"]) || empty($par["password"])) {
+                $this->jsonReturn(0, '用户名密码不能为空!');
+            }
+            $sms = new SendSMSLogic();
+            $logic = new ConsoleUserLogic();
+            $phone = $logic->getUserByName($par["userName"]);
+            $stutas = $sms->ConfirmVerify($phone, $par["smsCode"]);
+            if (!$stutas) {
+                $this->jsonReturn(0, "动态验证码错误!");
+            }
+            $par["password"] = Xxtea::decrypt(base64_decode($par['password']), md5(trim($par['imgCode'])));
+            $result = $logic->userLogin($par);
+            if ($result * 1 > 0) {
+                $this->jsonReturn(1, "登录成功", $result);
+            }
+        }
+        $this->jsonReturn(0, "密码或者账户不正确!");
+    }
+
+    /**
+     * 验证码登录发送验证码
+     */
+    public function loginPhoneCode() {
+        if (!IS_AJAX) {
+            $this->jsonReturn(0, "非法请求");
+        }
+        $par = I("post.par");
+        $verifyCode = $par["code"];
+        if (!checkverify($verifyCode, "backend")) {
+            $this->jsonReturn(0, '请输入正确的图片验证码!');
+        }
+        $logic = new ConsoleUserLogic();
+        $phone = $logic->getUserByName($par["name"]);
+        if (empty($phone)||!verify_phone($phone)) {
+            $this->jsonReturn(1, '发送成功!');
+        }
+        $this->sendCode("LoginSign", $phone); //验证码登录标识
+    }
+
+    /**
+     * 发送短信方法
+     * @param type $type
+     * @param type $mobile
+     * @return type
+     */
+    private function sendCode($type, $mobile) {
+        $logic = new SendSMSLogic();
+        $res = $logic->sendCode($mobile, $type, 1); //PC端
+        if ($res === true) {
+            $this->jsonReturn(1, '验证码发送成功');
+        } else {
+            $this->jsonReturn(0, $res);
+        }
+    }
+
+    public function jsonReturn($status = 0, $msg = null, $data = null) {
+        $this->ajaxSK(array(
+            "status" => $status,
+            "msg" => $msg,
+            "data" => $data
+                ), "JSON");
+    }
+
+    /**
+     * Ajax方式返回数据到客户端
+     * @access protected
+     * @param mixed $data 要返回的数据
+     * @param String $type AJAX返回数据格式
+     * @return void
+     */
+    public function ajaxSK($data, $type = '') {
+        if (func_num_args() > 2) {// 兼容3.0之前用法
+            $args = func_get_args();
+            array_shift($args);
+            $info = array();
+            $info['data'] = $data;
+            $info['info'] = array_shift($args);
+            $info['status'] = array_shift($args);
+            $data = $info;
+            $type = $args ? array_shift($args) : '';
+        }
+        if (empty($type))
+            $type = C('DEFAULT_AJAX_RETURN');
+        switch (strtoupper($type)) {
+            case 'JSON' :
+                // 返回JSON数据格式到客户端 包含状态信息
+                header('Content-Type:application/json; charset=utf-8');
+                exit(json_encode($data));
+            case 'XML' :
+                // 返回xml格式数据
+                header('Content-Type:text/xml; charset=utf-8');
+                exit(xml_encode($data));
+            case 'JSONP':
+                // 返回JSON数据格式到客户端 包含状态信息
+                header('Content-Type:application/json; charset=utf-8');
+                $handler = isset($_GET[C('VAR_JSONP_HANDLER')]) ? $_GET[C('VAR_JSONP_HANDLER')] : C('DEFAULT_JSONP_HANDLER');
+                exit($handler . '(' . json_encode($data) . ');');
+            case 'EVAL' :
+                // 返回可执行的js脚本
+                header('Content-Type:text/html; charset=utf-8');
+                exit($data);
+            default :
+                // 用于扩展其他返回格式数据
+                tag('ajax_return', $data);
+        }
+        exit();
+    }
+
+}

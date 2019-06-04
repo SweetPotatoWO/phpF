@@ -1,0 +1,264 @@
+<include file="Common:header" />
+<div class="property">
+	<div class="navigation text-center bg-white">
+        <ul class="nav nav-tabs bord-n clearfix" role="tablist">
+            <li role="presentation">
+                <a href="#trademark" aria-controls="trademarkr" role="tab" data-toggle="tab" class="active">商标信息</a>
+            </li>
+            <li role="presentation" data="list">
+                <a href="#patent" aria-controls="patent" role="tab" data-toggle="tab">专利信息</a>
+            </li>
+        </ul>
+    </div>
+    
+    <div class="tab-content">
+    	<div id="trademark" role="tabpanel" class="tab-pane active">
+    		<div class="list bg-white">
+    			<!--&lt;!&ndash;单条数据start&ndash;&gt;-->
+    			<!--<div class="bord-b clearfix">-->
+    				<!--<div class="fl portrait"><img src="/Public/wechat/images/company/touxiang.png"></div>-->
+    				<!--<div class="fl pl-15">-->
+    					<!--<p class="mb-5">商标名称</p>-->
+    					<!--<div class="fs-12">-->
+    						<!--<p class="mb-5"><font class="color-deep">商标类别：</font>金融类</p>-->
+    						<!--<p class="mb-0"><font class="color-deep">商标状态：</font>注册</p>-->
+    					<!--</div>-->
+    				<!--</div>-->
+    			<!--</div>    			-->
+    			<!--&lt;!&ndash;单条数据end&ndash;&gt;    	-->
+    		</div>
+    		<!--暂无数据-->
+    		<!--<div class="nodata text-center fs-13 color-deep pl-10">暂无数据~</div>-->
+    		<!--点击加载-->
+    		<!--<div id="wxNo" class="wxLast text-center fs-13 color-deep">已经没有更多数据</div>-->
+            <!--<div id="wxLoad" class="wxLast text-center fs-13 color-deep">正在努力加载...</div>-->
+            <div id="traMore" page="2" class="wxLast text-center fs-13 color-deep">点击加载更多</div>
+    	</div>
+    	<div id="patent" role="tabpanel" class="tab-pane">
+    		<div class="list bg-white">
+    			<!--&lt;!&ndash;单条数据start&ndash;&gt;-->
+    			<!--<a href="/Wechat/Company/patentDetail" class="block bord-b">-->
+    				<!--<h6 class="mb-5">专利名称</h6>-->
+    				<!--<div class="fs-12">-->
+    					<!--<p class="mb-5"><font class="color-deep">申请公布号：</font>CN95236132798</p>-->
+    					<!--<p class="mb-0"><font class="color-deep">申请公布日：</font>2018-10-20</p>-->
+    				<!--</div>    				-->
+    			<!--</a>    			-->
+    			<!--&lt;!&ndash;单条数据end&ndash;&gt;-->
+    		</div>
+    		<!--&lt;!&ndash;暂无数据&ndash;&gt;-->
+    		<!--<div class="nodata text-center fs-13 color-deep pl-10">暂无数据~</div>-->
+    		<!--&lt;!&ndash;点击加载&ndash;&gt;-->
+    		<!--<div id="wxNo" class="wxLast text-center fs-13 color-deep">已经没有更多数据</div>-->
+            <!--<div id="wxLoad" class="wxLast text-center fs-13 color-deep">正在努力加载...</div>-->
+            <div id="patMore" page="2" class="wxLast text-center fs-13 color-deep">点击加载更多</div>
+    	</div>
+    </div>
+</div>
+</body>
+</html>
+<script type="text/javascript">
+
+    var type = '{$type}';
+    var pagesize = 15;
+    var companyID="{$companyID}";
+	$(function () {
+        getPropertyList(1);
+        getPatent(1);
+        $("#traMore").click(function() {  //点击加载
+            var page = $(this).attr('page');
+            getPropertyList(page);
+        });
+
+        $("#patMore").click(function () {
+            var page = $(this).attr('page');
+            getPatent(page);
+        });
+
+        switchTap(type);
+	});
+
+	//切换状态
+	function switchTap(type) {
+	    switch (type) {
+            case "1":
+                $("a[data-toggle='tab']").removeClass('active show');
+                $("a[aria-controls='trademarkr']").addClass('active show');
+
+                $('.tab-pane').removeClass('active');
+                $("#trademark").addClass('active');
+                break;
+            case "2":
+                $("a[data-toggle='tab']").removeClass('active show');
+                $("a[aria-controls='patent']").addClass('active show');
+
+                $('.tab-pane').removeClass('active');
+                $("#patent").addClass('active');
+                break;
+        }
+    }
+
+    /**
+	 * 获取到商标的列表
+     * @param page
+     */
+    function getPropertyList(page) {
+        var data = {'page':page,'companyID':companyID};
+        $.ajax({
+            url:"/wechat/company/getPropertyList",
+            type:"post",
+            data:data,
+            dataType:'json',
+            success:function(data){
+                if(data.code == 0) {   //成功
+                    getCombinationProperty(data.data,page,pagesize);
+                } else {   //失败
+                    alert("服务器出错");
+                }
+            },
+            error:function(data){
+                alert("请求错误");
+            },
+        });
+	}
+
+    /**
+     * 获取到专利的信息
+     * @page
+     */
+    function getPatent(page) {
+        var data = {'page':page,'companyID':companyID};
+        $.ajax({
+            url:"/wechat/company/getPatentList",
+            type:"post",
+            data:data,
+            dataType:'json',
+            success:function(data){
+                if(data.code == 0) {   //成功
+                    getCombinationPatent(data.data,page,pagesize);
+                } else {   //失败
+                    alert("服务器出错");
+                }
+            },
+            error:function(data){
+                alert("请求错误");
+            },
+        });
+    }
+
+    /**
+	 * 组合对应的商标信息
+     * @param data
+     */
+	function getCombinationProperty(data,page,pagesize) {
+        var html = "";
+        if(data == "" && page == 1) {  //当请求的是第一页且没数据的时候
+            var b = $("#trademark").children();
+            html = "<div class=\"nodata text-center fs-13 color-deep pl-10\">暂无数据~</div>";
+            $("#trademark").html(html);
+            return;
+        }
+        if(data == "" && page !=1) {   //当请求是第一页的是否
+            var html = '<div id="wxNo" class="wxLast text-center fs-13 color-deep">已经没有更多数据</div>';
+            $("#trademark").append(html);
+            return
+        }
+        for (var a in data) {
+            html += '<div class="bord-b clearfix">\n' +
+                '    \t\t\t\t<div class="fl portrait"><img src="'+data[a].imageUrl+'"></div>\n' +
+                '    \t\t\t\t<div class="fl pl-15 content">\n' +
+                '    \t\t\t\t\t<p class="mb-5 name">商标名称:'+data[a].tmName+'</p>\n' +
+                '    \t\t\t\t\t<div class="fs-12">\n' +
+                '    \t\t\t\t\t\t<p class="mb-5"><font class="color-deep">商标类别：</font>'+data[a].tmType+'</p>\n' +
+                '    \t\t\t\t\t\t<p class="mb-0"><font class="color-deep">商标状态：</font>'+data[a].tmStatus+'</p>\n' +
+                '    \t\t\t\t\t</div>\n' +
+                '    \t\t\t\t</div>\n' +
+                '    \t\t\t</div>';
+        }
+        $("#trademark").children("div").eq(0).append(html);
+        if(data.length < pagesize) {   //当请求的结果集合小于一页的时候
+            html = '<div id="wxNo" class="wxLast text-center fs-13 color-deep">已经没有更多数据</div>';
+            $("#trademark").append(html);
+            $("#traMore").remove();  //移除点击更多
+        } else {
+            $("#traMore").attr('page',parseInt(page)+1);  //分页加一
+        }
+
+    }
+
+
+
+    /**
+     * 组合对应的商标信息
+     * @param data
+     */
+    function getCombinationPatent(data,page,pagesize) {
+        var html = "";
+        if(data == "" && page == 1) {  //当请求的是第一页且没数据的时候
+            var b = $("#patent").children();
+            html = "<div class=\"nodata text-center fs-13 color-deep pl-10\">暂无数据~</div>";
+            $("#patent").html(html);
+            return;
+        }
+        if(data == "" && page !=1) {   //当请求是第一页的是否
+            var html = '<div id="wxNo" class="wxLast text-center fs-13 color-deep">已经没有更多数据</div>';
+            $("#patent").append(html);
+            return
+        }
+        for (var a in data) {
+            html += '<a  data="'+data[a].alljson+'" onclick="post(this)"  class="pat block bord-b">\n' +
+                '    \t\t\t\t<h6 class="mb-5">专利名称:'+data[a].title+'</h6>\n' +
+                '    \t\t\t\t<div class="fs-12">\n' +
+                '    \t\t\t\t\t<p class="mb-5"><font class="color-deep">申请公布号：</font>'+data[a].pubNO+'</p>\n' +
+                '    \t\t\t\t\t<p class="mb-0"><font class="color-deep">申请公布日：</font>'+data[a].pubDate+'</p>\n' +
+                '    \t\t\t\t</div>    \t\t\t\t\n' +
+                '    \t\t\t</a>';
+        }
+        $("#patent").children("div").eq(0).append(html);
+        if(data.length < pagesize) {   //当请求的结果集合小于一页的时候
+            html = '<div id="wxNo" class="wxLast text-center fs-13 color-deep">已经没有更多数据</div>';
+            $("#patent").append(html);
+            $("#patMore").remove();  //移除点击更多
+        } else {
+            $("#patMore").attr('page',parseInt(page)+1);  //分页加一
+        }
+
+    }
+
+    //扩展JQ 进行post跳转
+    $.extend({
+        StandardPost:function(url,args){
+            var body = $(document.body),
+                form = $("<form method='post'></form>"),
+                input;
+            form.attr({"action":url});
+            $.each(args,function(key,value){
+                input = $("<input type='hidden'>");
+                input.attr({"name":key});
+                input.val(value);
+                form.append(input);
+            });
+            form.appendTo(document.body);
+            form.submit();
+            document.body.removeChild(form[0]);
+        }
+    });
+
+
+
+
+    /**
+     * post的方法跳转提交
+     * @param URL
+     * @param PARAMS
+     * @returns {HTMLElement}
+     */
+    function post(obj) {
+        var URla ='/Wechat/Company/patentDetail';
+        var PARAMS = {'data':$(obj).attr('data')};
+        $.StandardPost(URla,PARAMS);
+    }
+
+
+
+</script>

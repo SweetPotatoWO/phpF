@@ -1,0 +1,108 @@
+<?php
+
+namespace Service\Integral\Logic;
+
+
+
+use Service\Integral\Model\CardGroupModel;
+use Service\Integral\Model\UserCardModel;
+
+class CardLogic {
+
+
+    public function getUserCardList($userID) {
+        $model = new UserCardModel();
+        $data = $model->getList(array('userID'=>$userID),"cid,userName,phoneContent,cardImgUrl,companyContent,cardHeadUrl");
+        $return['count'] = count($data);
+        $return['list'] = $this->handlData($data);  //处理数据
+        return $return;
+    }
+
+
+    /**
+     * 处理数据
+     */
+    public function handlData($data) {
+        $return = [];
+        foreach ($data as $key=>$value) {
+            $return['cid'] = $value['cid'];
+            $return['userName'] = $value['userName'];
+            $tmp = unserialize($value['phoneContent']);
+            $return['phone'] = ($tmp[0]['value'])?$tmp[0]['value']:"13169601345";
+            $tmp = unserialize($value['companyContent']);
+            $return['companyName'] = ($tmp[0]['name'])?$tmp[0]['name']:"你好";
+            $return['jobName'] = ($tmp[0]['job'])?$tmp[0]['job']:"技术员";
+            $return['groupName'] = ($tmp[0]['group'])?$tmp[0]['group']:"技术部";
+            $return['cardImgUrl'] = UPLOAD.$value['cardImgUrl'];
+            $returnArr [] = $return;
+        }
+        return $returnArr;
+    }
+
+
+    /**
+     * 添加用户的分组
+     * @param $name
+     */
+    public function addGroup($data) {
+        $model = new  CardGroupModel();
+        $info = $model->getGroupByName($data['name'],$data['userID']);
+        if(empty($info) || empty($data['groupID'])) {  //添加
+            $saveData['groupName'] = $data['name'];
+            $saveData['userID'] = $data['userID'];
+            return $model->addOne($saveData);
+        } else {   //编辑
+            $saveData['groupName'] = $data['name'];
+            return $model->saveOne($saveData,$data);
+        }
+    }
+
+    /**
+     * 获取到组的列表
+     */
+    public function groupList($userID) {
+        $model = new CardGroupModel();
+        return $model->groupList($userID);
+    }
+
+    /**
+     * 获取到卡片的详情
+     */
+    public function getCardInfo($cardID) {
+        $model = new UserCardModel();
+        $group = new CardGroupModel();
+        $cardInfo = $model->getUserCardByCid($cardID);
+        if(empty($cardInfo)) {
+            return false;
+        }
+        $cardInfo['phoneContent'] = CardStringToArr($cardInfo['phoneContent']);
+        $cardInfo['mailContent'] = CardStringToArr($cardInfo['mailContent']);
+        $cardInfo['companyContent'] = CardStringToArr($cardInfo['companyContent']);
+        $cardInfo['websiteContent'] = CardStringToArr($cardInfo['websiteContent']);
+        $cardInfo['areaContent'] = CardStringToArr($cardInfo['areaContent']);
+        if(!empty($cardInfo['groupID'])) {   //空的组ID
+            $GroupInfo = $group->getGroupNameField($cardInfo['groupID']);
+        } else {
+            $GroupInfo = "";
+        }
+        $cardInfo['cardHeadUrl'] = (empty($cardInfo['cardHeadUrl']))?"": UPLOAD.$cardInfo['cardHeadUrl'];
+        $cardInfo['groupInfo'] = $GroupInfo;
+        $cardInfo['cardImgUrl'] =(empty($cardInfo['cardImgUrl']))?"": UPLOAD.$cardInfo['cardImgUrl'];
+        $cardInfo['socialConnectContent'] = empty($cardInfo['socialConnectContent'])?"":$cardInfo['socialConnectContent'];
+        return $cardInfo;
+    }
+
+
+    /**
+     * 修改和编辑卡片
+     */
+    public function addOrSaveCard($data,$userID) {
+        $userCard = new UserCardModel();
+        if(empty($data['cid'])) {
+            $data['userID'] = $userID;
+            return $userCard->addOne($data);
+        } else {
+            return $userCard->saveOne($data['cid'],$data);
+        }
+    }
+}

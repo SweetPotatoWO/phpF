@@ -1,0 +1,44 @@
+<?php
+
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+namespace Wechat\Controller;
+use Common\Common\AesSecurity;
+
+use Think\Controller;
+/**
+ * Description of UserController
+ *
+ * @author Administrator
+ */
+class IndexController extends Controller {
+
+
+
+
+    public function _initialize()
+    {
+
+
+    }
+
+
+
+    public function  index() {
+//      echo "在这里停顿";
+		$this->display('index');
+    }
+
+
+
+
+
+
+
+
+
+}

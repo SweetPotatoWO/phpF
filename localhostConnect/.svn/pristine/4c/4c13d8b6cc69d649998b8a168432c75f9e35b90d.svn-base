@@ -1,0 +1,102 @@
+<div class="modal-body">
+    <input  type="hidden" name="hidAction" id="hidAction" value="view" >
+    <form class="form-horizontal" id="form-Link">       
+        <input type="hidden" name='linkID' id='linkID' value="{$data.linkID}"/>
+        <div class="form-group has-info">
+            <label class="control-label col-sm-2" for="inputInfo">链接名称：</label>
+            <div class=" col-sm-9">
+                <input type="text" id="linkID" name="linkName" value="{$data.linkName}" class="form-control"  >          
+            </div>
+        </div>
+        <div class="form-group has-info">
+            <label class="control-label col-sm-2" for="inputInfo">链接地址：</label>
+            <div class=" col-sm-9">
+                <input type="text" id="linkUrl" name="linkUrl" value="{$data.linkUrl}" class="form-control" >         
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="control-label col-sm-2" for="inputInfo">排序：</label>
+            <div class="col-sm-9">
+                <input type="text" id="linkSort" name="linkSort" value="{$data.linkSort|default=0}" class="form-control">          
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="control-label col-sm-2" for="inputInfo">联系人：</label>
+            <div class="col-sm-9">
+                <input type="text" id="linkMan" name="linkMan"  value="{$data.linkMan}" class="form-control">        
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="control-label col-sm-2" for="inputInfo">联系QQ：</label>
+            <div class="col-sm-9">
+                <input  type="text" id="linkQQ" class="form-control" name="linkQQ"  value="{$data.linkQQ}" >       
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="control-label col-sm-2" for="inputInfo">联系电话：</label>
+            <div class="col-sm-9">
+                <input type="text" id="linkPhone" name="linkPhone" value="{$data.linkPhone}" class="form-control" >
+            </div>
+        </div>          
+    </form>
+</div>
+<div class="modal-footer">
+    <button type="button" id="butCancel" class="btn btn-default" data-dismiss="modal">关闭</button>
+    <button type="button" id="butSavelike" class="btn btn-primary" >保存</button>
+</div>  
+<script type="text/javascript" >
+    $(function($) {
+        linkvalid();
+        $("#butSavelike").click(function() {
+            var isOK = $("#form-Link").valid();
+            if (isOK) {
+                saveLink();
+            }
+        });
+    });
+
+    function saveLink() {
+        var data = $Util.getData($("#form-Link"));
+        $.ajax({
+            type: "post",
+            url: "/Backend/Spread/saveLink",
+            data: {'par': data},
+            dataType: "json",
+            beforeSend: function(XMLHttpRequest) {
+                $(".sub-content").showLoading();
+            },
+            success: function(data, textStatus) {
+                $(".sub-content").hideLoading();
+                if (data.status == 1) {
+                    $("#linkID").val(data.data);
+                    $("#hidAction").val("edit");
+                    $win.confirm(data.msg + ",是否关闭窗口？").on(function() {
+                        $('#butCancel').trigger("click");
+                    });
+                } else {
+                    $win.warn(data.msg);
+                }
+            },
+            complete: function(XMLHttpRequest, textStatus) {
+                $(".sub-content").hideLoading();
+            },
+            error: function() {
+                $(".sub-content").hideLoading();
+            }
+        });
+    }
+    function linkvalid() {
+        $("#form-Link").validate({
+            rules: {
+                linkName: {required: true, maxlength: 15},
+                linkUrl: {required: true, url: true},
+                linkSort: {digits: true}
+            },
+            messages: {
+                linkName: {required: "名称不能为空!", maxlength: "最大长度15个字符"},
+                linkUrl: {required: "链接URL不能为空!", url: "URL不正确"},
+                linkSort: {digits: "排序为0~999的正整数!"}
+            }
+        });
+    }
+</script>
